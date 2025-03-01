@@ -6,7 +6,7 @@ import std::math::random;
 
 import raylib5::rl;
 
-random::Pcg32Random rng;
+random::Pcg32Random g_rng;
 
 int font_size = 16;
 Font* sprite_font;
@@ -20,7 +20,7 @@ struct LogMessage
 }
 List(<LogMessage>) log_messages;
 
-int map_zoom = 2;
+int map_zoom = 1;
 VirtualTerminal map_term;
 VirtualTerminal ui_term;
 
@@ -28,25 +28,64 @@ Zone* zone;
 
 bool show_visibility;
 
+DungeonFloor* current_floor;
+
 fn void log(String message, rl::Color color = colors::WHITE)
 {
     log_messages.push({message, color});
 }
 
-fn void zone_generator(void*, Zone* zone)
+struct GeneratorData
 {
-    for (int y = 0; y < zone.height; ++y)
+    ulong seed;
+    int depth;
+}
+
+fn void GeneratorData.generate(&self, Zone* zone)
+{
+    random::Pcg32Random rng;
+    random::seed(&rng, self.seed);
+
+    zone.name = string::new_format("Floor %d", self.depth);
+
+    if (current_floor)
     {
-        for (int x = 0; x < zone.width; ++x)
+        current_floor.free();
+        mem::free(current_floor);
+    }
+    current_floor = mem::new(DungeonFloor);
+    current_floor.new_init(self.depth);
+
+    for (int y = 0; y < 8; ++y)
+    {
+        for (int x = 0; x < 8; ++x)
         {
-            if (x == 10 && y == 10) continue;
-            if (x == 0 || x == zone.width - 1 || y == 0 || y == zone.height - 1 || random::next_in_range(&rng, 0, 5) == 0)
+            Room* room = mem::new(Room);
+            room.new_init({x * 17, y * 17}, {16, 16});
+            current_floor.rooms.set({x, y}, room);
+        }
+    }
+    
+    for (int y = 0; y < 8; ++y)
+    {
+        for (int x = 0; x < 8; ++x)
+        {
+            Room* room = current_floor.rooms.get({x, y})!!;
+            IVec2 pos = room.position;
+            IVec2 size = room.size;
+            for (int ry = 0; ry < size.y; ++ry)
             {
-                zone.set_terrain(x, y, '#', colors::random_color(&rng), colors::BLACK, false);
-            }
-            else
-            {
-                zone.set_terrain(x, y, '.', colors::WHITE, colors::BLACK, true);
+                for (int rx = 0; rx < size.x; ++rx)
+                {
+                    if (rx == 0 || rx == size.x - 1 || ry == 0 || ry == size.y - 1 || random::next_in_range(&rng, 0, 6) == 0)
+                    {
+                        zone.set_terrain(pos[0] + rx, pos[1] + ry, '#', {220, 220, 220, 255}, colors::BLACK, false);
+                    }
+                    else
+                    {
+                        zone.set_terrain(pos[0] + rx, pos[1] + ry, '.', colors::DARK_GREY, colors::BLACK, true);
+                    }
+                }
             }
         }
     }
@@ -137,7 +176,7 @@ fn int main(String[] args)
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Initializing...");
 
-    random::seed_entropy(&rng);
+    random::seed_entropy(&g_rng);
 
     int term_width = 80;
     int term_height = 45;
@@ -171,9 +210,14 @@ fn int main(String[] args)
     map_term.new_init(term_width / map_zoom, term_height / map_zoom, textmode_font);
     ui_term.new_init(term_width * 2, term_height, text_font);
 
+    g_items.new_init();
+    g_mobs.new_init();
+
     ZoneDescription initial_zone;
-    initial_zone.new_init("main", 80, 45);
-    initial_zone.generator = (ZoneGenerator) &zone_generator;
+    initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
+    GeneratorData generator = { 16135, 0 };
+    initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
+    initial_zone.generator_data = &generator;
 
     zone = mem::new(Zone);
     zone.new_init(initial_zone);

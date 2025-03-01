@@ -29,8 +29,8 @@ fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 
 // Implement EntityVisibility
-fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
-fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 10);
+//fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
+//fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 10);
 
 fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
