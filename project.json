@@ -1,0 +1,17 @@
+{
+  "langrev": "1",
+  "warnings":  [ "no-unused" ],
+  "dependency-search-paths":  [ "lib" ],
+  "dependencies":  [ "raylib5" ],
+  "authors":  [ "TechnicalFowl <atechnicalfowl@gmail.com>" ],
+  "version": "0.1.0",
+  "sources":  [ "src/**" ],
+  "output": "build",
+  "targets": {
+    "dungeoneer": {
+      "type": "executable"
+    }
+  },
+  "cpu": "generic",
+  "opt": "O0"
+}
