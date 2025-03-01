@@ -301,7 +301,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             IVec2 next = current.pos + n;
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
             ZoneCell* cell = self.get_cell(...next);
-            if (!cell.terrain.passable) continue;
+            if (cell.terrain.glyph == '+' && next != to)
+            {
+                Direction dir = get_door_direction(next);
+                next = next + dir.dir * 4;
+                cell = self.get_cell(...next);
+            }
+            if (!cell.terrain.passable && next != to) continue;
             
             double new_cost = current.cost + 1;
             double h_cost = new_cost + (diagonal_moves ? get_diag_heuristic(next, to) : get_heuristic(next, to));
@@ -319,7 +325,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 IVec2 next = current.pos + n;
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
                 ZoneCell* cell = self.get_cell(...next);
-                if (!cell.terrain.passable) continue;
+                if (cell.terrain.glyph == '+')
+                {
+                    Direction dir = get_door_direction(next);
+                    next = next + dir.dir * 4;
+                    cell = self.get_cell(...next);
+                }
+                if (!cell.terrain.passable && next != to) continue;
                 
                 double new_cost = current.cost + 1.414;
                 double h_cost = new_cost + get_diag_heuristic(next, to);

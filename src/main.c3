@@ -69,8 +69,8 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
     HashMap(<IVec2, bool>) placed;
     HashMap(<IVec2, bool>) adjacent;
-    placed.new_init();
-    adjacent.new_init();
+    placed.temp_init();
+    adjacent.temp_init();
 
     IVec2 start = {random::next_in_range(&rng, 1, 7), random::next_in_range(&rng, 1, 7)};
     placed.set(start, true);
@@ -111,6 +111,67 @@ fn void GeneratorData.generate(&self, Zone* zone)
         if (next.y > 0 && !(placed.get({next.x, next.y - 1}) ?? false)) adjacent.set({next.x, next.y - 1}, true);
         if (next.y < 7 && !(placed.get({next.x, next.y + 1}) ?? false)) adjacent.set({next.x, next.y + 1}, true);
     }
+
+    Room* start_room = current_floor.rooms.get(start)!!;
+    start_room.type = STARTING;
+    start_room.distance_from_start = 0;
+
+    List(<IVec3>) frontier;
+    HashMap(<IVec2, int>) seen;
+    frontier.temp_init();
+    seen.temp_init();
+    frontier.push({...start, 0});
+    seen.set(start, 0);
+
+    while (!frontier.is_empty())
+    {
+        IVec3 next = frontier.pop()!!;
+        IVec2 pos = {next.x, next.y};
+        Room* room = current_floor.rooms.get(pos)!!;
+        room.distance_from_start = next.z;
+        if (room.doors[Direction.WEST.ordinal - 1].type != WALL && next.x > 0 && (seen.get({next.x - 1, next.y}) ?? 99) > next.z + 1)
+        {
+            frontier.push({next.x - 1, next.y, next.z + 1});
+            seen.set({next.x - 1, next.y}, next.z + 1);
+        }
+        if (room.doors[Direction.EAST.ordinal - 1].type != WALL && next.x < 7 && (seen.get({next.x + 1, next.y}) ?? 99) > next.z + 1)
+        {
+            frontier.push({next.x + 1, next.y, next.z + 1});
+            seen.set({next.x + 1, next.y}, next.z + 1);
+        }
+        if (room.doors[Direction.NORTH.ordinal - 1].type != WALL && next.y > 0 && (seen.get({next.x, next.y - 1}) ?? 99) > next.z + 1)
+        {
+            frontier.push({next.x, next.y - 1, next.z + 1});
+            seen.set({next.x, next.y - 1}, next.z + 1);
+        }
+        if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL && next.y < 7 && (seen.get({next.x, next.y + 1}) ?? 99) > next.z + 1)
+        {
+            frontier.push({next.x, next.y + 1, next.z + 1});
+            seen.set({next.x, next.y + 1}, next.z + 1);
+        }
+    }
+
+    List(<IVec2>) farthest;
+    farthest.temp_init();
+    int max_distance = 0;
+    seen.@each(; IVec2 p, int d)
+    {
+        if (d > max_distance)
+        {
+            max_distance = d;
+            farthest.clear();
+            farthest.push(p);
+        }
+        else if (d == max_distance)
+        {
+            farthest.push(p);
+        }
+    };
+
+    assert(farthest.len() > 0, "No farthest room found");
+    IVec2 boss_pos = farthest[random::next_in_range(&rng, 0, (int) farthest.len() - 1)];
+    Room* boss_room = current_floor.rooms.get(boss_pos)!!;
+    boss_room.type = BOSS;
     
     for (int y = 0; y < 8; ++y)
     {
@@ -139,7 +200,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     }
 
     Player* pl = mem::new(Player);
-    pl.new_init(zone, "Player", {70, 70});
+    pl.new_init(zone, "Player", {start.x * 17 + 10, start.y * 17 + 10});
     zone.add_player(pl);
 }
 

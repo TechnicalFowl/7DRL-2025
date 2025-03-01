@@ -2,6 +2,7 @@ module dg;
 
 import std::collections::list;
 import std::collections::map;
+import std::io;
 import std::math;
 
 enum Direction : (IVec2 dir)
@@ -72,6 +73,7 @@ struct Room
     IVec2 size;
 
     RoomType type;
+    int distance_from_start;
     Door[4] doors;
 
     List(<MonsterSpawn>) monsters;
@@ -87,6 +89,7 @@ fn void Room.new_init(&self, IVec2 pos, IVec2 sz)
     self.monsters.new_init();
     self.items.new_init();
     self.resources.new_init();
+    self.distance_from_start = 99;
 }
 
 fn void Room.free(&self)
@@ -107,25 +110,66 @@ fn void Room.generate(&self, Zone* zone, random::Pcg32Random* rng)
         switch (d.direction)
         {
         case NORTH:
-            zone.set_terrain(pos.x + 7, pos.y, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 8, pos.y, '+', colors::BROWN, colors::BLACK, true);
+            zone.set_terrain(pos.x + 7, pos.y, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 8, pos.y, '+', colors::BROWN, colors::BLACK, false);
         case EAST:
-            zone.set_terrain(pos.x + 15, pos.y + 7, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 15, pos.y + 8, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 16, pos.y + 7, ' ', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 16, pos.y + 8, ' ', colors::BROWN, colors::BLACK, true);
+            zone.set_terrain(pos.x + 15, pos.y + 7, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 15, pos.y + 8, '+', colors::BROWN, colors::BLACK, false);
         case SOUTH:
-            zone.set_terrain(pos.x + 7, pos.y + 15, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 8, pos.y + 15, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 7, pos.y + 16, ' ', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x + 8, pos.y + 16, ' ', colors::BROWN, colors::BLACK, true);
+            zone.set_terrain(pos.x + 7, pos.y + 15, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 8, pos.y + 15, '+', colors::BROWN, colors::BLACK, false);
         case WEST:
-            zone.set_terrain(pos.x, pos.y + 7, '+', colors::BROWN, colors::BLACK, true);
-            zone.set_terrain(pos.x, pos.y + 8, '+', colors::BROWN, colors::BLACK, true);
+            zone.set_terrain(pos.x, pos.y + 7, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x, pos.y + 8, '+', colors::BROWN, colors::BLACK, false);
         default:
             unreachable();
         }
     }
+    zone.set_terrain(pos.x, pos.y + 16, 'D', colors::WHITE, colors::BLACK, false);
+    zone.set_terrain(pos.x + 1, pos.y + 16, ':', colors::WHITE, colors::BLACK, false);
+    zone.set_terrain(pos.x + 2, pos.y + 16, (char) (self.distance_from_start / 10) + '0', colors::WHITE, colors::BLACK, false);
+    zone.set_terrain(pos.x + 3, pos.y + 16, (char) (self.distance_from_start % 10) + '0', colors::WHITE, colors::BLACK, false);
+
+    if (self.type == EMPTY)
+    {
+        self.type = random::next_in_range(rng, 0, 5) == 0 ? SPECIAL : STANDARD;
+    }
+
+    switch (self.type)
+    {
+    case STARTING:
+        zone.set_terrain(pos.x + 15, pos.y + 16, 'S', colors::WHITE, colors::BLACK, false);
+    case BOSS:
+        zone.set_terrain(pos.x + 15, pos.y + 16, 'B', colors::WHITE, colors::BLACK, false);
+    case STANDARD:
+        zone.set_terrain(pos.x + 15, pos.y + 16, 'R', colors::WHITE, colors::BLACK, false);
+    case SPECIAL:
+        zone.set_terrain(pos.x + 15, pos.y + 16, 'P', colors::WHITE, colors::BLACK, false);
+    default:
+        zone.set_terrain(pos.x + 15, pos.y + 16, '?', colors::WHITE, colors::BLACK, false);
+    }
+}
+
+fn Room*! find_room(IVec2 pos)
+{
+    IVec2 room_pos = { pos.x / 17, pos.y / 17 };
+    return current_floor.rooms.get(room_pos);
+}
+
+fn Direction get_door_direction(IVec2 pos)
+{
+    IVec2 lpos = { pos.x % 17, pos.y % 17 };
+    Direction dir;
+    if (lpos.x > 2 && lpos.x < 14)
+    {
+        if (lpos.y == 0) {dir = NORTH;}
+        else if (lpos.y == 15) {dir = SOUTH;}
+        else {unreachable();}
+    }
+    else if (lpos.x == 0) {dir = WEST;}
+    else if (lpos.x == 15) {dir = EAST;}
+    else {io::printfn("Invalid door pos %d %d", ...lpos); unreachable();}
+    return dir;
 }
 
 struct DungeonFloor

@@ -63,10 +63,68 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         if (self.nav_delay <= 0)
         {
             self.nav_delay = 0.05f;
-            IVec2 next_move = self.nav.next_point() - self.entity.position;
-            assert(math::abs(next_move[0]) + math::abs(next_move[1]) == 1, "Invalid move from navigator");
-            return do_move(next_move);
+            IVec2 next_pos = self.nav.next_point();
+            IVec2 next_move = next_pos - self.entity.position;
+            ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
+            if (next_cell.terrain.passable)
+            {
+                return do_move(next_move);
+            }
+            else if (next_cell.terrain.glyph == '+')
+            {
+                return do_interact(next_move);
+            }
+            else
+            {
+                self.nav.abort();
+                return null;
+            }
         }
     }
     return null;
+}
+
+struct InteractAction (Action)
+{
+    IVec2 dir;
+}
+fn double InteractAction.duration(&self) @dynamic => 1.0;
+
+fn void InteractAction.apply(&self, Entity entity) @dynamic
+{
+    IVec2 new_pos = entity.get_position() + self.dir;
+
+    ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
+    if (cell.terrain.glyph == '+')
+    {
+        Room* r = find_room(new_pos)!!;
+        Direction dir = get_door_direction(new_pos);
+        Door* d = &r.doors[dir.ordinal - 1];
+        assert(d.type == UNLOCKED);
+        switch (dir)
+        {
+        case NORTH:
+            entity.set_position(entity.get_position() + IVec2{0, -4});
+        case EAST:
+            entity.set_position(entity.get_position() + IVec2{4, 0});
+        case SOUTH:
+            entity.set_position(entity.get_position() + IVec2{0, 4});
+        case WEST:
+            entity.set_position(entity.get_position() + IVec2{-4, 0});
+        default:
+            unreachable();
+        }
+        log("You go through the door.");
+    }
+    else
+    {
+        log("Nothing interesting happens.");
+    }
+}
+
+fn InteractAction* do_interact(IVec2 dir)
+{
+    InteractAction* move_action = mem::temp_alloc(InteractAction);
+    move_action.dir = dir;
+    return move_action;
 }

@@ -4,8 +4,10 @@ import std::io;
 import std::math;
 
 def IVec2 = int[<2>];
+def IVec3 = int[<3>];
 
 fn uint IVec2.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]);
+fn uint IVec3.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]) * 2654435761u + ((uint) self[2]) * 2654435761u;
 
 fn IVec2 ivec2_sign(IVec2 v)
 {

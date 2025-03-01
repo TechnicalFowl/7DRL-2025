@@ -161,7 +161,7 @@ fn bool Navigator.is_idle(&self) => self.path.is_empty();
 fn void Navigator.path_to(&self, Zone* zone, IVec2 start, IVec2 end)
 {
     self.path.clear();
-    zone.path(start, end, &self.path, diagonal_moves: false, reverse: true);
+    zone.path(start, end, &self.path, diagonal_moves: true, reverse: true);
 }
 
 fn IVec2 Navigator.next_point(&self)
