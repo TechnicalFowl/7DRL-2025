@@ -48,14 +48,85 @@ fn void Player.free(&self) @dynamic
     self.vis.free();
 }
 
+fn Action Player.moveOrInteract(&self, IVec2 dir)
+{
+    ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    if (cell.terrain.passable)
+    {
+        return do_move(dir);
+    }
+    else
+    {
+        return do_interact(dir);
+    }
+}
+
 fn Action Player.next_action(&self, double max_time) @dynamic
 {
     if (self.nav.is_idle())
     {
-        if (rl::isKeyPressed(rl::KEY_W)) return do_move({0, -1});
-        if (rl::isKeyPressed(rl::KEY_S)) return do_move({0, 1});
-        if (rl::isKeyPressed(rl::KEY_A)) return do_move({-1, 0});
-        if (rl::isKeyPressed(rl::KEY_D)) return do_move({1, 0});
+        bool is_shift = is_key_down(DIAGONAL_UP);
+        bool is_ctrl = is_key_down(DIAGONAL_DOWN);
+        if (is_key_pressed(MOVE_UP))
+        {
+            if (is_shift || is_ctrl)
+            {
+                log("Invalid move.");
+            }
+            else
+            {
+                return self.moveOrInteract({0, -1});
+            }
+        }
+        if (is_key_pressed(MOVE_DOWN))
+        {
+            if (is_shift || is_ctrl)
+            {
+                log("Invalid move.");
+            }
+            else
+            {
+                return self.moveOrInteract({0, 1});
+            }
+        }
+        if (is_key_pressed(MOVE_LEFT))
+        {
+            if (is_shift && is_ctrl)
+            {
+                log("Invalid move.");
+            }
+            else if (is_shift)
+            {
+                return self.moveOrInteract({-1, -1});
+            }
+            else if (is_ctrl)
+            {
+                return self.moveOrInteract({-1, 1});
+            }
+            else
+            {
+                return self.moveOrInteract({-1, 0});
+            }
+        }
+        if (is_key_pressed(MOVE_RIGHT))
+        {
+            if (is_shift && is_ctrl)
+            {
+                log("Invalid move.");
+            }
+            else if (is_shift)
+            {
+                return self.moveOrInteract({1, -1});
+            }
+            else if (is_ctrl)
+            {
+                return self.moveOrInteract({1, 1});
+            }
+            else
+            {
+                return self.moveOrInteract({1, 0});
+            }
+        }
     }
     else
     {
@@ -104,13 +175,21 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         switch (dir)
         {
         case NORTH:
-            entity.set_position(entity.get_position() + IVec2{0, -4});
+            IVec2 end_pos = entity.get_position() + IVec2{0, -4};
+            if (self.dir.x != 0) end_pos.x += self.dir.x;
+            entity.set_position(end_pos);
         case EAST:
-            entity.set_position(entity.get_position() + IVec2{4, 0});
+            IVec2 end_pos = entity.get_position() + IVec2{4, 0};
+            if (self.dir.y != 0) end_pos.y += self.dir.y;
+            entity.set_position(end_pos);
         case SOUTH:
-            entity.set_position(entity.get_position() + IVec2{0, 4});
+            IVec2 end_pos = entity.get_position() + IVec2{0, 4};
+            if (self.dir.x != 0) end_pos.x += self.dir.x;
+            entity.set_position(end_pos);
         case WEST:
-            entity.set_position(entity.get_position() + IVec2{-4, 0});
+            IVec2 end_pos = entity.get_position() + IVec2{-4, 0};
+            if (self.dir.y != 0) end_pos.y += self.dir.y;
+            entity.set_position(end_pos);
         default:
             unreachable();
         }

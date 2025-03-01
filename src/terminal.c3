@@ -45,13 +45,8 @@ fn void VirtualTerminal.free(&self)
     mem::free(self.buffer);
 }
 
-<*
-@require new_width > 0, new_height > 0, "Width and height must be greater than zero"
-*>
-fn void VirtualTerminal.on_resize(&self, int new_width, int new_height) @dynamic
+fn void VirtualTerminal.on_resize(&self, int new_term_width, int new_term_height) @dynamic
 {
-    int new_term_width = new_width / self.font.width;
-    int new_term_height = new_height / self.font.height;
     mem::free(self.buffer);
     self.buffer = mem::new_array(VCell, (usz) new_term_width * new_term_height);
     self.width = new_term_width;

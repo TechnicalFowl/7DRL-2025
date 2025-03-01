@@ -21,7 +21,7 @@ struct LogMessage
 }
 List(<LogMessage>) log_messages;
 
-int map_zoom = 1;
+int map_zoom = 2;
 VirtualTerminal map_term;
 VirtualTerminal ui_term;
 
@@ -224,38 +224,6 @@ fn void onRender()
             pl.nav.abort();
         }
     }
-    if (rl::isKeyPressed(rl::KEY_SPACE))
-    {
-        pl.vis.clear();
-        pl.vis.sweep(pl.get_position(), 10);
-    }
-    if (rl::isKeyPressed(rl::KEY_F1))
-    {
-        show_visibility = !show_visibility;
-    }
-
-    // Visibility debugging
-    if (show_visibility)
-    {
-        IVec2 player_pos = pl.get_position();
-        IVec2 zone_min = player_pos - { map_term.width / 2, map_term.height / 2};
-
-        for (int y = 0; y < map_term.height; ++y)
-        {
-            for (int x = 0; x < map_term.width; ++x)
-            {
-                IVec2 term_pos = {x, y} + zone_min;
-                if (term_pos[0] < 0 || term_pos[0] >= zone.width || term_pos[1] < 0 || term_pos[1] >= zone.height) continue;
-                if (pl.vis.is_visible(term_pos))
-                {
-                    map_term.set_background(x, y, colors::DARK_GREEN, 5);
-                } else if (pl.vis.is_explored(term_pos))
-                {
-                    map_term.set_background(x, y, colors::DARK_RED, 5);
-                }
-            }
-        }
-    }
 
     int sidebar_width = 60;
     int term_width = ui_term.width;
@@ -295,6 +263,8 @@ fn int main(String[] args)
     rl::setTargetFPS(60);
     rl::setExitKey(0);
     rl::setWindowState(rl::FLAG_WINDOW_RESIZABLE);
+
+    init_inputs();
 
     set_font_directory("resources");
 
@@ -336,7 +306,7 @@ fn int main(String[] args)
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Starting game loop...");
     
-    log("You descend into the dungeon...", colors::GREEN);
+    log("You descend into the depths of Daemonheim...", colors::RED);
 
     while (!rl::windowShouldClose())
     {
@@ -346,12 +316,24 @@ fn int main(String[] args)
             {
                 int new_width = rl::getScreenWidth();
                 int new_height = rl::getScreenHeight();
-                map_term.on_resize(new_width, new_height);
-                ui_term.on_resize(new_width, new_height);
+                map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
+                ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
             }
             
             rl::beginDrawing();
             rl::clearBackground(colors::BLACK);
+
+            update_inputs();
+            
+            if (is_key_pressed(TOGGLE_ZOOM, false))
+            {
+                map_zoom = map_zoom == 1 ? 2 : 1;
+                
+                int new_width = rl::getScreenWidth();
+                int new_height = rl::getScreenHeight();
+                map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
+                ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
+            }
 
             map_term.clear(colors::BLANK);
             ui_term.clear(colors::BLANK);
@@ -363,7 +345,7 @@ fn int main(String[] args)
             {
                 onUpdate(elapsed);
             }
-            ZoneRenderSettings settings = { { 7, 0} };
+            ZoneRenderSettings settings = { { 15 / map_zoom, 0} };
             zone.render(&map_term, settings);
 
             onRender();
