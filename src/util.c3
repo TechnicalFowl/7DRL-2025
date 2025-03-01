@@ -16,6 +16,22 @@ fn int ivec2_distance(IVec2 a, IVec2 b)
 {
     return math::abs(a[0] - b[0]) + math::abs(a[1] - b[1]);
 }
+
+fn IVec2 ivec2_min(IVec2 a, IVec2 b)
+{
+    return { math::min(a[0], b[0]), math::min(a[1], b[1]) };
+}
+
+fn IVec2 ivec2_max(IVec2 a, IVec2 b)
+{
+    return { math::max(a[0], b[0]), math::max(a[1], b[1]) };
+}
+
+fn IVec2 ivec2_clamp(IVec2 v, IVec2 min, IVec2 max)
+{
+    return ivec2_min(ivec2_max(v, min), max);
+}
+
 struct BitBoard
 {
     usz width;

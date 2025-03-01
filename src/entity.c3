@@ -234,13 +234,13 @@ fn void VisibilityTracker.sweep(&self, IVec2 pos, int range)
     for (int i = -range; i <= range; ++i)
     {
         cb_data.step = 0;
-        line(pos, pos + {i, -range}, (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
+        line(pos, ivec2_clamp(pos + {i, -range}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
         cb_data.step = 0;
-        line(pos, pos + {i, range}, (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
+        line(pos, ivec2_clamp(pos + {i, range}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
         cb_data.step = 0;
-        line(pos, pos + {-range, i}, (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
+        line(pos, ivec2_clamp(pos + {-range, i}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
         cb_data.step = 0;
-        line(pos, pos + {range, i}, (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
+        line(pos, ivec2_clamp(pos + {range, i}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
     }
 }
 

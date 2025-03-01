@@ -48,7 +48,10 @@ fn void Zone.new_init(&self, ZoneDescription desc)
         cell.entities.new_init();
     }
 
-    desc.generator(desc.generator_data, self);
+    @pool()
+    {
+        desc.generator(desc.generator_data, self);
+    };
 
     assert(self.player != null, "No player provided");
 

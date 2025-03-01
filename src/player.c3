@@ -36,7 +36,7 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
     self.entity.new_init(z, n, p, '@', colors::WHITE);
     self.nav.new_init();
-    self.nav_delay = 0.2f;
+    self.nav_delay = 0.05f;
 
     self.vis.new_init(z);
 }
@@ -62,7 +62,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         self.nav_delay -= rl::getFrameTime();
         if (self.nav_delay <= 0)
         {
-            self.nav_delay = 0.2f;
+            self.nav_delay = 0.05f;
             IVec2 next_move = self.nav.next_point() - self.entity.position;
             assert(math::abs(next_move[0]) + math::abs(next_move[1]) == 1, "Invalid move from navigator");
             return do_move(next_move);

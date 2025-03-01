@@ -1,6 +1,7 @@
 module dg;
 
 import std::collections::list;
+import std::collections::map;
 import std::io;
 import std::math::random;
 
@@ -65,11 +66,57 @@ fn void GeneratorData.generate(&self, Zone* zone)
             current_floor.rooms.set({x, y}, room);
         }
     }
+
+    HashMap(<IVec2, bool>) placed;
+    HashMap(<IVec2, bool>) adjacent;
+    placed.new_init();
+    adjacent.new_init();
+
+    IVec2 start = {random::next_in_range(&rng, 1, 7), random::next_in_range(&rng, 1, 7)};
+    placed.set(start, true);
+    adjacent.set({ start.x + 1, start.y }, true);
+    adjacent.set({ start.x - 1, start.y }, true);
+    adjacent.set({ start.x, start.y + 1 }, true);
+    adjacent.set({ start.x, start.y - 1 }, true);
+
+    while (!adjacent.is_empty())
+    {
+        IVec2[] keys = adjacent.tcopy_keys();
+        IVec2 next = keys[random::next_in_range(&rng, 0, (int) keys.len - 1)];
+        List(<Direction>) neighbors;
+        if (next.x > 0 && placed.get({next.x - 1, next.y}) ?? false) neighbors.push(WEST);
+        if (next.x < 7 && placed.get({next.x + 1, next.y}) ?? false) neighbors.push(EAST);
+        if (next.y > 0 && placed.get({next.x, next.y - 1}) ?? false) neighbors.push(NORTH);
+        if (next.y < 7 && placed.get({next.x, next.y + 1}) ?? false) neighbors.push(SOUTH);
+        assert(neighbors.len() > 0, "No neighbors for room");
+
+        Direction neighbor = neighbors[random::next_in_range(&rng, 0, (int) neighbors.len() - 1)];
+        
+        Room* next_room = current_floor.rooms.get(next)!!;
+        Room* neighbor_room = current_floor.rooms.get(next + neighbor.dir)!!;
+
+        Door* door = &next_room.doors[neighbor.ordinal - 1];
+        door.direction = neighbor;
+        door.type = UNLOCKED;
+
+        Door* ndoor = &neighbor_room.doors[FLIP[neighbor.ordinal].ordinal - 1];
+        ndoor.direction = FLIP[neighbor];
+        ndoor.type = UNLOCKED;
+
+        placed.set(next, true);
+        adjacent.remove(next);
+
+        if (next.x > 0 && !(placed.get({next.x - 1, next.y}) ?? false)) adjacent.set({next.x - 1, next.y}, true);
+        if (next.x < 7 && !(placed.get({next.x + 1, next.y}) ?? false)) adjacent.set({next.x + 1, next.y}, true);
+        if (next.y > 0 && !(placed.get({next.x, next.y - 1}) ?? false)) adjacent.set({next.x, next.y - 1}, true);
+        if (next.y < 7 && !(placed.get({next.x, next.y + 1}) ?? false)) adjacent.set({next.x, next.y + 1}, true);
+    }
     
     for (int y = 0; y < 8; ++y)
     {
         for (int x = 0; x < 8; ++x)
         {
+            if (!(placed.get({x, y}) ?? false)) continue;
             Room* room = current_floor.rooms.get({x, y})!!;
             IVec2 pos = room.position;
             IVec2 size = room.size;
@@ -77,21 +124,22 @@ fn void GeneratorData.generate(&self, Zone* zone)
             {
                 for (int rx = 0; rx < size.x; ++rx)
                 {
-                    if (rx == 0 || rx == size.x - 1 || ry == 0 || ry == size.y - 1 || random::next_in_range(&rng, 0, 6) == 0)
+                    if (rx == 0 || rx == size.x - 1 || ry == 0 || ry == size.y - 1)
                     {
-                        zone.set_terrain(pos[0] + rx, pos[1] + ry, '#', {220, 220, 220, 255}, colors::BLACK, false);
+                        zone.set_terrain(pos.x+ rx, pos.y + ry, '#', {220, 220, 220, 255}, colors::BLACK, false);
                     }
                     else
                     {
-                        zone.set_terrain(pos[0] + rx, pos[1] + ry, '.', colors::DARK_GREY, colors::BLACK, true);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, '.', colors::DARK_GREY, colors::BLACK, true);
                     }
                 }
             }
+            room.generate(zone, &rng);
         }
     }
 
     Player* pl = mem::new(Player);
-    pl.new_init(zone, "Player", {40, 10});
+    pl.new_init(zone, "Player", {70, 70});
     zone.add_player(pl);
 }
 
@@ -156,6 +204,7 @@ fn void onRender()
     gui::push_topbar("The Depths of Daemonheim - 7DRL 2025");
     gui::push_bottombar(string::tformat("Player @ %d %d", ...pl.get_position()));
     gui::push_bottombar(string::tformat("Mouse @ %d %d", ...pl.zone.get_mouse_position()));
+    gui::push_bottombar(string::tformat("FPS: %d", rl::getFPS()));
 
     int log_height = 7;
     gui::begin_window("Log", {map_width, 0}, {sidebar_width, log_height});
