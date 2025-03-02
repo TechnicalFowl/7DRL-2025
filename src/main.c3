@@ -34,6 +34,8 @@ bool show_visibility;
 
 DungeonFloor* current_floor;
 
+bool devmode;
+
 fn void log(String message, rl::Color color = colors::WHITE)
 {
     log_messages.push({message, color});
@@ -329,6 +331,15 @@ fn int main(String[] args)
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Initializing...");
 
+    foreach (s: args)
+    {
+        if (s == "-devmode")
+        {
+            devmode = true;
+            rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Developer mode enabled");
+        }
+    }
+
     random::seed_entropy(&g_rng);
     generate_whole_dungeon_stuff(&g_rng);
 
@@ -372,7 +383,7 @@ fn int main(String[] args)
 
     ZoneDescription initial_zone;
     initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
-    GeneratorData generator = { 16135, 0 };
+    GeneratorData generator = { (ulong) g_rng.next_long(), 0 };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
 
@@ -437,7 +448,7 @@ fn int main(String[] args)
             
             rl::endDrawing();
 
-            if (want_exit_floor || is_key_pressed(NEXT_FLOOR, false))
+            if (want_exit_floor || (devmode && is_key_pressed(NEXT_FLOOR, false)))
             {
                 if (current_floor.depth == 10)
                 {

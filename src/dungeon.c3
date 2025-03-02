@@ -78,6 +78,53 @@ enum SpecialRoomType
     LOGGING_CAMP,
 }
 
+enum HotspotType : (int weight)
+{
+    EMPTY_SPOT = 40,
+    TREE = 5,
+    STUMP = 3,
+    ROCK = 3,
+    ORE = 5,
+    FURNACE = 2,
+    ANVIL = 2,
+    STORE_CACHE = 8,
+    SMALL_MOB = 25,
+    MOB_GROUP = 20,
+    GRAVESITE = 5,
+}
+
+int hotspot_total_weight;
+
+fn HotspotType get_random_hotspot(random::Pcg32Random* rng)
+{
+    int r = random::next_in_range(rng, 0, hotspot_total_weight - 1);
+    for (int i = 0; i < HotspotType.elements; ++i)
+    {
+        r -= HotspotType.from_ordinal(i).weight;
+        if (r < 0) return HotspotType.from_ordinal(i);
+    }
+    unreachable();
+}
+
+fn IVec2 get_random_pos(random::Pcg32Random* rng, IVec2 pos, IVec2 size, IVec2... avoid)
+{
+    for(int i = 0; i < 100; ++i)
+    {
+        IVec2 p = pos + {random::next_in_range(rng, 0, size.x - 1), random::next_in_range(rng, 0, size.y - 1)};
+        bool invalid = false;
+        foreach (a: avoid)
+        {
+            if (p == a)
+            {
+                invalid = true;
+                break;
+            }
+        }
+        if (!invalid) return p;
+    }
+    unreachable();
+}
+
 fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Random* rng)
 {
     IVec2 pos = self.position;
@@ -371,6 +418,79 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         }
                     }
                 }
+                else if ((x == 2 && (y == 0 || y == 4)) || (y == 2 && (x == 0 || x == 4)))
+                {
+
+                }
+                else
+                {
+                    IVec2 min = pos + {x0, y0};
+                    IVec2 size = {w + 2, h + 2};
+                    if (x == 0)
+                    {
+                        min.x += 1;
+                        size.x -= 1;
+                    }
+                    else if (x == 4)
+                    {
+                        size.x -= 1;
+                    }
+                    if (y == 0)
+                    {
+                        min.y += 1;
+                        size.y -= 1;
+                    }
+                    else if (y == 4)
+                    {
+                        size.y -= 1;
+                    }
+                    HotspotType hst = get_random_hotspot(rng);
+                    switch (hst)
+                    {
+                    case EMPTY_SPOT:
+                        break;
+                    case TREE:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, TREE, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), TREE, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                    case STUMP:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, STUMP, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                    case ROCK:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, ROCKS, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ROCKS, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), SMALL_ROCKS, false);
+                    case ORE:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, ORE1, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ORE1, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ROCKS, false);
+                    case FURNACE:
+                        IVec2 p0 = get_random_pos(rng, min, {size.x, 1});
+                        zone.set_object(...p0, FURNACE, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), CRATE, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OPEN_CRATE, false);
+                    case ANVIL:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, ANVIL, false);
+                    case STORE_CACHE:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, CRATE, false);
+                    case SMALL_MOB:
+                        break;
+                    case MOB_GROUP:
+                        break;
+                    case GRAVESITE:
+                        IVec2 p0 = get_random_pos(rng, min, size);
+                        zone.set_object(...p0, GRAVE, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), GRAVE2, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), SMALL_ROCKS, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                    }
+                }
             }
         }
 
@@ -513,4 +633,11 @@ fn void generate_whole_dungeon_stuff(random::Pcg32Random* rng)
     shuffle(rng, t2);
     boss_ordering[6] = BossTypes.from_ordinal(t2[0]); boss_ordering[7] = BossTypes.from_ordinal(t2[1]); boss_ordering[8] = BossTypes.from_ordinal(t2[2]);
     boss_ordering[9] = ANCIENT_DAEMON;
+    
+    int total_weight = 0;
+    for (int i = 0; i < HotspotType.elements; ++i)
+    {
+        total_weight += HotspotType.from_ordinal(i).weight;
+    }
+    hotspot_total_weight = total_weight;
 }

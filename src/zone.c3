@@ -14,11 +14,20 @@ struct ZoneTerrain
     bool passable;
 }
 
+struct ZoneObject
+{
+    Appearance look;
+    bool passable;
+}
+
 struct ZoneCell
 {
     ZoneTerrain terrain;
+    ZoneObject object;
     List(<Entity>) entities;
 }
+
+fn bool ZoneCell.isPassable(&self) => self.terrain.passable && self.object.passable && self.entities.is_empty();
 
 struct Zone
 {
@@ -44,6 +53,7 @@ fn void Zone.new_init(&self, ZoneDescription desc)
     {
         ZoneCell* cell = &self.cells[i];
         cell.terrain = { EMPTY_LOOK, colors::BLACK, false };
+        cell.object = { EMPTY_LOOK, true };
         cell.entities.new_init();
     }
 
@@ -145,6 +155,13 @@ fn void Zone.set_terrain(&self, int x, int y, Appearance look, rl::Color bg, boo
     cell.terrain.passable = passable;
 }
 
+fn void Zone.set_object(&self, int x, int y, Appearance look, bool passable)
+{
+    ZoneCell* cell = self.get_cell(x, y);
+    cell.object.look = look;
+    cell.terrain.passable = passable;
+}
+
 fn void Zone.add_player(&self, Entity e)
 {
     self.player = e;
@@ -181,7 +198,7 @@ fn IVec2 Zone.find_nearest_empty(&self, IVec2 pos)
     const int RANGE = 10;
     for (int i = 0; i < RANGE * RANGE * 4; ++i)
     {
-        if (self.get_cell(pos[0] + x, pos[1] + y).terrain.passable) return pos;
+        if (self.get_cell(pos[0] + x, pos[1] + y).isPassable()) return pos;
         if  (x == y || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1 - y)))
         {
             int t = dx;
@@ -238,7 +255,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
             int term_x = x - min[0];
             ZoneCell* cell = &self.cells[x + y * self.width];
             ZoneTerrain terr = cell.terrain;
-            bool is_visible = vis == null || vis.is_explored({x, y});
+            bool is_visible = true;// vis == null || vis.is_visible({x, y});
             terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
             {
                 Appearance look = terr.look;
@@ -251,7 +268,19 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 }
                 terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
-            if (is_visible && !cell.entities.is_empty())
+            if (cell.object.look.color != colors::BLANK)
+            {
+                Appearance look = cell.object.look;
+                bool is_textmode = textmode || look.sprite_index < 0;
+                char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+                rl::Color color = is_textmode ? look.color : colors::WHITE;
+                if (!is_visible)
+                {
+                    color = color.grayscale().darken(0.4f);
+                }
+                terminal.set_tile(term_x, term_y, gl, color, 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+            }
+            else if (is_visible && !cell.entities.is_empty())
             {
                 Entity first = cell.entities.first()!!;
                 Appearance look = first.get_look();
@@ -343,7 +372,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 cell = self.get_cell(...next);
 
             }
-            if (!cell.terrain.passable && next != to)
+            if (!cell.isPassable() && next != to)
             {
                 //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
                 current = save_current;
@@ -394,7 +423,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                     next = next + dir.dir * 3;
                     cell = self.get_cell(...next);
                 }
-                if (!cell.terrain.passable && next != to)
+                if (!cell.isPassable() && next != to)
                 {
                     //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
                     current = save_current;

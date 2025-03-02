@@ -52,7 +52,7 @@ fn void MoveAction.apply(&self, Entity entity) @dynamic
     IVec2 new_pos = entity.get_position() + self.move;
 
     ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
-    if (cell.terrain.passable)
+    if (cell.isPassable())
     {
         entity.set_position(new_pos);
     }
@@ -210,7 +210,7 @@ fn bool VisibilityTrackerCB.line_cb(&self, IVec2 pos) @private
     self.vis.set_visible(pos, true);
     self.vis.set_explored(pos, true);
     if (self.step++ >= self.range) return false;
-    if (!self.vis.zone.get_cell(...pos).terrain.passable)
+    if (!self.vis.zone.get_cell(...pos).isPassable())
     {
         self.pen_depth++;
         if (self.pen_depth > 1) return false;
