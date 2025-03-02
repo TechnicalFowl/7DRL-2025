@@ -238,7 +238,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
             int term_x = x - min[0];
             ZoneCell* cell = &self.cells[x + y * self.width];
             ZoneTerrain terr = cell.terrain;
-            bool is_visible = vis == null || vis.is_visible({x, y});
+            bool is_visible = vis == null || vis.is_explored({x, y});
             terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
             {
                 Appearance look = terr.look;
@@ -247,7 +247,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 rl::Color color = is_textmode ? look.color : colors::WHITE;
                 if (!is_visible)
                 {
-                    //color = color.grayscale().darken(0.4f);
+                    color = color.grayscale().darken(0.4f);
                 }
                 terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
@@ -312,53 +312,109 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
     while (!frontier.is_empty())
     {
         AStarStep current = frontier.pop()!!;
+        //io::printfn("Popped [%d %d] with cost %.1f", ...current.pos, current.cost);
         if (current.pos == to) break;
         
         foreach (n: DIRECT_NEIGHBORS)
         {
+            AStarStep save_current = current;
             IVec2 next = current.pos + n;
+            //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
             ZoneCell* cell = self.get_cell(...next);
             if (cell.terrain.look.glyph == '+' && next != to)
             {
+                double new_cost = current.cost + 1;
+                double h_cost = new_cost + get_diag_heuristic(next, to);
+                AStarStep! existing = came_from.get(next);
+                if (try existing && existing.cost <= h_cost)
+                {}
+                else
+                {
+                    AStarStep next_step = {next, current.pos, h_cost};
+                    //io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                    //frontier.push(next_step);
+                    came_from.set(next, next_step);
+                    current = next_step;
+                }
+
                 Direction dir = get_door_direction(next);
                 next = next + dir.dir * 3;
                 cell = self.get_cell(...next);
+
             }
-            if (!cell.terrain.passable && next != to) continue;
+            if (!cell.terrain.passable && next != to)
+            {
+                //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
+                current = save_current;
+                continue;
+            }
             
             double new_cost = current.cost + 1;
             double h_cost = new_cost + (diagonal_moves ? get_diag_heuristic(next, to) : get_heuristic(next, to));
             AStarStep! existing = came_from.get(next);
-            if (try existing && existing.cost <= h_cost) continue;
+            if (try existing && existing.cost <= h_cost)
+            {
+                //io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f", ...next, existing.cost);
+                current = save_current;
+                continue;
+            }
             AStarStep next_step = {next, current.pos, h_cost};
-            //io::printfn("Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+            //io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
             frontier.push(next_step);
             came_from.set(next, next_step);
+            current = save_current;
         }
         if (diagonal_moves)
         {
             foreach (n: DIAGONAL_NEIGHBORS)
             {
+                AStarStep save_current = current;
                 IVec2 next = current.pos + n;
+                //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
                 ZoneCell* cell = self.get_cell(...next);
                 if (cell.terrain.look.glyph == '+')
                 {
+                    double new_cost = current.cost + 1.414;
+                    double h_cost = new_cost + get_diag_heuristic(next, to);
+                    AStarStep! existing = came_from.get(next);
+                    if (try existing && existing.cost <= h_cost)
+                    {}
+                    else
+                    {
+                        AStarStep next_step = {next, current.pos, h_cost};
+                        //io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                        //frontier.push(next_step);
+                        came_from.set(next, next_step);
+                        current = next_step;
+                    }
+
                     Direction dir = get_door_direction(next);
                     next = next + dir.dir * 3;
                     cell = self.get_cell(...next);
                 }
-                if (!cell.terrain.passable && next != to) continue;
+                if (!cell.terrain.passable && next != to)
+                {
+                    //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
+                    current = save_current;
+                    continue;
+                }
                 
                 double new_cost = current.cost + 1.414;
                 double h_cost = new_cost + get_diag_heuristic(next, to);
                 AStarStep! existing = came_from.get(next);
-                if (try existing && existing.cost <= h_cost) continue;
+                if (try existing && existing.cost <= h_cost)
+                {
+                    //io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f", ...next, existing.cost);
+                    current = save_current;
+                    continue;
+                }
                 AStarStep next_step = {next, current.pos, h_cost};
-                //io::printfn("Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                //io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
                 frontier.push(next_step);
                 came_from.set(next, next_step);
+                current = save_current;
             }
         }
     }
@@ -402,12 +458,6 @@ fn void ZoneDescription.new_init(&self, String name, int width, int height)
     self.name = name;
     self.width = width;
     self.height = height;
-}
-
-fn void load_zone(ZoneDescription desc)
-{
-    zone = mem::new(Zone);
-    zone.new_init(desc);
 }
 
 def LineCallback = fn bool(void* data, IVec2 next);

@@ -20,6 +20,7 @@ enum Input : inline int
     // dev-mode
     PATH_TO_BOSS,
     REVEAL_MAP,
+    NEXT_FLOOR,
 }
 
 struct KeyBind
@@ -70,6 +71,7 @@ fn void init_inputs()
 
     createBind(PATH_TO_BOSS, rl::KEY_F11);
     createBind(REVEAL_MAP, rl::KEY_F12);
+    createBind(NEXT_FLOOR, rl::KEY_F10);
 }
 
 fn void update_inputs()

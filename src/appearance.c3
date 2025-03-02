@@ -35,7 +35,14 @@ const Appearance DOOR_SOUTH_R = { '+', colors::BROWN, 1 * 16 + 8 };
 const Appearance DOOR_WEST_U = { '+', colors::BROWN, 0 * 16 + 11 };
 const Appearance DOOR_WEST_L = { '+', colors::BROWN, 1 * 16 + 11 };
 
-const Appearance PLAYER_NAKED = { '@', {255, 255, 255, 255}, 66 };
+const Appearance EXIT_WALL_L = { '#', {220, 220, 220, 255}, 3 * 16 + 5 };
+const Appearance EXIT_WALL_R = { '#', {220, 220, 220, 255}, 3 * 16 + 6 };
+const Appearance EXIT_HOLE_L = { '>', {220, 220, 220, 255}, 4 * 16 + 5 };
+const Appearance EXIT_HOLE_R = { '>', {220, 220, 220, 255}, 4 * 16 + 6 };
+
+const Appearance TRADER = { 'T', colors::DARK_GREEN, 4 * 16 + 4 };
+
+const Appearance PLAYER_NAKED = { '@', {255, 255, 255, 255}, 4 * 16 + 2 };
 const Appearance WARRIOR_IDLE1 = { '@', {255, 255, 255, 255}, 6 * 16 + 2 };
 const Appearance WARRIOR_IDLE2 = { '@', {255, 255, 255, 255}, 6 * 16 + 1 };
 const Appearance WARRIOR_POINT = { '@', {255, 255, 255, 255}, 6 * 16 + 0 };

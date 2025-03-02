@@ -27,7 +27,8 @@ int map_zoom = 3;
 VirtualTerminal map_term;
 VirtualTerminal ui_term;
 
-Zone* zone;
+Zone* g_zone;
+bool want_exit_floor;
 
 bool show_visibility;
 
@@ -47,6 +48,7 @@ struct GeneratorData
 fn void GeneratorData.generate(&self, Zone* zone)
 {
     random::Pcg32Random rng;
+    //random::seed_entropy(&rng);
     random::seed(&rng, self.seed);
 
     zone.name = string::new_format("Floor %d", self.depth);
@@ -74,7 +76,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     placed.temp_init();
     adjacent.temp_init();
 
-    IVec2 start = {random::next_in_range(&rng, 1, 7), random::next_in_range(&rng, 1, 7)};
+    IVec2 start = {random::next_in_range(&rng, 1, 6), random::next_in_range(&rng, 1, 6)};
     placed.set(start, true);
     adjacent.set({ start.x + 1, start.y }, true);
     adjacent.set({ start.x - 1, start.y }, true);
@@ -84,6 +86,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     while (!adjacent.is_empty())
     {
         IVec2[] keys = adjacent.tcopy_keys();
+        assert(keys.len > 0, "No adjacent rooms");
         IVec2 next = keys[random::next_in_range(&rng, 0, (int) keys.len - 1)];
         List(<Direction>) neighbors;
         if (next.x > 0 && placed.get({next.x - 1, next.y}) ?? false) neighbors.push(WEST);
@@ -253,13 +256,14 @@ fn void GeneratorData.generate(&self, Zone* zone)
                     }
                 }
             }
-            room.generate(zone, &rng);
+            room.generate(current_floor, zone, &rng);
         }
     }
 
     Player* pl = mem::new(Player);
-    pl.new_init(zone, "Player", {start.x * 17 + 10, start.y * 17 + 10});
+    pl.new_init(zone, "Player", {start.x * 17 + 7, start.y * 17 + 7});
     zone.add_player(pl);
+    pl.explore(start_room.position, {16, 16});
 }
 
 fn void onUpdate(double elapsed)
@@ -269,16 +273,17 @@ fn void onUpdate(double elapsed)
 
 fn void onRender()
 {
-    Player* pl = (Player*) zone.player;
+    Player* pl = (Player*) g_zone.player;
     int sidebar_width = 60;
     int term_width = ui_term.width;
     int term_height = ui_term.height;
     int map_width = ui_term.width - sidebar_width;
 
     gui::push_topbar("The Depths of Daemonheim - 7DRL 2025");
-    gui::push_bottombar(string::tformat("Player @ %d %d", ...pl.get_position()));
-    gui::push_bottombar(string::tformat("Mouse @ %d %d", ...pl.zone.get_mouse_position()));
-    gui::push_bottombar(string::tformat("FPS: %d", rl::getFPS()));
+    gui::push_bottombar(string::tformat("%-16s", g_zone.name));
+    //gui::push_bottombar(string::tformat("Player @ %d %d", ...pl.get_position()));
+    //gui::push_bottombar(string::tformat("Mouse @ %d %d", ...pl.zone.get_mouse_position()));
+    //gui::push_bottombar(string::tformat("FPS: %d", rl::getFPS()));
 
     int log_height = 7;
     gui::begin_window("Log", {map_width, 0}, {sidebar_width, log_height});
@@ -293,13 +298,39 @@ fn void onRender()
     gui::end_window();
 }
 
+fn void load_zone(ZoneDescription desc)
+{
+    if (g_zone)
+    {
+        g_zone.free();
+        mem::free(g_zone);
+    }
+    g_zone = mem::new(Zone);
+    g_zone.new_init(desc);
+}
+
+fn void load_floor(int depth)
+{
+    ZoneDescription initial_zone;
+    initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
+    GeneratorData generator = { 165361613 * ((ulong) depth + 1), depth };
+    initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
+    initial_zone.generator_data = &generator;
+
+    log("You descend further into the depths of Daemonheim...", colors::RED);
+
+    load_zone(initial_zone);
+}
+
 fn int main(String[] args)
 {
     //waitForDebugger();
+    initExceptionHandler();
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Initializing...");
 
     random::seed_entropy(&g_rng);
+    generate_whole_dungeon_stuff(&g_rng);
 
     int term_width = 80;
     int term_height = 45;
@@ -345,8 +376,7 @@ fn int main(String[] args)
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
 
-    zone = mem::new(Zone);
-    zone.new_init(initial_zone);
+    load_zone(initial_zone);
     
     gui::gui_data.new_init();
 
@@ -391,13 +421,13 @@ fn int main(String[] args)
             
             gui::gui_data.start_frame();
 
-            double elapsed = zone.update();
+            double elapsed = g_zone.update();
             if (elapsed > 0.0)
             {
                 onUpdate(elapsed);
             }
             ZoneRenderSettings settings = { { 15 / map_zoom, 0} };
-            zone.render(&map_term, settings);
+            g_zone.render(&map_term, settings);
 
             onRender();
             gui::gui_data.render();
@@ -406,6 +436,17 @@ fn int main(String[] args)
             ui_term.render(1);
             
             rl::endDrawing();
+
+            if (want_exit_floor || is_key_pressed(NEXT_FLOOR, false))
+            {
+                if (current_floor.depth == 10)
+                {
+                    // Victory screen
+                    break;
+                }
+                load_floor(current_floor.depth + 1);
+                want_exit_floor = false;
+            }
         };
     }
     

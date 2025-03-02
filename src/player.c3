@@ -7,6 +7,7 @@ import raylib5::rl;
 struct Player (Entity)
 {
     inline EntityCommon entity;
+    uint flags;
 
     Navigator nav;
     float nav_delay;
@@ -21,7 +22,7 @@ fn IVec2 Player.get_position(&self) @dynamic => self.entity.get_position();
 fn void Player.set_position(&self, IVec2 pos) @dynamic
 {
     self.entity.set_position(pos);
-    self.vis.sweep(pos, 7);
+    self.vis.sweep(pos, 16);
 }
 fn Appearance Player.get_look(&self) @dynamic => self.entity.get_look();
 fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
@@ -29,7 +30,18 @@ fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_i
 
 // Implement EntityVisibility
 fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
-fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 7);
+fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 16);
+
+fn void Player.explore(&self, IVec2 pos, IVec2 size)
+{
+    for (int y = pos.y; y < pos.y + size.y; ++y)
+    {
+        for (int x = pos.x; x < pos.x + size.x; ++x)
+        {
+            self.vis.explored.set({x, y}, true);
+        }
+    }
+}
 
 fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
@@ -181,7 +193,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             else
             {
                 self.nav.abort();
-                return null;
+                return do_interact(next_move);
             }
         }
     }
@@ -227,6 +239,13 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             unreachable();
         }
         log("You go through the door.");
+        Room* next_room = find_room(entity.get_position())!!;
+        Player* player = (Player*) entity;
+        player.explore(next_room.position, next_room.size);
+    }
+    else if (cell.terrain.look.glyph == '>')
+    {
+        want_exit_floor = true;
     }
     else
     {

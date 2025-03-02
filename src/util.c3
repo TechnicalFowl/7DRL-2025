@@ -5,6 +5,7 @@ import std::math;
 
 def IVec2 = int[<2>];
 def IVec3 = int[<3>];
+def IVec4 = int[<4>];
 
 fn uint IVec2.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]);
 fn uint IVec3.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]) * 2654435761u + ((uint) self[2]) * 2654435761u;
@@ -129,13 +130,42 @@ $else
 $endif
 }
 
-def UnhandledExceptionFilter = fn int (void* exception_info);
+struct ExceptionRecord
+{
+    uint code;
+    uint flags;
+    void* record;
+    void* address;
+}
+
+def UnhandledExceptionFilter = fn int (ExceptionRecord* exception_info);
 extern fn UnhandledExceptionFilter setUnhandledExceptionFilter(UnhandledExceptionFilter filter) @extern("SetUnhandledExceptionFilter") @if(env::WIN32);
 
-fn int exceptionHandler(void* exception_info)
+fn int exceptionHandler(ExceptionRecord* exception_info)
 {
-    io::printn("Unhandled exception");
-    // Handle the exception
+    String code;
+    switch (exception_info.code)
+    {
+        case 0xC0000005: code = "Access violation";
+        case 0xC000001D: code = "Illegal instruction";
+        case 0xC0000025: code = "Non-continuable exception";
+        case 0xC0000026: code = "Invalid disposition";
+        case 0xC000008C: code = "Array bounds exceeded";
+        case 0xC000008D: code = "Float denormal operand";
+        case 0xC000008E: code = "Float divide by zero";
+        case 0xC000008F: code = "Float inexact result";
+        case 0xC0000090: code = "Float invalid operation";
+        case 0xC0000091: code = "Float overflow";
+        case 0xC0000092: code = "Float stack check";
+        case 0xC0000093: code = "Float underflow";
+        case 0xC0000094: code = "Integer divide by zero";
+        case 0xC0000095: code = "Integer overflow";
+        case 0xC0000096: code = "Privileged instruction";
+        case 0xC00000FD: code = "Stack overflow";
+        default: code = "Unhandled exception";
+    }
+    io::printfn("Unhandled exception: %s (%u)", code, exception_info.code);
+    builtin::print_backtrace(code, 0);
     return 1;
 }
 
