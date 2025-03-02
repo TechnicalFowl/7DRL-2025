@@ -137,11 +137,11 @@ fn void begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
     dg::ui_term.fill_background(...pos, ...size, get_color(GuiColor.WINDOW_BG), prio);
     if (border)
     {
-        dg::ui_term.box_tile(pos[0], pos[1], size[0], size[1], double_lines: false, fg: get_color(GuiColor.WINDOW_BORDER), priority: prio);
-        dg::ui_term.fill_tile(pos[0] + 5, pos[1], (int) title.len + 2, 1, ' ', colors::WHITE, prio);
-        dg::ui_term.set_tile(pos[0] + 4, pos[1], 180, get_color(GuiColor.WINDOW_BORDER), prio);
-        dg::ui_term.write(pos[0] + 6, pos[1], title, get_color(GuiColor.WINDOW_BORDER), prio);
-        dg::ui_term.set_tile(pos[0] + 7 + (int) title.len, pos[1], 195, get_color(GuiColor.WINDOW_BORDER), prio);
+        dg::ui_term.box_tile(...pos, ...size, double_lines: false, fg: get_color(GuiColor.WINDOW_BORDER), priority: prio);
+        dg::ui_term.fill_tile(pos.x + 5, pos.y, (int) title.len + 2, 1, ' ', colors::WHITE, prio);
+        dg::ui_term.set_tile(pos.x + 4, pos.y, 180, get_color(GuiColor.WINDOW_BORDER), prio);
+        dg::ui_term.write(pos.x + 6, pos.y, title, get_color(GuiColor.WINDOW_TEXT), prio);
+        dg::ui_term.set_tile(pos.x + 7 + (int) title.len, pos[1], 195, get_color(GuiColor.WINDOW_BORDER), prio);
         window.cursor = window.cursor + {1, 1};
         window.newline_start++;
     }

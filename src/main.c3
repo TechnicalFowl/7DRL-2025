@@ -371,6 +371,7 @@ fn int main(String[] args)
     load_zone(initial_zone);
     
     gui::gui_data.new_init();
+    init_ui();
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Starting game loop...");
     

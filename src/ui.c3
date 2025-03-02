@@ -10,6 +10,13 @@ enum SidebarTab
     SKILLS,
 }
 
+SidebarTab sidebar_tab;
+
+fn void init_ui()
+{
+    sidebar_tab = INVENTORY;
+}
+
 fn void draw_ui()
 {
     Player* pl = (Player*) g_zone.player;
@@ -37,11 +44,71 @@ fn void draw_ui()
 
     gui::end_window();
 
+    int prio = 10;
     IVec2 spos = {map_width, log_height};
     IVec2 ssize = {sidebar_width, term_height - log_height};
     gui::begin_window("Inv", spos, ssize, border: false);
 
-    ui_term.box_tile(...spos, ...ssize, false, colors::GREY, 10);
+    ui_term.box_tile(...spos, ...ssize, false, colors::GREY, prio);
+    ui_term.fill_tile(spos.x + 5, spos.y, 9, 1, ' ', colors::WHITE, prio);
+    ui_term.set_tile(spos.x + 4, spos.y, 180, colors::GREY, prio);
+    ui_term.set_tile(spos.x + 14, spos.y, 195, colors::GREY, prio);
+    ui_term.write(spos.x + 6, spos.y, string::tformat("%c:Equip", getKeyIcon(get_bind(EQUIPMENT_TAB)[0])), sidebar_tab == EQUIPMENT ? { 220, 220, 220, 255 } : colors::GREY, prio);
+
+    if (is_key_pressed(EQUIPMENT_TAB, false))
+    {
+        sidebar_tab = EQUIPMENT;
+    }
+
+    if (sidebar_tab == EQUIPMENT)
+    {
+
+    }
+
+    ui_term.fill_tile(spos.x + 17, spos.y, 9, 1, ' ', colors::WHITE, prio);
+    ui_term.set_tile(spos.x + 16, spos.y, 180, colors::GREY, prio);
+    ui_term.set_tile(spos.x + 26, spos.y, 195, colors::GREY, prio);
+    ui_term.write(spos.x + 18, spos.y, string::tformat("%c:Inven", getKeyIcon(get_bind(INVENTORY_TAB)[0])), sidebar_tab == INVENTORY ? { 220, 220, 220, 255 } : colors::GREY, prio);
+
+    if (is_key_pressed(INVENTORY_TAB, false))
+    {
+        sidebar_tab = INVENTORY;
+    }
+
+    if (sidebar_tab == INVENTORY)
+    {
+
+    }
+
+    ui_term.fill_tile(spos.x + 29, spos.y, 9, 1, ' ', colors::WHITE, prio);
+    ui_term.set_tile(spos.x + 28, spos.y, 180, colors::GREY, prio);
+    ui_term.set_tile(spos.x + 38, spos.y, 195, colors::GREY, prio);
+    ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Spell", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK ? { 220, 220, 220, 255 } : colors::GREY, prio);
+
+    if (is_key_pressed(SPELLBOOK_TAB, false))
+    {
+        sidebar_tab = SPELLBOOK;
+    }
+
+    if (sidebar_tab == SPELLBOOK)
+    {
+
+    }
+
+    ui_term.fill_tile(spos.x + 41, spos.y, 9, 1, ' ', colors::WHITE, prio);
+    ui_term.set_tile(spos.x + 40, spos.y, 180, colors::GREY, prio);
+    ui_term.set_tile(spos.x + 50, spos.y, 195, colors::GREY, prio);
+    ui_term.write(spos.x + 42, spos.y, string::tformat("%c:Skill", getKeyIcon(get_bind(SKILLS_TAB)[0])), sidebar_tab == SKILLS ? { 220, 220, 220, 255 } : colors::GREY, prio);
+
+    if (is_key_pressed(SKILLS_TAB, false))
+    {
+        sidebar_tab = SKILLS;
+    }
+
+    if (sidebar_tab == SKILLS)
+    {
+
+    }
 
     gui::end_window();
 }
