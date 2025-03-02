@@ -65,6 +65,38 @@ const Appearance WARRIOR_IDLE1 = { '@', {255, 255, 255, 255}, 6 * 16 + 2 };
 const Appearance WARRIOR_IDLE2 = { '@', {255, 255, 255, 255}, 6 * 16 + 1 };
 const Appearance WARRIOR_POINT = { '@', {255, 255, 255, 255}, 6 * 16 + 0 };
 
-const Appearance GOBLIN_IDLE1 = { 'g', {0, 255, 0, 255}, 9 * 16 + 5 };
-const Appearance GOBLIN_IDLE2 = { 'g', {0, 255, 0, 255}, 9 * 16 + 4 };
-const Appearance GOBLIN_POINT = { 'g', {0, 255, 0, 255}, 9 * 16 + 3 };
+const Appearance GOBLIN_IDLE1 = { 'g', {116, 122, 82, 255}, 9 * 16 + 5 };
+const Appearance GOBLIN_IDLE2 = { 'g', {116, 122, 82, 255}, 9 * 16 + 4 };
+const Appearance GOBLIN_POINT = { 'g', {116, 122, 82, 255}, 9 * 16 + 3 };
+
+const Appearance GOBLIN_ARCHER_IDLE1 = { 'c', {116, 178, 37, 255}, 10 * 16 + 5 };
+const Appearance GOBLIN_ARCHER_IDLE2 = { 'c', {116, 178, 37, 255}, 10 * 16 + 4 };
+const Appearance GOBLIN_ARCHER_POINT = { 'c', {116, 178, 37, 255}, 10 * 16 + 3 };
+
+const Appearance GOBLIN_MAGE_IDLE1 = { 'h', {62, 122, 124, 255}, 8 * 16 + 5 };
+const Appearance GOBLIN_MAGE_IDLE2 = { 'h', {62, 122, 124, 255}, 8 * 16 + 4 };
+const Appearance GOBLIN_MAGE_POINT = { 'h', {62, 122, 124, 255}, 8 * 16 + 3 };
+
+const Appearance BANDIT_IDLE1 = { 'b', {122, 53, 38, 255}, 6 * 16 + 5 };
+const Appearance BANDIT_IDLE2 = { 'b', {122, 53, 38, 255}, 6 * 16 + 4 };
+const Appearance BANDIT_POINT = { 'b', {122, 53, 38, 255}, 6 * 16 + 3 };
+
+const Appearance BANDIT_RANGER_IDLE1 = { 'a', {122, 143, 38, 255}, 7 * 16 + 5 };
+const Appearance BANDIT_RANGER_IDLE2 = { 'a', {122, 143, 38, 255}, 7 * 16 + 4 };
+const Appearance BANDIT_RANGER_POINT = { 'a', {122, 143, 38, 255}, 7 * 16 + 3 };
+
+const Appearance BANDIT_MAGE_IDLE1 = { 'm', {46, 61, 147, 255}, 6 * 16 + 5 };
+const Appearance BANDIT_MAGE_IDLE2 = { 'm', {46, 61, 147, 255}, 6 * 16 + 4 };
+const Appearance BANDIT_MAGE_POINT = { 'm', {46, 61, 147, 255}, 6 * 16 + 3 };
+
+const Appearance DARK_MAGE_IDLE1 = { 'M', {89, 41, 122, 255}, 8 * 16 + 2 };
+const Appearance DARK_MAGE_IDLE2 = { 'M', {89, 41, 122, 255}, 8 * 16 + 1 };
+const Appearance DARK_MAGE_POINT = { 'M', {89, 41, 122, 255}, 8 * 16 + 0 };
+
+const Appearance DARK_KNIGHT_IDLE1 = { 'k', {89, 41, 122, 255}, 9 * 16 + 2 };
+const Appearance DARK_KNIGHT_IDLE2 = { 'k', {89, 41, 122, 255}, 9 * 16 + 1 };
+const Appearance DARK_KNIGHT_POINT = { 'k', {89, 41, 122, 255}, 9 * 16 + 0 };
+
+const Appearance ASSASSIN_IDLE1 = { 'A', {89, 41, 122, 255}, 10 * 16 + 2 };
+const Appearance ASSASSIN_IDLE2 = { 'A', {89, 41, 122, 255}, 10 * 16 + 1 };
+const Appearance ASSASSIN_POINT = { 'A', {89, 41, 122, 255}, 10 * 16 + 0 };

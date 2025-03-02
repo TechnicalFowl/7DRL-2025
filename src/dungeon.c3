@@ -88,8 +88,11 @@ enum HotspotType : (int weight)
     FURNACE = 2,
     ANVIL = 2,
     STORE_CACHE = 8,
-    SMALL_MOB = 25,
-    MOB_GROUP = 20,
+    SMALL_WARRIOR = 4,
+    SMALL_ARCHER = 4,
+    SMALL_MAGE = 4,
+    MOB_GROUP = 2,
+    BIG_GROUP = 1,
     GRAVESITE = 5,
 }
 
@@ -479,10 +482,46 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                     case STORE_CACHE:
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, CRATE, false);
-                    case SMALL_MOB:
-                        break;
+                    case SMALL_WARRIOR:
+                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int count = random::next_in_range(rng, 1, 3);
+                        for (int i = 0; i < count; ++i)
+                        {
+                            IVec2 p0 = get_random_pos(rng, min, size);
+                            p0 = zone.find_nearest_empty(p0);
+                            spawn_monster(zone, p0, WARRIOR_TYPES[tier]);
+                        }
+                    case SMALL_ARCHER:
+                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int count = random::next_in_range(rng, 1, 3);
+                        for (int i = 0; i < count; ++i)
+                        {
+                            IVec2 p0 = get_random_pos(rng, min, size);
+                            p0 = zone.find_nearest_empty(p0);
+                            spawn_monster(zone, p0, ARCHER_TYPES[tier]);
+                        }
+                    case SMALL_MAGE:
+                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int count = random::next_in_range(rng, 1, 3) / 2;
+                        for (int i = 0; i < count; ++i)
+                        {
+                            IVec2 p0 = get_random_pos(rng, min, size);
+                            p0 = zone.find_nearest_empty(p0);
+                            spawn_monster(zone, p0, MAGE_TYPES[tier]);
+                        }
                     case MOB_GROUP:
-                        break;
+                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
+                    case BIG_GROUP:
+                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
+                        spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
                     case GRAVESITE:
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, GRAVE, false);
