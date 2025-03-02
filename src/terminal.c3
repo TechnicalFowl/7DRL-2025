@@ -238,21 +238,21 @@ fn void VirtualTerminal.write(&self, int x, int y, String text, rl::Color fg=col
     }
 }
 
-fn void VirtualTerminal.drawTile(&self, float x, float y, char c, rl::Color col, float zoom, Font* font) @private
+fn void VirtualTerminal.drawTile(&self, Vec2f p, Vec2f offs, char c, rl::Color col, float zoom, Font* font) @private
 {
     rl::Rectangle src = {
         (float) (c % 16) * font.width, (float) (c / 16) * font.height,
         font.width, font.height
     };
     rl::Rectangle dest = {
-        x * self.font.width * zoom, y * self.font.height * zoom,
+        p.x * self.font.width * zoom + offs.x, p.y * self.font.height * zoom + offs.y,
         self.font.width * zoom, self.font.height * zoom
     };
 
     rl::drawTexturePro(font.texture, src, dest, { 0, 0 }, 0, col);
 }
 
-fn void VirtualTerminal.render(&self, float zoom)
+fn void VirtualTerminal.render(&self, float zoom, Vec2f offset={0, 0})
 {
     rl::beginBlendMode(0);
     for (int y = 0; y < self.height; y++)
@@ -261,7 +261,7 @@ fn void VirtualTerminal.render(&self, float zoom)
         {
             VCell* cell = &self.buffer[self.width * y + x];
             rl::Rectangle dest = {
-                (float) x * self.font.width * zoom, (float) y * self.font.height * zoom,
+                (float) x * self.font.width * zoom + offset.x, (float) y * self.font.height * zoom + offset.y,
                 self.font.width * zoom, self.font.height * zoom
             };
             if (cell.bg.a > 0) rl::drawRectangleRec(dest, cell.bg);
@@ -269,7 +269,7 @@ fn void VirtualTerminal.render(&self, float zoom)
             {
                 VCellLayer* layer = &cell.layers[i];
                 if (layer.fg.a == 0) continue;
-                self.drawTile(x, y, layer.glyph, layer.fg, zoom, layer.override ? layer.override : self.font);
+                self.drawTile({x, y}, offset, layer.glyph, layer.fg, zoom, layer.override ? layer.override : self.font);
             }
         }
     }

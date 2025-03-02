@@ -265,7 +265,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     }
 
     Player* pl = mem::new(Player);
-    pl.new_init(zone, "Player", {start.x * 17 + 7, start.y * 17 + 7});
+    pl.new_init(zone, "Player", {start.x * 17 + 7, start.y * 17 + 8});
     zone.add_player(pl);
     pl.explore(start_room.position, {16, 16});
 }
@@ -277,30 +277,7 @@ fn void onUpdate(double elapsed)
 
 fn void onRender()
 {
-    Player* pl = (Player*) g_zone.player;
-    int sidebar_width = 60;
-    int term_width = ui_term.width;
-    int term_height = ui_term.height;
-    int map_width = ui_term.width - sidebar_width;
-
-    gui::push_topbar("The Depths of Daemonheim - 7DRL 2025");
-    gui::push_bottombar(string::tformat("%-16s", g_zone.name));
-    gui::push_bottombar(string::tformat("T:%.0f", elapsed_time));
-    //gui::push_bottombar(string::tformat("Player @ %d %d", ...pl.get_position()));
-    //gui::push_bottombar(string::tformat("Mouse @ %d %d", ...pl.zone.get_mouse_position()));
-    //gui::push_bottombar(string::tformat("FPS: %d", rl::getFPS()));
-
-    int log_height = 7;
-    gui::begin_window("Log", {map_width, 0}, {sidebar_width, log_height});
-    
-    long start = math::max(log_messages.len() - log_height + 2, 0l);
-    for (long i = start; i < log_messages.len(); ++i)
-    {
-        LogMessage msg = log_messages[i];
-        gui::text(msg.message, msg.color);
-    }
-
-    gui::end_window();
+    draw_ui();
 }
 
 fn void load_zone(ZoneDescription desc)
@@ -347,12 +324,13 @@ fn int main(String[] args)
     generate_whole_dungeon_stuff(&g_rng);
 
     int term_width = 80;
-    int term_height = 45;
+    int term_height = 50;
 
     rl::initWindow(term_width * font_size, term_height * font_size, "The Depths of Daemonheim - 7DRL 2025");
     rl::setTargetFPS(60);
     rl::setExitKey(0);
     rl::setWindowState(rl::FLAG_WINDOW_RESIZABLE);
+    rl::setWindowMinSize(term_width * font_size, term_height * font_size);
 
     init_inputs();
 
@@ -441,13 +419,13 @@ fn int main(String[] args)
                 elapsed_time += elapsed;
                 onUpdate(elapsed);
             }
-            ZoneRenderSettings settings = { { 15 / map_zoom, 0} };
+            ZoneRenderSettings settings = { { 15 / map_zoom, 0 } };
             g_zone.render(&map_term, settings);
 
             onRender();
             gui::gui_data.render();
 
-            map_term.render(map_zoom);
+            map_term.render(map_zoom, {0, 16});
             ui_term.render(1);
             
             rl::endDrawing();
