@@ -349,11 +349,11 @@ fn void GuiData.new_init(&self)
 
     set_setting(GuiSetting.PRIORITY, 10);
 
-    set_color(GuiColor.TOP_BAR_BG, colors::DARKEST_GREY);
+    set_color(GuiColor.TOP_BAR_BG, colors::BLACK);
     set_color(GuiColor.TOP_BAR_TEXT, { 220, 220, 220, 255});
-    set_color(GuiColor.BOTTOM_BAR_BG, colors::DARKEST_GREY);
+    set_color(GuiColor.BOTTOM_BAR_BG, colors::BLACK);
     set_color(GuiColor.BOTTOM_BAR_TEXT, { 220, 220, 220, 255});
-    set_color(GuiColor.WINDOW_BG, colors::DARKEST_GREY);
+    set_color(GuiColor.WINDOW_BG, colors::BLACK);
     set_color(GuiColor.WINDOW_TEXT, { 220, 220, 220, 255});
     set_color(GuiColor.HOVERED_TEXT, colors::WHITE);
     set_color(GuiColor.WINDOW_BORDER, colors::GREY);

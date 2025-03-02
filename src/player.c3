@@ -23,8 +23,7 @@ fn void Player.set_position(&self, IVec2 pos) @dynamic
     self.entity.set_position(pos);
     self.vis.sweep(pos, 10);
 }
-fn char Player.get_glyph(&self) @dynamic => self.entity.get_glyph();
-fn rl::Color Player.get_color(&self) @dynamic => self.entity.get_color();
+fn Appearance Player.get_look(&self) @dynamic => self.entity.get_look();
 fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 
@@ -34,9 +33,9 @@ fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_i
 
 fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
-    self.entity.new_init(z, n, p, '@', colors::WHITE);
+    self.entity.new_init(z, n, p, WARRIOR_IDLE1, WARRIOR_IDLE2, WARRIOR_POINT);
     self.nav.new_init();
-    self.nav_delay = 0.05f;
+    self.nav_delay = 0.1f;
 
     self.vis.new_init(z);
 }
@@ -63,8 +62,37 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
 
 fn Action Player.next_action(&self, double max_time) @dynamic
 {
+    if (rl::isMouseButtonPressed(rl::MouseButton.LEFT))
+    {
+        if (self.nav.is_idle())
+        {
+            IVec2 pos = math::clamp(self.get_zone().get_mouse_position(), IVec2 {0, 0}, IVec2 {self.get_zone().width - 1, self.get_zone().height - 1});
+            self.nav.path_to(self.get_zone(), self.get_position(), pos);
+        }
+        else
+        {
+            self.nav.abort();
+        }
+    }
+
     if (self.nav.is_idle())
     {
+        if (is_key_down(PATH_TO_BOSS))
+        {
+            for (int y= 0; y < 8 && self.nav.is_idle(); ++y)
+            {
+                for (int x = 0; x < 8 && self.nav.is_idle(); ++x)
+                {
+                    Room* r = current_floor.rooms.get({x, y})!!;
+                    if (r.type == BOSS)
+                    {
+                        IVec2 pos = {x * 17 + 8, y * 17 + 8};
+                        self.nav.path_to(self.get_zone(), self.get_position(), pos);
+                    }
+                }
+            }
+        }
+
         bool is_shift = is_key_down(DIAGONAL_UP);
         bool is_ctrl = is_key_down(DIAGONAL_DOWN);
         if (is_key_pressed(MOVE_UP))
@@ -133,7 +161,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         self.nav_delay -= rl::getFrameTime();
         if (self.nav_delay <= 0)
         {
-            self.nav_delay = 0.05f;
+            self.nav_delay = 0.1f;
             IVec2 next_pos = self.nav.next_point();
             IVec2 next_move = next_pos - self.entity.position;
             ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
@@ -141,7 +169,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             {
                 return do_move(next_move);
             }
-            else if (next_cell.terrain.glyph == '+')
+            else if (next_cell.terrain.look.glyph == '+')
             {
                 return do_interact(next_move);
             }
@@ -166,7 +194,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     IVec2 new_pos = entity.get_position() + self.dir;
 
     ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
-    if (cell.terrain.glyph == '+')
+    if (cell.terrain.look.glyph == '+')
     {
         Room* r = find_room(new_pos)!!;
         Direction dir = get_door_direction(new_pos);

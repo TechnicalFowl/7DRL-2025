@@ -45,6 +45,13 @@ struct ItemInfo
     String name;
 }
 
+struct ItemStack
+{
+    Item item;
+    int count;
+    int metadata;
+}
+
 struct ItemCache
 {
     ItemInfo[ITEM_COUNT] items;

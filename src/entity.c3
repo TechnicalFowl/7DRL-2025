@@ -72,8 +72,7 @@ interface Entity
     fn String get_name();
     fn IVec2 get_position();
     fn void set_position(IVec2 pos);
-    fn char get_glyph();
-    fn rl::Color get_color();
+    fn Appearance get_look();
     fn double get_idle_time();
     fn void give_idle_time(double time);
 
@@ -85,8 +84,7 @@ struct EntityCommon (Entity)
     Zone* zone;
     String name;
     IVec2 position;
-    char glyph;
-    rl::Color color;
+    Appearance[3] look;
 
     double idle_time;
 }
@@ -112,21 +110,19 @@ fn void EntityCommon.set_position(&self, IVec2 pos) @dynamic
     new_cell.entities.push(this_ent);
 }
 
-fn char EntityCommon.get_glyph(&self) @dynamic => self.glyph;
-fn rl::Color EntityCommon.get_color(&self) @dynamic => self.color;
+fn Appearance EntityCommon.get_look(&self) @dynamic => self.look[0];
 fn double EntityCommon.get_idle_time(&self) @dynamic => self.idle_time;
 fn void EntityCommon.give_idle_time(&self, double time) @dynamic
 {
     self.idle_time += time;
 }
 
-fn void EntityCommon.new_init(&self, Zone* z, String n, IVec2 p, char g, rl::Color c)
+fn void EntityCommon.new_init(&self, Zone* z, String n, IVec2 p, Appearance idle1, Appearance idle2, Appearance point)
 {
     self.zone = z;
     self.name = n;
     self.position = p;
-    self.glyph = g;
-    self.color = c;
+    self.look = { idle1, idle2, point };
 }
 
 fn void EntityCommon.free(&self) @dynamic

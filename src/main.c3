@@ -14,6 +14,8 @@ Font* sprite_font;
 Font* textmode_font;
 Font* text_font;
 
+bool textmode;
+
 struct LogMessage
 {
     String message;
@@ -21,7 +23,7 @@ struct LogMessage
 }
 List(<LogMessage>) log_messages;
 
-int map_zoom = 2;
+int map_zoom = 3;
 VirtualTerminal map_term;
 VirtualTerminal ui_term;
 
@@ -185,13 +187,41 @@ fn void GeneratorData.generate(&self, Zone* zone)
             {
                 for (int rx = 0; rx < size.x; ++rx)
                 {
-                    if (rx == 0 || rx == size.x - 1 || ry == 0 || ry == size.y - 1)
+                    if (rx == 0 && ry == 0)
                     {
-                        zone.set_terrain(pos.x+ rx, pos.y + ry, '#', {220, 220, 220, 255}, colors::BLACK, false);
+                        zone.set_terrain(pos.x+ rx, pos.y + ry, WALL_NW, colors::BLACK, false);
+                    }
+                    else if (rx == 0 && ry == size.y - 1)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SW, colors::BLACK, false);
+                    }
+                    else if (rx == size.x - 1 && ry == 0)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_NE, colors::BLACK, false);
+                    }
+                    else if (rx == size.x - 1 && ry == size.y - 1)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SE, colors::BLACK, false);
+                    }
+                    else if (rx == 0)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_WEST, colors::BLACK, false);
+                    }
+                    else if (rx == size.x - 1)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_EAST, colors::BLACK, false);
+                    }
+                    else if (ry == 0)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_NORTH, colors::BLACK, false);
+                    }
+                    else if (ry == size.y - 1)
+                    {
+                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SOUTH, colors::BLACK, false);
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, '.', colors::DARK_GREY, colors::BLACK, true);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, FLOOR_STONE, colors::BLACK, true);
                     }
                 }
             }
@@ -212,19 +242,6 @@ fn void onUpdate(double elapsed)
 fn void onRender()
 {
     Player* pl = (Player*) zone.player;
-    if (rl::isMouseButtonPressed(rl::MouseButton.LEFT))
-    {
-        if (pl.nav.is_idle())
-        {
-            IVec2 pos = math::clamp(zone.get_mouse_position(), IVec2 {0, 0}, IVec2 {zone.width - 1, zone.height - 1});
-            pl.nav.path_to(zone, pl.get_position(), pos);
-        }
-        else
-        {
-            pl.nav.abort();
-        }
-    }
-
     int sidebar_width = 60;
     int term_width = ui_term.width;
     int term_height = ui_term.height;
@@ -287,7 +304,8 @@ fn int main(String[] args)
     }
     text_font = hfont;
 
-    map_term.new_init(term_width / map_zoom, term_height / map_zoom, textmode_font);
+    textmode = false;
+    map_term.new_init(term_width / map_zoom, term_height / map_zoom, textmode ? textmode_font : sprite_font);
     ui_term.new_init(term_width * 2, term_height, text_font);
 
     g_items.new_init();
@@ -325,9 +343,14 @@ fn int main(String[] args)
 
             update_inputs();
             
+            if (is_key_pressed(TOGGLE_TEXTMODE, false))
+            {
+                textmode = !textmode;
+            }
+            
             if (is_key_pressed(TOGGLE_ZOOM, false))
             {
-                map_zoom = map_zoom == 1 ? 2 : 1;
+                map_zoom = map_zoom == 1 ? 3 : 1;
                 
                 int new_width = rl::getScreenWidth();
                 int new_height = rl::getScreenHeight();

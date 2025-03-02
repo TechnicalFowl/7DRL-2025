@@ -15,6 +15,8 @@ enum Input : int
     DIAGONAL_DOWN,
 
     TOGGLE_ZOOM,
+    TOGGLE_TEXTMODE,
+    PATH_TO_BOSS,
 }
 
 struct KeyBind
@@ -61,6 +63,8 @@ fn void init_inputs()
     createBind(DIAGONAL_DOWN, rl::KEY_LEFT_CONTROL, rl::KEY_RIGHT_CONTROL);
 
     createBind(TOGGLE_ZOOM, rl::KEY_LEFT_ALT, rl::KEY_RIGHT_ALT);
+    createBind(TOGGLE_TEXTMODE, rl::KEY_F1);
+    createBind(PATH_TO_BOSS, rl::KEY_F11);
 }
 
 fn void update_inputs()

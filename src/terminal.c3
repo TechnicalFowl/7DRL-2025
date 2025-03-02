@@ -7,11 +7,17 @@ import std::math;
 
 import raylib5::rl;
 
-struct VCell
+struct VCellLayer
 {
     char glyph;
     rl::Color fg;
     int fg_priority;
+    Font* override;
+}
+
+struct VCell
+{
+    VCellLayer[2] layers;
     rl::Color bg;
     int bg_priority;
 }
@@ -55,7 +61,7 @@ fn void VirtualTerminal.on_resize(&self, int new_term_width, int new_term_height
 
 fn void VirtualTerminal.clear(&self, rl::Color bg=colors::BLACK)
 {
-    self.clear_to({ 0, colors::BLACK, 0, bg, 0 });
+    self.clear_to({ {}, bg, 0 });
 }
 
 fn void VirtualTerminal.clear_to(&self, VCell glyph)
@@ -78,10 +84,9 @@ fn void VirtualTerminal.set_background(&self, int x, int y, rl::Color bg, int pr
         cell.bg = bg;
         cell.bg_priority = priority;
     }
-    if (priority > cell.fg_priority)
+    if (priority > cell.layers[1].fg_priority)
     {
-        cell.glyph = 0;
-        cell.fg_priority = priority;
+        cell.layers = {};
     }
 }
 
@@ -103,10 +108,9 @@ fn void VirtualTerminal.fill_background(&self, int x0, int y0, int w, int h, rl:
                 cell.bg = bg;
                 cell.bg_priority = priority;
             }
-            if (priority > cell.fg_priority)
+            if (priority > cell.layers[1].fg_priority)
             {
-                cell.glyph = 0;
-                cell.fg_priority = priority;
+                cell.layers = {};
             }
         }
     }
@@ -116,36 +120,27 @@ fn void VirtualTerminal.fill_background(&self, int x0, int y0, int w, int h, rl:
 @require x >= 0 && x <= self.width
 @require y >= 0 && y <= self.height
 *>
-fn void VirtualTerminal.set_tile(&self, int x, int y, char glyph, rl::Color fg=colors::WHITE, int priority=0)
+fn void VirtualTerminal.set_tile(&self, int x, int y, char glyph, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
     VCell* cell = &self.buffer[self.width * y + x];
-    if (priority >= cell.fg_priority && priority >= cell.bg_priority)
+    if (priority >= cell.bg_priority)
     {
-        cell.glyph = glyph;
-        cell.fg = fg;
-        cell.fg_priority = priority;
-    }
-}
-
-<*
-@require x0 >= 0 && x0 + w <= self.width
-@require y0 >= 0 && y0 + h <= self.height
-@require w > 0
-@require h > 0
-*>
-fn void VirtualTerminal.fill_tile(&self, int x0, int y0, int w, int h, char glyph, rl::Color fg=colors::WHITE, int priority=0)
-{
-    for (int y = y0; y < y0 + h; y++)
-    {
-        for (int x = x0; x < x0 + w; x++)
+        VCellLayer* l = &cell.layers[1];
+        if (priority >= l.fg_priority)
         {
-            VCell* cell = &self.buffer[self.width * y + x];
-            if (priority >= cell.fg_priority && priority >= cell.bg_priority)
-            {
-                cell.glyph = glyph;
-                cell.fg = fg;
-                cell.fg_priority = priority;
-            }
+            cell.layers[0] = cell.layers[1];
+            l.glyph = glyph;
+            l.fg = fg;
+            l.fg_priority = priority;
+            l.override = override_font;
+        }
+        else if (priority >= cell.layers[0].fg_priority)
+        {
+            l = &cell.layers[0];
+            l.glyph = glyph;
+            l.fg = fg;
+            l.fg_priority = priority;
+            l.override = override_font;
         }
     }
 }
@@ -156,7 +151,24 @@ fn void VirtualTerminal.fill_tile(&self, int x0, int y0, int w, int h, char glyp
 @require w > 0
 @require h > 0
 *>
-fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool double_lines=false, rl::Color fg=colors::WHITE, int priority=0)
+fn void VirtualTerminal.fill_tile(&self, int x0, int y0, int w, int h, char glyph, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
+{
+    for (int y = y0; y < y0 + h; y++)
+    {
+        for (int x = x0; x < x0 + w; x++)
+        {
+            self.set_tile(x, y, glyph, fg, priority, override_font);
+        }
+    }
+}
+
+<*
+@require x0 >= 0 && x0 + w <= self.width
+@require y0 >= 0 && y0 + h <= self.height
+@require w > 0
+@require h > 0
+*>
+fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool double_lines=false, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
     int x_min = math::max(0, x0);
     int y_min = math::max(0, y0);
@@ -167,13 +179,13 @@ fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool doubl
     {
         if (!double_lines)
         {
-            self.set_tile(x, y_min, 196, fg, priority);
-            self.set_tile(x, y_max, 196, fg, priority);
+            self.set_tile(x, y_min, 196, fg, priority, override_font);
+            self.set_tile(x, y_max, 196, fg, priority, override_font);
         }
         else
         {
-            self.set_tile(x, y_min, 205, fg, priority);
-            self.set_tile(x, y_max, 205, fg, priority);
+            self.set_tile(x, y_min, 205, fg, priority, override_font);
+            self.set_tile(x, y_max, 205, fg, priority, override_font);
         }
     }
 
@@ -181,29 +193,29 @@ fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool doubl
     {
         if (!double_lines)
         {
-            self.set_tile(x_min, y, 179, fg, priority);
-            self.set_tile(x_max, y, 179, fg, priority);
+            self.set_tile(x_min, y, 179, fg, priority, override_font);
+            self.set_tile(x_max, y, 179, fg, priority, override_font);
         }
         else
         {
-            self.set_tile(x_min, y, 186, fg, priority);
-            self.set_tile(x_max, y, 186, fg, priority);
+            self.set_tile(x_min, y, 186, fg, priority, override_font);
+            self.set_tile(x_max, y, 186, fg, priority, override_font);
         }
     }
 
     if (!double_lines)
     {
-        self.set_tile(x_min, y_min, 218, fg, priority);
-        self.set_tile(x_max, y_min, 191, fg, priority);
-        self.set_tile(x_min, y_max, 192, fg, priority);
-        self.set_tile(x_max, y_max, 217, fg, priority);
+        self.set_tile(x_min, y_min, 218, fg, priority, override_font);
+        self.set_tile(x_max, y_min, 191, fg, priority, override_font);
+        self.set_tile(x_min, y_max, 192, fg, priority, override_font);
+        self.set_tile(x_max, y_max, 217, fg, priority, override_font);
     }
     else
     {
-        self.set_tile(x_min, y_min, 201, fg, priority);
-        self.set_tile(x_max, y_min, 187, fg, priority);
-        self.set_tile(x_min, y_max, 200, fg, priority);
-        self.set_tile(x_max, y_max, 188, fg, priority);
+        self.set_tile(x_min, y_min, 201, fg, priority, override_font);
+        self.set_tile(x_max, y_min, 187, fg, priority, override_font);
+        self.set_tile(x_min, y_max, 200, fg, priority, override_font);
+        self.set_tile(x_max, y_max, 188, fg, priority, override_font);
     }
 }
 
@@ -211,30 +223,31 @@ fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool doubl
 @require x >= 0 && x <= self.width * 2
 @require y >= 0 && y <= self.height
 *>
-fn void VirtualTerminal.write(&self, int x, int y, String text, rl::Color fg=colors::WHITE, int priority=0)
+fn void VirtualTerminal.write(&self, int x, int y, String text, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
     foreach (c: text)
     {
-        self.set_tile(x++, y, c, fg, priority);
+        self.set_tile(x++, y, c, fg, priority, override_font);
     }
 }
 
-fn void VirtualTerminal.drawTile(&self, float x, float y, char c, rl::Color col, float zoom) @private
+fn void VirtualTerminal.drawTile(&self, float x, float y, char c, rl::Color col, float zoom, Font* font) @private
 {
     rl::Rectangle src = {
-        (float) (c % 16) * self.font.width, (float) (c / 16) * self.font.height,
-        self.font.width, self.font.height
+        (float) (c % 16) * font.width, (float) (c / 16) * font.height,
+        font.width, font.height
     };
     rl::Rectangle dest = {
         x * self.font.width * zoom, y * self.font.height * zoom,
         self.font.width * zoom, self.font.height * zoom
     };
 
-    rl::drawTexturePro(self.font.texture, src, dest, { 0, 0 }, 0, col);
+    rl::drawTexturePro(font.texture, src, dest, { 0, 0 }, 0, col);
 }
 
 fn void VirtualTerminal.render(&self, float zoom)
 {
+    rl::beginBlendMode(0);
     for (int y = 0; y < self.height; y++)
     {
         for (int x = 0; x < self.width; x++)
@@ -244,11 +257,13 @@ fn void VirtualTerminal.render(&self, float zoom)
                 (float) x * self.font.width * zoom, (float) y * self.font.height * zoom,
                 self.font.width * zoom, self.font.height * zoom
             };
-            if (cell.bg.a != 0) rl::drawRectangleRec(dest, cell.bg);
-            if (cell.glyph != 0)
+            rl::drawRectangleRec(dest, cell.bg);
+            for (int i = 0; i < 2; i++)
             {
-                self.drawTile(x, y, cell.glyph, cell.fg, zoom);
+                VCellLayer* layer = &cell.layers[i];
+                self.drawTile(x, y, layer.glyph, layer.fg, zoom, layer.override ? layer.override : self.font);
             }
         }
     }
+    rl::endBlendMode();
 }

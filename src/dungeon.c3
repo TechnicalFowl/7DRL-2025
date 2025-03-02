@@ -26,9 +26,8 @@ struct MonsterSpawn
 
 struct ItemSpawn
 {
-    Item item;
+    ItemStack item;
     IVec2 position;
-    int count;
 }
 
 enum HotspotType
@@ -110,25 +109,25 @@ fn void Room.generate(&self, Zone* zone, random::Pcg32Random* rng)
         switch (d.direction)
         {
         case NORTH:
-            zone.set_terrain(pos.x + 7, pos.y, '+', colors::BROWN, colors::BLACK, false);
-            zone.set_terrain(pos.x + 8, pos.y, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 7, pos.y, DOOR_NORTH_L, colors::BLACK, false);
+            zone.set_terrain(pos.x + 8, pos.y, DOOR_NORTH_R, colors::BLACK, false);
         case EAST:
-            zone.set_terrain(pos.x + 15, pos.y + 7, '+', colors::BROWN, colors::BLACK, false);
-            zone.set_terrain(pos.x + 15, pos.y + 8, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 15, pos.y + 7, DOOR_EAST_U, colors::BLACK, false);
+            zone.set_terrain(pos.x + 15, pos.y + 8, DOOR_EAST_L, colors::BLACK, false);
         case SOUTH:
-            zone.set_terrain(pos.x + 7, pos.y + 15, '+', colors::BROWN, colors::BLACK, false);
-            zone.set_terrain(pos.x + 8, pos.y + 15, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x + 7, pos.y + 15, DOOR_SOUTH_L, colors::BLACK, false);
+            zone.set_terrain(pos.x + 8, pos.y + 15, DOOR_SOUTH_R, colors::BLACK, false);
         case WEST:
-            zone.set_terrain(pos.x, pos.y + 7, '+', colors::BROWN, colors::BLACK, false);
-            zone.set_terrain(pos.x, pos.y + 8, '+', colors::BROWN, colors::BLACK, false);
+            zone.set_terrain(pos.x, pos.y + 7, DOOR_WEST_U, colors::BLACK, false);
+            zone.set_terrain(pos.x, pos.y + 8, DOOR_WEST_L, colors::BLACK, false);
         default:
             unreachable();
         }
     }
-    zone.set_terrain(pos.x, pos.y + 16, 'D', colors::WHITE, colors::BLACK, false);
-    zone.set_terrain(pos.x + 1, pos.y + 16, ':', colors::WHITE, colors::BLACK, false);
-    zone.set_terrain(pos.x + 2, pos.y + 16, (char) (self.distance_from_start / 10) + '0', colors::WHITE, colors::BLACK, false);
-    zone.set_terrain(pos.x + 3, pos.y + 16, (char) (self.distance_from_start % 10) + '0', colors::WHITE, colors::BLACK, false);
+    zone.set_terrain(pos.x, pos.y + 16, {'D', colors::WHITE, -1}, colors::BLACK, false);
+    zone.set_terrain(pos.x + 1, pos.y + 16, {':', colors::WHITE, -1}, colors::BLACK, false);
+    zone.set_terrain(pos.x + 2, pos.y + 16, {(char) (self.distance_from_start / 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
+    zone.set_terrain(pos.x + 3, pos.y + 16, {(char) (self.distance_from_start % 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
 
     if (self.type == EMPTY)
     {
@@ -138,15 +137,15 @@ fn void Room.generate(&self, Zone* zone, random::Pcg32Random* rng)
     switch (self.type)
     {
     case STARTING:
-        zone.set_terrain(pos.x + 15, pos.y + 16, 'S', colors::WHITE, colors::BLACK, false);
+        zone.set_terrain(pos.x + 15, pos.y + 16, {'S', colors::WHITE, -1}, colors::BLACK, false);
     case BOSS:
-        zone.set_terrain(pos.x + 15, pos.y + 16, 'B', colors::WHITE, colors::BLACK, false);
+        zone.set_terrain(pos.x + 15, pos.y + 16, {'B', colors::WHITE, -1}, colors::BLACK, false);
     case STANDARD:
-        zone.set_terrain(pos.x + 15, pos.y + 16, 'R', colors::WHITE, colors::BLACK, false);
+        zone.set_terrain(pos.x + 15, pos.y + 16, {'R', colors::WHITE, -1}, colors::BLACK, false);
     case SPECIAL:
-        zone.set_terrain(pos.x + 15, pos.y + 16, 'P', colors::WHITE, colors::BLACK, false);
+        zone.set_terrain(pos.x + 15, pos.y + 16, {'P', colors::WHITE, -1}, colors::BLACK, false);
     default:
-        zone.set_terrain(pos.x + 15, pos.y + 16, '?', colors::WHITE, colors::BLACK, false);
+        zone.set_terrain(pos.x + 15, pos.y + 16, {'?', colors::WHITE, -1}, colors::BLACK, false);
     }
 }
 

@@ -53,8 +53,7 @@ fn Zone* Monster.get_zone(&self) @dynamic => self.entity.get_zone();
 fn String Monster.get_name(&self) @dynamic => self.entity.get_name();
 fn IVec2 Monster.get_position(&self) @dynamic => self.entity.get_position();
 fn void Monster.set_position(&self, IVec2 pos) @dynamic => self.entity.set_position(pos);
-fn char Monster.get_glyph(&self) @dynamic => self.entity.get_glyph();
-fn rl::Color Monster.get_color(&self) @dynamic => self.entity.get_color();
+fn Appearance Monster.get_look(&self) @dynamic => self.entity.get_look();
 fn double Monster.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Monster.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 
@@ -65,17 +64,21 @@ fn void Monster.new_init(&self, Zone* z, MonsterType t, IVec2 p)
     char glyph = '?';
     rl::Color color = colors::MAGENTA;
 
+    Appearance[3] looks; 
+
     switch (t)
     {
     case GOBLIN:
         glyph = 'g';
         color = colors::GREEN;
         name = "Goblin";
+
+        looks = { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT };
     default:
         unreachable();
     }
 
-    self.entity.new_init(z, name, p, glyph, color);
+    self.entity.new_init(z, name, p, ...looks);
     self.nav.new_init();
 }
 

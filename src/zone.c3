@@ -9,8 +9,7 @@ import raylib5::rl;
 
 struct ZoneTerrain
 {
-    char glyph;
-    rl::Color fg;
+    Appearance look;
     rl::Color bg;
     bool passable;
 }
@@ -44,7 +43,7 @@ fn void Zone.new_init(&self, ZoneDescription desc)
     for (int i = 0; i < self.width * self.height; ++i)
     {
         ZoneCell* cell = &self.cells[i];
-        cell.terrain = { ' ', colors::WHITE, colors::BLACK, true };
+        cell.terrain = { EMPTY_LOOK, colors::BLACK, true };
         cell.entities.new_init();
     }
 
@@ -138,11 +137,10 @@ fn ZoneCell* Zone.get_cell(&self, int x, int y)
     return &self.cells[y * self.width + x];
 }
 
-fn void Zone.set_terrain(&self, int x, int y, char glyph, rl::Color fg, rl::Color bg, bool passable)
+fn void Zone.set_terrain(&self, int x, int y, Appearance look, rl::Color bg, bool passable)
 {
     ZoneCell* cell = self.get_cell(x, y);
-    cell.terrain.glyph = glyph;
-    cell.terrain.fg = fg;
+    cell.terrain.look = look;
     cell.terrain.bg = bg;
     cell.terrain.passable = passable;
 }
@@ -213,6 +211,15 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
 
     self.last_render_min = min;
 
+    if (textmode)
+    {
+        terminal.font = textmode_font;
+    }
+    else
+    {
+        terminal.font = sprite_font;
+    }
+
     VisibilityTracker* vis = null;
     EntityVisibility ev = (EntityVisibility) self.player;
     if (&ev.get_visibility)
@@ -233,14 +240,21 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
             ZoneTerrain terr = cell.terrain;
             bool is_visible = vis == null || vis.is_visible({x, y});
             terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
-            if (cell.entities.is_empty() || !is_visible)
             {
-                terminal.set_tile(term_x, term_y, terr.glyph, is_visible ? terr.fg : terr.fg.grayscale().darken(0.4f));
+                Appearance look = terr.look;
+                bool is_textmode = textmode || look.sprite_index < 0;
+                char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+                rl::Color color = is_textmode ? (is_visible ? look.color : look.color.grayscale().darken(0.4f)) : colors::WHITE;
+                terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
-            else
+            if (is_visible && !cell.entities.is_empty())
             {
                 Entity first = cell.entities.first()!!;
-                terminal.set_tile(term_x, term_y, first.get_glyph(), first.get_color());
+                Appearance look = first.get_look();
+                bool is_textmode = textmode || look.sprite_index < 0;
+                char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+                rl::Color color = is_textmode ? look.color : colors::WHITE;
+                terminal.set_tile(term_x, term_y, gl, color, 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
         }
     }
@@ -301,10 +315,10 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             IVec2 next = current.pos + n;
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
             ZoneCell* cell = self.get_cell(...next);
-            if (cell.terrain.glyph == '+' && next != to)
+            if (cell.terrain.look.glyph == '+' && next != to)
             {
                 Direction dir = get_door_direction(next);
-                next = next + dir.dir * 4;
+                next = next + dir.dir * 3;
                 cell = self.get_cell(...next);
             }
             if (!cell.terrain.passable && next != to) continue;
@@ -325,10 +339,10 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 IVec2 next = current.pos + n;
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
                 ZoneCell* cell = self.get_cell(...next);
-                if (cell.terrain.glyph == '+')
+                if (cell.terrain.look.glyph == '+')
                 {
                     Direction dir = get_door_direction(next);
-                    next = next + dir.dir * 4;
+                    next = next + dir.dir * 3;
                     cell = self.get_cell(...next);
                 }
                 if (!cell.terrain.passable && next != to) continue;
