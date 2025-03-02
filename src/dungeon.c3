@@ -468,8 +468,8 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), SMALL_ROCKS, false);
                     case ORE:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, ORE1, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ORE1, false);
+                        zone.set_object(...p0, ORE_ROCK1, false);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ORE_ROCK1, false);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ROCKS, false);
                     case FURNACE:
                         IVec2 p0 = get_random_pos(rng, min, {size.x, 1});

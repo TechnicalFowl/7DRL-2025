@@ -54,9 +54,9 @@ const Appearance FIRE_PIT = { 14 * 16 + 13, colors::GREY, 3 * 16 + 7 };
 const Appearance TORCH = { ':', colors::GREY, 4 * 16 + 7 };
 const Appearance GRAVE = { 14 * 16 + 10, colors::LIGHT_GREY, 6 * 16 + 15 };
 const Appearance GRAVE2 = { 14 * 16 + 15, colors::LIGHT_GREY, 7 * 16 + 15 };
-const Appearance ORE1 = { 4, { 195, 40, 195, 255}, 2 * 16 + 9 };
-const Appearance ORE2 = { 4, { 15, 191, 175, 255}, 2 * 16 + 11 };
-const Appearance ORE3 = { 4, { 243, 192, 37, 255}, 5 * 16 + 11 };
+const Appearance ORE_ROCK1 = { 4, { 195, 40, 195, 255}, 2 * 16 + 9 };
+const Appearance ORE_ROCK2 = { 4, { 15, 191, 175, 255}, 2 * 16 + 11 };
+const Appearance ORE_ROCK3 = { 4, { 243, 192, 37, 255}, 5 * 16 + 11 };
 
 const Appearance TRADER = { 'T', colors::DARK_GREEN, 4 * 16 + 4 };
 
@@ -100,3 +100,77 @@ const Appearance DARK_KNIGHT_POINT = { 'k', {89, 41, 122, 255}, 9 * 16 + 0 };
 const Appearance ASSASSIN_IDLE1 = { 'A', {89, 41, 122, 255}, 10 * 16 + 2 };
 const Appearance ASSASSIN_IDLE2 = { 'A', {89, 41, 122, 255}, 10 * 16 + 1 };
 const Appearance ASSASSIN_POINT = { 'A', {89, 41, 122, 255}, 10 * 16 + 0 };
+
+const Appearance ITEM_SWORD0 = { '/', colors::SILVER, 2 * 16 + 8 };
+const Appearance ITEM_SWORD1 = { '/', colors::PINK, 2 * 16 + 10 };
+const Appearance ITEM_SWORD2 = { '/', colors::CYAN, 2 * 16 + 12 };
+const Appearance ITEM_SWORD3 = { '/', colors::GOLD, 5 * 16 + 12 };
+
+const Appearance ITEM_STAFF0 = { '|', colors::SILVER, 3 * 16 + 8 };
+const Appearance ITEM_STAFF1 = { '|', colors::PINK, 3 * 16 + 10 };
+const Appearance ITEM_STAFF2 = { '|', colors::CYAN, 3 * 16 + 12 };
+const Appearance ITEM_STAFF3 = { '|', colors::GOLD, 6 * 16 + 12 };
+
+const Appearance ITEM_BOW0 = { '}', colors::SILVER, 4 * 16 + 8 };
+const Appearance ITEM_BOW1 = { '}', colors::PINK, 4 * 16 + 10 };
+const Appearance ITEM_BOW2 = { '}', colors::CYAN, 4 * 16 + 12 };
+const Appearance ITEM_BOW3 = { '}', colors::GOLD, 7 * 16 + 12 };
+
+const Appearance ITEM_INGOT1 = { '-', colors::PINK, 3 * 16 + 9 };
+const Appearance ITEM_INGOT2 = { '-', colors::CYAN, 3 * 16 + 11 };
+const Appearance ITEM_INGOT3 = { '-', colors::GOLD, 6 * 16 + 11 };
+
+const Appearance ITEM_ORE1 = { ':', colors::PINK, 4 * 16 + 9 };
+const Appearance ITEM_ORE2 = { ':', colors::CYAN, 4 * 16 + 11 };
+const Appearance ITEM_ORE3 = { ':', colors::GOLD, 7 * 16 + 11 };
+
+const Appearance ITEM_AXE = { '1', colors::SILVER, 5 * 16 + 7 };
+const Appearance ITEM_PICKAXE = { '7', colors::SILVER, 6 * 16 + 7 };
+const Appearance ITEM_KNIFE = { '\'', colors::SILVER, 5 * 16 + 8 };
+const Appearance ITEM_NEEDLE = {'`', colors::SILVER, 6 * 16 + 8 };
+const Appearance ITEM_GATESTONE = { 14 * 16 + 8, colors::PURPLE, 7 * 16 + 7 };
+const Appearance ITEM_FOOD = { '%', colors::GREEN, 8 * 16 + 7 };
+const Appearance ITEM_COINS = { '$', colors::GOLD, 9 * 16 + 8 };
+const Appearance ITEM_KEY = { '?', colors::GOLD, 9 * 16 + 9 };
+const Appearance ITEM_LOGS = { '=', colors::BROWN, 7 * 16 + 8 };
+
+const Appearance ITEM_AIR_RUNE = { '0', colors::SILVER, 5 * 16 + 6 };
+const Appearance ITEM_WATER_RUNE = { '0', colors::BLUE, 6 * 16 + 6 };
+const Appearance ITEM_EARTH_RUNE = { '0', colors::BROWN, 7 * 16 + 6 };
+const Appearance ITEM_FIRE_RUNE = { '0', colors::RED, 8 * 16 + 6 };
+
+const Appearance ITEM_AMULET1 = { '9', colors::GREEN, 5 * 16 + 9 };
+const Appearance ITEM_AMULET2 = { '9', colors::RED, 5 * 16 + 10 };
+const Appearance ITEM_AMULET3 = { '9', colors::PURPLE, 8 * 16 + 9 };
+
+const Appearance ITEM_RING1 = { '6', colors::GREEN, 6 * 16 + 9 };
+const Appearance ITEM_RING2 = { '6', colors::RED, 6 * 16 + 10 };
+const Appearance ITEM_RING3 = { '6', colors::PURPLE, 9 * 16 + 9 };
+
+const Appearance ITEM_POTION1 = { '&', colors::RED, 7 * 16 + 9 };
+const Appearance ITEM_POTION2 = { '&', colors::GREEN, 7 * 16 + 10 };
+const Appearance ITEM_POTION3 = { '&', colors::CYAN, 10 * 16 + 9 };
+
+const Appearance ITEM_HELM1 = { 15 * 16 + 12, colors::PINK, 8 * 16 + 10 };
+const Appearance ITEM_HELM2 = { 15 * 16 + 12, colors::CYAN, 8 * 16 + 11 };
+const Appearance ITEM_HELM3 = { 15 * 16 + 12, colors::GOLD, 8 * 16 + 12 };
+
+const Appearance ITEM_HOOD1 = { 15 * 16 + 13, colors::PINK, 9 * 16 + 10 };
+const Appearance ITEM_HOOD2 = { 15 * 16 + 13, colors::CYAN, 9 * 16 + 11 };
+const Appearance ITEM_HOOD3 = { 15 * 16 + 13, colors::GOLD, 9 * 16 + 12 };
+
+const Appearance ITEM_WIZARD_HAT1 = { '^', colors::PINK, 10 * 16 + 10 };
+const Appearance ITEM_WIZARD_HAT2 = { '^', colors::CYAN, 10 * 16 + 11 };
+const Appearance ITEM_WIZARD_HAT3 = { '^', colors::GOLD, 10 * 16 + 12 };
+
+const Appearance ITEM_BODY1 = { 16 + 14, colors::PINK, 13 };
+const Appearance ITEM_BODY2 = { 16 + 14, colors::CYAN, 14 };
+const Appearance ITEM_BODY3 = { 16 + 14, colors::GOLD, 15 };
+
+const Appearance ITEM_SHIELD1 = { 15 * 16 + 9, colors::PINK, 1 * 16 + 13 };
+const Appearance ITEM_SHIELD2 = { 15 * 16 + 9, colors::CYAN, 1 * 16 + 14 };
+const Appearance ITEM_SHIELD3 = { 15 * 16 + 9, colors::GOLD, 1 * 16 + 15 };
+
+const Appearance ITEM_LEGS1 = { 16 + 15, colors::PINK, 2 * 16 + 13 };
+const Appearance ITEM_LEGS2 = { 16 + 15, colors::CYAN, 2 * 16 + 14 };
+const Appearance ITEM_LEGS3 = { 16 + 15, colors::GOLD, 2 * 16 + 15 };

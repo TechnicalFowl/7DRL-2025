@@ -167,7 +167,8 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
             return do_move(move);
         }
     case ATTACK:
-        log(string::new_format("The %s attacks!", self.get_name()));
+        //log(string::new_format("The %s attacks!", self.get_name()));
+        break;
     default:
         unreachable();
     }
