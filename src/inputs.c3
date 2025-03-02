@@ -14,6 +14,8 @@ enum Input : inline int
     DIAGONAL_UP,
     DIAGONAL_DOWN,
 
+    WAIT,
+
     TOGGLE_ZOOM,
     TOGGLE_TEXTMODE,
 
@@ -66,6 +68,8 @@ fn void init_inputs()
     createBind(DIAGONAL_UP, rl::KEY_LEFT_SHIFT, rl::KEY_RIGHT_SHIFT);
     createBind(DIAGONAL_DOWN, rl::KEY_LEFT_CONTROL, rl::KEY_RIGHT_CONTROL);
 
+    createBind(WAIT, rl::KEY_SPACE);
+
     createBind(TOGGLE_ZOOM, rl::KEY_LEFT_ALT, rl::KEY_RIGHT_ALT);
     createBind(TOGGLE_TEXTMODE, rl::KEY_F1);
 
@@ -91,6 +95,7 @@ fn void update_inputs()
         bind.repeat = false;
         if (bind.down && !bind.was_down)
         {
+            //io::printfn("Input %s pressed", bind.input);
             bind.last_press_time = rl::getTime();
             bind.last_repeat_time = bind.last_press_time;
         }

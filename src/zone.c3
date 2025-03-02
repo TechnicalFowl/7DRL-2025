@@ -211,6 +211,29 @@ fn IVec2 Zone.find_nearest_empty(&self, IVec2 pos)
     return pos;
 }
 
+struct ZoneVisCB
+{
+    Zone* zone;
+    bool visible;
+}
+
+fn bool ZoneVisCB.line_cb(&self, IVec2 pos) @private
+{
+    if (!self.zone.get_cell(...pos).isPassable())
+    {
+        self.visible = false;
+        return false;
+    }
+    return true;
+}
+
+fn bool Zone.can_see(&self, IVec2 from, IVec2 to)
+{
+    ZoneVisCB cb_data = { self, true };
+    line(from, to, (LineCallback) &ZoneVisCB.line_cb, &cb_data);
+    return cb_data.visible;
+}
+
 struct ZoneRenderSettings
 {
     IVec2 offset;

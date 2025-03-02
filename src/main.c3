@@ -36,6 +36,8 @@ DungeonFloor* current_floor;
 
 bool devmode;
 
+double elapsed_time;
+
 fn void log(String message, rl::Color color = colors::WHITE)
 {
     log_messages.push({message, color});
@@ -283,6 +285,7 @@ fn void onRender()
 
     gui::push_topbar("The Depths of Daemonheim - 7DRL 2025");
     gui::push_bottombar(string::tformat("%-16s", g_zone.name));
+    gui::push_bottombar(string::tformat("T:%.0f", elapsed_time));
     //gui::push_bottombar(string::tformat("Player @ %d %d", ...pl.get_position()));
     //gui::push_bottombar(string::tformat("Mouse @ %d %d", ...pl.zone.get_mouse_position()));
     //gui::push_bottombar(string::tformat("FPS: %d", rl::getFPS()));
@@ -435,6 +438,7 @@ fn int main(String[] args)
             double elapsed = g_zone.update();
             if (elapsed > 0.0)
             {
+                elapsed_time += elapsed;
                 onUpdate(elapsed);
             }
             ZoneRenderSettings settings = { { 15 / map_zoom, 0} };

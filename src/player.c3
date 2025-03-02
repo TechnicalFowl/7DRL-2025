@@ -116,6 +116,11 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             }
         }
 
+        if (is_key_pressed(WAIT) || math::abs(rl::getMouseWheelMove()) > 0.01)
+        {
+            return do_wait(1.0);
+        }
+
         bool is_shift = is_key_down(DIAGONAL_UP);
         bool is_ctrl = is_key_down(DIAGONAL_DOWN);
         if (is_key_pressed(MOVE_UP))

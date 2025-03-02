@@ -20,6 +20,13 @@ fn int ivec2_distance(IVec2 a, IVec2 b)
     return math::abs(a[0] - b[0]) + math::abs(a[1] - b[1]);
 }
 
+fn double ivec2_fdistance(IVec2 a, IVec2 b)
+{
+    int dx = a[0] - b[0];
+    int dy = a[1] - b[1];
+    return math::sqrt(dx * dx + dy * dy);
+}
+
 fn IVec2 ivec2_min(IVec2 a, IVec2 b)
 {
     return { math::min(a[0], b[0]), math::min(a[1], b[1]) };
