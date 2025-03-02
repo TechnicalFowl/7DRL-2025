@@ -5,7 +5,7 @@ import std::collections::map;
 import std::io;
 import raylib5::rl;
 
-enum Input : int
+enum Input : inline int
 {
     MOVE_UP,
     MOVE_DOWN,
@@ -16,7 +16,10 @@ enum Input : int
 
     TOGGLE_ZOOM,
     TOGGLE_TEXTMODE,
+
+    // dev-mode
     PATH_TO_BOSS,
+    REVEAL_MAP,
 }
 
 struct KeyBind
@@ -64,7 +67,9 @@ fn void init_inputs()
 
     createBind(TOGGLE_ZOOM, rl::KEY_LEFT_ALT, rl::KEY_RIGHT_ALT);
     createBind(TOGGLE_TEXTMODE, rl::KEY_F1);
+
     createBind(PATH_TO_BOSS, rl::KEY_F11);
+    createBind(REVEAL_MAP, rl::KEY_F12);
 }
 
 fn void update_inputs()
@@ -75,7 +80,7 @@ fn void update_inputs()
         bind.down = false;
         foreach (k: bind.keys)
         {
-            if (rl::isKeyDown(k))
+            if (rl::isKeyDown((KeyboardKey) k))
             {
                 bind.down = true;
                 break;

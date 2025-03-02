@@ -21,15 +21,15 @@ fn IVec2 Player.get_position(&self) @dynamic => self.entity.get_position();
 fn void Player.set_position(&self, IVec2 pos) @dynamic
 {
     self.entity.set_position(pos);
-    self.vis.sweep(pos, 10);
+    self.vis.sweep(pos, 7);
 }
 fn Appearance Player.get_look(&self) @dynamic => self.entity.get_look();
 fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 
 // Implement EntityVisibility
-//fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
-//fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 10);
+fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
+fn void Player.on_post_load(&self) @dynamic => self.vis.sweep(self.get_position(), 7);
 
 fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
@@ -62,6 +62,11 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
 
 fn Action Player.next_action(&self, double max_time) @dynamic
 {
+    if (is_key_pressed(REVEAL_MAP, false))
+    {
+        self.vis.explored.clear_to(true);
+    }
+
     if (rl::isMouseButtonPressed(rl::MouseButton.LEFT))
     {
         if (self.nav.is_idle())

@@ -22,8 +22,8 @@ fn void set_font_directory(String path)
 }
 
 <*
-@require size[0] > 0, "Font width must be greater than zero"
-@require size[1] > 0, "Font height must be greater than zero"
+@require size[0] > 0: "Font width must be greater than zero"
+@require size[1] > 0: "Font height must be greater than zero"
 *>
 fn Font*! get_font(String font_name, IVec2 size)
 {

@@ -42,8 +42,8 @@ struct BitBoard
 }
 
 <*
-@require w > 0, "Width must be greater than zero"
-@require h > 0, "Height must be greater than zero"
+@require w > 0: "Width must be greater than zero"
+@require h > 0: "Height must be greater than zero"
 *>
 fn void BitBoard.new_init(&self, usz w, usz h)
 {
@@ -62,9 +62,15 @@ fn void BitBoard.clear(&self)
     mem::set(self.data, 0, (((self.width * self.height) - 1) / 64 + 1) * 8);
 }
 
+fn void BitBoard.clear_to(&self, bool value)
+{
+    char fill = value ? 0xFF : 0x00;
+    mem::set(self.data, fill, (((self.width * self.height) - 1) / 64 + 1) * 8);
+}
+
 <*
-@require w > 0, "Width must be greater than zero"
-@require h > 0, "Height must be greater than zero"
+@require w > 0: "Width must be greater than zero"
+@require h > 0: "Height must be greater than zero"
 *>
 fn void BitBoard.resize(&self, usz w, usz h)
 {
@@ -75,8 +81,8 @@ fn void BitBoard.resize(&self, usz w, usz h)
 }
 
 <*
-@require pos[0] >= 0, pos[0] < self.width, "Invalid position x"
-@require pos[1] >= 0, pos[1] < self.height, "Invalid position y"
+@require pos[0] >= 0, pos[0] < self.width: "Invalid position x"
+@require pos[1] >= 0, pos[1] < self.height: "Invalid position y"
 *>
 fn bool BitBoard.get(&self, IVec2 pos)
 {
@@ -87,8 +93,8 @@ fn bool BitBoard.get(&self, IVec2 pos)
 }
 
 <*
-@require pos[0] >= 0, pos[0] < self.width, "Invalid position x"
-@require pos[1] >= 0, pos[1] < self.height, "Invalid position y"
+@require pos[0] >= 0, pos[0] < self.width: "Invalid position x"
+@require pos[1] >= 0, pos[1] < self.height: "Invalid position y"
 *>
 fn void BitBoard.set(&self, IVec2 pos, bool value)
 {

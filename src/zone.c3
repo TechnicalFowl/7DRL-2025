@@ -43,7 +43,7 @@ fn void Zone.new_init(&self, ZoneDescription desc)
     for (int i = 0; i < self.width * self.height; ++i)
     {
         ZoneCell* cell = &self.cells[i];
-        cell.terrain = { EMPTY_LOOK, colors::BLACK, true };
+        cell.terrain = { EMPTY_LOOK, colors::BLACK, false };
         cell.entities.new_init();
     }
 
@@ -244,7 +244,11 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 Appearance look = terr.look;
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
-                rl::Color color = is_textmode ? (is_visible ? look.color : look.color.grayscale().darken(0.4f)) : colors::WHITE;
+                rl::Color color = is_textmode ? look.color : colors::WHITE;
+                if (!is_visible)
+                {
+                    //color = color.grayscale().darken(0.4f);
+                }
                 terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
             if (is_visible && !cell.entities.is_empty())
@@ -288,10 +292,10 @@ const IVec2[4] DIAGONAL_NEIGHBORS = { {-1, -1}, {1, -1}, {-1, 1}, {1, 1} };
 
 <*
 @param [&in] results
-@require from[0] >= 0, from[0] < self.width, "From x out of bounds"
-@require from[1] >= 0, from[1] < self.height, "From y out of bounds"
-@require to[0] >= 0, to[0] < self.width, "To x out of bounds"
-@require to[1] >= 0, to[1] < self.height, "To y out of bounds"
+@require from[0] >= 0, from[0] < self.width: "From x out of bounds"
+@require from[1] >= 0, from[1] < self.height: "From y out of bounds"
+@require to[0] >= 0, to[0] < self.width: "To x out of bounds"
+@require to[1] >= 0, to[1] < self.height: "To y out of bounds"
 *>
 fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diagonal_moves=true, bool reverse=false)
 {
@@ -390,8 +394,8 @@ struct ZoneDescription
 }
 
 <*
-@require width > 0, "Zone width must be greater than 0"
-@require height > 0, "Zone height must be greater than 0"
+@require width > 0: "Zone width must be greater than 0"
+@require height > 0: "Zone height must be greater than 0"
 *>
 fn void ZoneDescription.new_init(&self, String name, int width, int height)
 {

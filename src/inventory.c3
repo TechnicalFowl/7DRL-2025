@@ -2,7 +2,7 @@ module dg;
 
 import std::collections::map;
 
-enum Item : int
+enum Item : inline int
 {
     SWORD,
     BOW,

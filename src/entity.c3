@@ -3,6 +3,7 @@ module dg;
 import std::collections::list;
 import std::collections::map;
 import std::io;
+import std::math;
 
 import raylib5::rl;
 
@@ -201,20 +202,29 @@ struct VisibilityTrackerCB
     VisibilityTracker* vis;
     int step;
     int range;
+    int pen_depth;
 }
 
 fn bool VisibilityTrackerCB.line_cb(&self, IVec2 pos) @private
 {
     self.vis.set_visible(pos, true);
     self.vis.set_explored(pos, true);
-    return self.step++ < self.range && self.vis.zone.get_cell(...pos).terrain.passable;
+    if (self.step++ >= self.range) return false;
+    if (!self.vis.zone.get_cell(...pos).terrain.passable)
+    {
+        self.pen_depth++;
+        if (self.pen_depth > 1) return false;
+        return true;
+    }
+    self.pen_depth = 0;
+    return true;
 }
 
 fn void VisibilityTracker.sweep_line(&self, IVec2 from, IVec2 to)
 {
     self.set_visible(from, true);
     self.set_explored(from, true);
-    VisibilityTrackerCB cb_data = { self, 0, ivec2_distance(from, to) };
+    VisibilityTrackerCB cb_data = { self, 0, ivec2_distance(from, to), 0 };
     line(from, to, (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
 }
 
@@ -224,18 +234,18 @@ fn void VisibilityTracker.sweep(&self, IVec2 pos, int range)
     self.set_visible(pos, true);
     self.set_explored(pos, true);
     
-    VisibilityTrackerCB cb_data = { self, 0, range };
+    VisibilityTrackerCB cb_data = { self, 0, range, 0 };
 
     // Box sweep
     for (int i = -range; i <= range; ++i)
     {
-        cb_data.step = 0;
+        cb_data.step = 0; cb_data.pen_depth = 0; cb_data.range = range + math::abs(range) / 2;
         line(pos, ivec2_clamp(pos + {i, -range}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
-        cb_data.step = 0;
+        cb_data.step = 0; cb_data.pen_depth = 0; cb_data.range = range + math::abs(range) / 2;
         line(pos, ivec2_clamp(pos + {i, range}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
-        cb_data.step = 0;
+        cb_data.step = 0; cb_data.pen_depth = 0; cb_data.range = range + math::abs(range) / 2;
         line(pos, ivec2_clamp(pos + {-range, i}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
-        cb_data.step = 0;
+        cb_data.step = 0; cb_data.pen_depth = 0; cb_data.range = range + math::abs(range) / 2;
         line(pos, ivec2_clamp(pos + {range, i}, {0, 0}, {self.zone.width - 1, self.zone.height - 1}), (LineCallback) &VisibilityTrackerCB.line_cb, &cb_data);
     }
 }

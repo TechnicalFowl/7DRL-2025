@@ -177,7 +177,9 @@ fn int open_simplex_noise(long seed, OSN_Context **ctx)
 
     ulong seedU = seed;
     for (i = 0; i < 256; i++)
+    {
         source[i] = (short) i;
+    }
     seedU = seedU * 6364136223846793005u64 + 1442695040888963407u64;
     seedU = seedU * 6364136223846793005u64 + 1442695040888963407u64;
     seedU = seedU * 6364136223846793005u64 + 1442695040888963407u64;

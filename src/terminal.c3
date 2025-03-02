@@ -33,7 +33,7 @@ struct VirtualTerminal
 }
 
 <*
-@require w > 0, h > 0, "Width and height must be greater than zero"
+@require w > 0, h > 0: "Width and height must be greater than zero"
 *>
 fn void VirtualTerminal.new_init(&self, int w, int h, Font* font)
 {
@@ -264,10 +264,11 @@ fn void VirtualTerminal.render(&self, float zoom)
                 (float) x * self.font.width * zoom, (float) y * self.font.height * zoom,
                 self.font.width * zoom, self.font.height * zoom
             };
-            rl::drawRectangleRec(dest, cell.bg);
+            if (cell.bg.a > 0) rl::drawRectangleRec(dest, cell.bg);
             for (int i = 0; i < 2; i++)
             {
                 VCellLayer* layer = &cell.layers[i];
+                if (layer.fg.a == 0) continue;
                 self.drawTile(x, y, layer.glyph, layer.fg, zoom, layer.override ? layer.override : self.font);
             }
         }

@@ -102,7 +102,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
         door.type = UNLOCKED;
 
         Door* ndoor = &neighbor_room.doors[FLIP[neighbor.ordinal].ordinal - 1];
-        ndoor.direction = FLIP[neighbor];
+        ndoor.direction = FLIP[neighbor.ordinal];
         ndoor.type = UNLOCKED;
 
         placed.set(next, true);

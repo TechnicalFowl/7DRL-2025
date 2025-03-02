@@ -5,7 +5,7 @@ import std::io;
 import std::math;
 import raylib5::rl;
 
-enum MonsterType : int
+enum MonsterType : inline int
 {
     GOBLIN,
 }
