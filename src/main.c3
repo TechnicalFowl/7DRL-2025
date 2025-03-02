@@ -174,6 +174,11 @@ fn void GeneratorData.generate(&self, Zone* zone)
     IVec2 boss_pos = farthest[random::next_in_range(&rng, 0, (int) farthest.len() - 1)];
     Room* boss_room = current_floor.rooms.get(boss_pos)!!;
     boss_room.type = BOSS;
+
+    OSN_Context* ctx;
+    open_simplex_noise((long) rng.next_long(), &ctx);
+
+    float noise_scale = 12;
     
     for (int y = 0; y < 8; ++y)
     {
@@ -221,7 +226,30 @@ fn void GeneratorData.generate(&self, Zone* zone)
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, FLOOR_STONE, colors::BLACK, true);
+                        double v0 = open_simplex_noise2(ctx, (double) (pos.x + rx) / noise_scale, (double) (pos.y + ry) / noise_scale);
+                        double v1 = open_simplex_noise2(ctx, (double) (pos.x + rx) / noise_scale * 2, (double) (pos.y + ry) / noise_scale * 2);
+                        double v2 = open_simplex_noise2(ctx, (double) (pos.x + rx) / noise_scale * 4, (double) (pos.y + ry) / noise_scale * 4);
+
+                        double fval = v0 * (4.0 / 7.0) + v1 * (2.0 / 7.0) + v2 * (1.0 / 7.0);
+
+                        Appearance floor;
+                        if (fval < -0.3)
+                        {
+                            floor = FLOOR_SLABS;
+                        }
+                        else if (fval < 0.0)
+                        {
+                            floor = FLOOR_STONE;
+                        }
+                        else if (fval < 0.2)
+                        {
+                            floor = FLOOR_DIRT;
+                        }
+                        else
+                        {
+                            floor = FLOOR_GRASS;
+                        }
+                        zone.set_terrain(pos.x + rx, pos.y + ry, floor, colors::BLACK, true);
                     }
                 }
             }

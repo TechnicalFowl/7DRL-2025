@@ -124,28 +124,33 @@ fn void Room.generate(&self, Zone* zone, random::Pcg32Random* rng)
             unreachable();
         }
     }
-    zone.set_terrain(pos.x, pos.y + 16, {'D', colors::WHITE, -1}, colors::BLACK, false);
-    zone.set_terrain(pos.x + 1, pos.y + 16, {':', colors::WHITE, -1}, colors::BLACK, false);
-    zone.set_terrain(pos.x + 2, pos.y + 16, {(char) (self.distance_from_start / 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
-    zone.set_terrain(pos.x + 3, pos.y + 16, {(char) (self.distance_from_start % 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
 
-    if (self.type == EMPTY)
+    bool debug_notes = false;
+    if (debug_notes)
     {
-        self.type = random::next_in_range(rng, 0, 5) == 0 ? SPECIAL : STANDARD;
-    }
+        zone.set_terrain(pos.x, pos.y + 16, {'D', colors::WHITE, -1}, colors::BLACK, false);
+        zone.set_terrain(pos.x + 1, pos.y + 16, {':', colors::WHITE, -1}, colors::BLACK, false);
+        zone.set_terrain(pos.x + 2, pos.y + 16, {(char) (self.distance_from_start / 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
+        zone.set_terrain(pos.x + 3, pos.y + 16, {(char) (self.distance_from_start % 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
 
-    switch (self.type)
-    {
-    case STARTING:
-        zone.set_terrain(pos.x + 15, pos.y + 16, {'S', colors::WHITE, -1}, colors::BLACK, false);
-    case BOSS:
-        zone.set_terrain(pos.x + 15, pos.y + 16, {'B', colors::WHITE, -1}, colors::BLACK, false);
-    case STANDARD:
-        zone.set_terrain(pos.x + 15, pos.y + 16, {'R', colors::WHITE, -1}, colors::BLACK, false);
-    case SPECIAL:
-        zone.set_terrain(pos.x + 15, pos.y + 16, {'P', colors::WHITE, -1}, colors::BLACK, false);
-    default:
-        zone.set_terrain(pos.x + 15, pos.y + 16, {'?', colors::WHITE, -1}, colors::BLACK, false);
+        if (self.type == EMPTY)
+        {
+            self.type = random::next_in_range(rng, 0, 5) == 0 ? SPECIAL : STANDARD;
+        }
+
+        switch (self.type)
+        {
+        case STARTING:
+            zone.set_terrain(pos.x + 15, pos.y + 16, {'S', colors::WHITE, -1}, colors::BLACK, false);
+        case BOSS:
+            zone.set_terrain(pos.x + 15, pos.y + 16, {'B', colors::WHITE, -1}, colors::BLACK, false);
+        case STANDARD:
+            zone.set_terrain(pos.x + 15, pos.y + 16, {'R', colors::WHITE, -1}, colors::BLACK, false);
+        case SPECIAL:
+            zone.set_terrain(pos.x + 15, pos.y + 16, {'P', colors::WHITE, -1}, colors::BLACK, false);
+        default:
+            zone.set_terrain(pos.x + 15, pos.y + 16, {'?', colors::WHITE, -1}, colors::BLACK, false);
+        }
     }
 }
 

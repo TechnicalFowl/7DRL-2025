@@ -126,9 +126,16 @@ fn void VirtualTerminal.set_tile(&self, int x, int y, char glyph, rl::Color fg=c
     if (priority >= cell.bg_priority)
     {
         VCellLayer* l = &cell.layers[1];
-        if (priority >= l.fg_priority)
+        if (priority > l.fg_priority)
         {
             cell.layers[0] = cell.layers[1];
+            l.glyph = glyph;
+            l.fg = fg;
+            l.fg_priority = priority;
+            l.override = override_font;
+        }
+        else if (priority == l.fg_priority)
+        {
             l.glyph = glyph;
             l.fg = fg;
             l.fg_priority = priority;
