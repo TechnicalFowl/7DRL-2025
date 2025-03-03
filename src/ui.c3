@@ -114,37 +114,35 @@ fn void draw_ui()
         inv_use_source = -1;
         inv_action = NO_ACTION;
     }
-    else if (can_get_input && inv_use_source == -1 && inv_action == NO_ACTION)
-    {
-        if (is_key_pressed(EQUIP, allow_repeat: false, consume_press: true))
-        {
-            inv_action = ACT_EQUIP;
-        }
-        else if (is_key_pressed(DROP, allow_repeat: false, consume_press: true))
-        {
-            inv_action = ACT_DROP;
-        }
-        else if (is_key_pressed(USE, allow_repeat: false, consume_press: true))
-        {
-            inv_action = ACT_USE;
-        }
-        else if (is_key_pressed(EXAMINE, allow_repeat: false, consume_press: true))
-        {
-            inv_action = ACT_EXAMINE;
-        }
-        inv_action_changed = gui::gui_data.frame_index;
-    }
 
     if (can_get_input && is_key_pressed(EQUIPMENT_TAB, false))
     {
         sidebar_tab = EQUIPMENT;
+        inv_use_source = -1;
+        inv_action = NO_ACTION;
     }
 
     if (sidebar_tab == EQUIPMENT)
     {
-        inv_use_source = -1;
-        inv_action = NO_ACTION;
+        if (can_get_input && inv_use_source == -1 && inv_action == NO_ACTION)
+        {
+            if (is_key_pressed(EQUIP, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_EQUIP;
+            }
+            else if (is_key_pressed(DROP, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_DROP;
+            }
+            else if (is_key_pressed(EXAMINE, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_EXAMINE;
+            }
+            inv_action_changed = gui::gui_data.frame_index;
+        }
+
         gui::text("");
+        bool valid_inv_action = (inv_action != NO_ACTION && gui::gui_data.frame_index - 1 > inv_action_changed);
         for (int i = 0; i < pl.equipment.len; ++i)
         {
             ItemStack stack = pl.equipment[i];
@@ -154,14 +152,48 @@ fn void draw_ui()
                 gui::same_line();
                 ItemInfo* info = &g_items.items[stack.item];
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
-                if (gui::button(string::tformat("%s%s", info.name, count)))
+                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0)))
                 {
-                    inv_minimenu_target = i;
-                    minimenu_height = sidebar_window.cursor.y;
-                    gui::open_popup("Equipped Menu");
+                    if (inv_action != NO_ACTION)
+                    {
+                        switch (inv_action)
+                        {
+                        case ACT_EQUIP:
+                            pl.equipment[i] = { NO_ITEM, 0, 0 };
+                            if (pl.is_inventory_full(stack))
+                            {
+                                log(string::new_format("You drop the %s on the ground.", info.name));
+                                g_zone.drop_item(...pl.get_position(), stack);
+                            }
+                            else
+                            {
+                                pl.add_item(stack);
+                            }
+                        case ACT_DROP:
+                            g_zone.drop_item(...pl.get_position(), stack);
+                            pl.inventory[i] = { NO_ITEM, 0, 0 };
+                        case ACT_USE:
+                            break;
+                        case ACT_EXAMINE:
+                            break;
+                        case NO_ACTION:
+                            unreachable();
+                        }
+                        inv_action = NO_ACTION;
+                    }
+                    else
+                    {
+                        inv_minimenu_target = i;
+                        minimenu_height = sidebar_window.cursor.y;
+                        gui::open_popup("Equipped Menu");
+                    }
                 }
             }
         }
+        
+        gui::vertical_separator(27);
+        gui::text(string::tformat("%5s: Unequip Item         %5s: Drop Item", getKeyName(get_bind(EQUIP)[0]), getKeyName(get_bind(DROP)[0])));
+        gui::text(string::tformat("                            %5s: Examine Item", getKeyName(get_bind(EXAMINE)[0])));
     }
 
     if (gui::begin_popup("Equipped Menu", {spos.x - 33, math::min(term_height - 10, minimenu_height)}, {32, 8}))
@@ -215,15 +247,38 @@ fn void draw_ui()
     if (can_get_input && is_key_pressed(INVENTORY_TAB, false))
     {
         sidebar_tab = INVENTORY;
+        inv_use_source = -1;
+        inv_action = NO_ACTION;
     }
 
     if (sidebar_tab == INVENTORY)
     {
+        if (can_get_input && inv_use_source == -1 && inv_action == NO_ACTION)
+        {
+            if (is_key_pressed(EQUIP, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_EQUIP;
+            }
+            else if (is_key_pressed(DROP, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_DROP;
+            }
+            else if (is_key_pressed(USE, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_USE;
+            }
+            else if (is_key_pressed(EXAMINE, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_EXAMINE;
+            }
+            inv_action_changed = gui::gui_data.frame_index;
+        }
+
         gui::text("");
         bool valid_inv_action = (inv_action != NO_ACTION && gui::gui_data.frame_index - 1 > inv_action_changed) || inv_use_source != -1;
         for (int i = 0; i < pl.inventory.len; ++i)
         {
-            ItemStack* stack = &pl.inventory[i];
+            ItemStack stack = pl.inventory[i];
             if (stack.item != NO_ITEM)
             {
                 ItemInfo* info = &g_items.items[stack.item];
@@ -240,14 +295,14 @@ fn void draw_ui()
                         switch (inv_action)
                         {
                         case ACT_EQUIP:
-                            ItemStack replaced = pl.equip(*stack);
+                            ItemStack replaced = pl.equip(stack);
                             pl.inventory[i] = { NO_ITEM, 0, 0 };
                             if (replaced.item != NO_ITEM)
                             {
                                 pl.add_item(replaced);
                             }
                         case ACT_DROP:
-                            g_zone.drop_item(...pl.get_position(), *stack);
+                            g_zone.drop_item(...pl.get_position(), stack);
                             pl.inventory[i] = { NO_ITEM, 0, 0 };
                         case ACT_USE:
                             inv_use_source = i;
@@ -271,6 +326,10 @@ fn void draw_ui()
                 gui::text("");
             }
         }
+        
+        gui::vertical_separator(9);
+        gui::text(string::tformat("%5s: Equip Item           %5s: Drop Item", getKeyName(get_bind(EQUIP)[0]), getKeyName(get_bind(DROP)[0])));
+        gui::text(string::tformat("%5s: Use Item             %5s: Examine Item", getKeyName(get_bind(USE)[0]), getKeyName(get_bind(EXAMINE)[0])));
     }
 
     if (gui::begin_popup("Item Menu", {spos.x - 33, math::min(term_height - 10, minimenu_height)}, {32, 8}))
@@ -459,7 +518,7 @@ fn void draw_ui()
         }
         if (gui::button("Novite Bow (2x Novite Ingot, 1x Logs)", rl::KEY_C, disabled: !pl.has_item(INGOT1, 2) || !pl.has_item(LOGS)))
         {
-            if (do_smith({ BOW1, 1, 0 }, { INGOT1, 1, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+            if (do_smith({ BOW1, 1, 0 }, { INGOT1, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
         }
         if (gui::button("Fractite Sword (3x Fractite Ingot)", rl::KEY_D, disabled: !pl.has_item(INGOT2, 3)))
         {

@@ -158,6 +158,13 @@ fn void same_line(int x = 1)
     window.cursor = window.last_end + {x, 0};
 }
 
+fn void vertical_separator(int y)
+{
+    if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
+    GuiWindow* window = gui_data.window_stack.last()!!;
+    window.cursor = { window.newline_start, window.cursor.y + y };
+}
+
 fn void text(String text, rl::Color color=colors::BLANK)
 {
     if (color == colors::BLANK) color = get_color(GuiColor.WINDOW_TEXT);
