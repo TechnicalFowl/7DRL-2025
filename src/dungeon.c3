@@ -162,8 +162,29 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     switch (self.type)
     {
     case STARTING:
+        zone.fill_terrain(pos + {1, 1}, {6, 6}, TERR_BRICKS);
         zone.set_object(pos.x + 4, pos.y + 4, OBJ_TRADER);
         if (random::next_in_range(rng, 0, 10) == 0) zone.set_object(pos.x + 12, pos.y + 4, OBJ_ANVIL);
+
+        zone.drop_item(pos.x + 3, pos.y + 1, starting_room_weapons.roll(rng));
+        if (random::next_in_range(rng, 0, 1) == 0) zone.drop_item(pos.x + 2, pos.y + 1, starting_room_weapons.roll(rng));
+        if (random::next_in_range(rng, 0, 1) == 0) zone.drop_item(pos.x + 4, pos.y + 1, starting_room_weapons.roll(rng));
+
+        int supplies0 = random::next_in_range(rng, 2, 5);
+        for (int i = 0; i < supplies0; ++i)
+        {
+            zone.drop_item(pos.x + 1, pos.y + 2, starting_room_supplies.roll(rng));
+        }
+        int supplies1 = random::next_in_range(rng, 2, 5);
+        for (int i = 0; i < supplies1; ++i)
+        {
+            zone.drop_item(pos.x + 1, pos.y + 3, starting_room_supplies.roll(rng));
+        }
+        int supplies2 = random::next_in_range(rng, 2, 5);
+        for (int i = 0; i < supplies2; ++i)
+        {
+            zone.drop_item(pos.x + 1, pos.y + 4, starting_room_supplies.roll(rng));
+        }
     case BOSS:
         self.spawn_exit_hole(zone);
         switch (boss_ordering[floor.depth])

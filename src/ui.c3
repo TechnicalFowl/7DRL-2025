@@ -1,5 +1,6 @@
 module dg;
 
+import std::collections::list;
 import std::math;
 import raylib5::rl;
 
@@ -31,6 +32,8 @@ enum InvAction
 InvAction inv_action;
 ulong inv_action_changed;
 
+List(<ItemStack>) storage_contents;
+
 fn bool ui_wants_keys()
 {
     return gui::want_key_input() || inv_action != NO_ACTION || inv_use_source != -1;
@@ -41,6 +44,7 @@ fn void init_ui()
     sidebar_tab = INVENTORY;
     sidebar_width = 54;
     inv_use_source = -1;
+    storage_contents.new_init();
 }
 
 fn void draw_ui()
@@ -283,7 +287,7 @@ fn void draw_ui()
             {
                 ItemInfo* info = &g_items.items[stack.item];
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
-                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: inv_use_source != -1 && inv_use_source == i))
+                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: (inv_use_source != -1 && inv_use_source == i) || (inv_action == ACT_EQUIP && info.stats == null)))
                 {
                     if (inv_use_source != -1)
                     {
@@ -543,6 +547,47 @@ fn void draw_ui()
         if (gui::button("Promethium Bow (2x Promethium Ingot, 1x Logs)", rl::KEY_I, disabled: !pl.has_item(INGOT3, 2) || !pl.has_item(LOGS)))
         {
             if (do_smith({ BOW3, 1, 0 }, { INGOT3, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+        }
+        gui::end_popup();
+    }
+    
+    popup_size = {100, 15};
+    if (gui::begin_popup("Search Crate", {term_width / 3 - popup_size.x / 2, term_height / 2 - popup_size.y / 2}, popup_size))
+    {
+        if (storage_contents.is_empty())
+        {
+            gui::close_current_popup();
+        }
+        gui::same_line(20);
+        if (gui::button("Close", get_bind(CANCEL)[0]))
+        {
+            foreach (i: storage_contents)
+            {
+                g_zone.drop_item(...pl.get_position(), i);
+            }
+            storage_contents.clear();
+            gui::close_current_popup();
+        }
+        gui::text("");
+        int i = 0;
+        foreach (stack: storage_contents)
+        {
+            ItemInfo* info = &g_items.items[stack.item];
+            int last_len = info.name.len + 2;
+            if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + i)))
+            {
+                if (pl.is_inventory_full(stack))
+                {
+                    log("Your inventory is full!");
+                }
+                else
+                {
+                    pl.add_item(stack);
+                    storage_contents.remove_at(i);
+                    break;
+                }
+            }
+            i++;
         }
         gui::end_popup();
     }

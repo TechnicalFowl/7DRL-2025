@@ -1,6 +1,7 @@
 module dg;
 
 import std::collections::map;
+import std::math;
 
 enum Item : inline int
 {
@@ -189,4 +190,266 @@ fn void ItemCache.new_init(&self)
         assert(info.item.ordinal == i, "ItemCache: Item in %d slot is not correct (expected %s)", i, Item.names[i]);
         self.item_names.set(info.name, info.item);
     }
+
+    init_drop_tables();
+}
+
+struct DropEntry
+{
+    ItemStack item;
+    int weight;
+}
+
+struct DropTable
+{
+    DropEntry[] entries;
+    DropTable*[] subtables;
+    int total_weight;
+}
+
+fn void DropTable.new_init(&self, DropTable*[] subtables, DropEntry... entries)
+{
+    self.subtables = mem::new_array(DropTable*, subtables.len);
+    self.entries = mem::new_array(DropEntry, entries.len);
+    self.total_weight = 0;
+    int i = 0;
+    foreach (sub: subtables)
+    {
+        self.subtables[i++] = sub;
+        self.total_weight += sub.total_weight;
+    }
+    i = 0;
+    foreach (entry : entries)
+    {
+        self.entries[i++] = entry;
+        self.total_weight += entry.weight;
+    }
+}
+
+fn ItemStack DropTable.get_item(&self, int* weight, int roll)
+{
+    foreach (entry : self.entries)
+    {
+        *weight += entry.weight;
+        if (roll < *weight)
+        {
+            return entry.item;
+        }
+    }
+    return { Item.NO_ITEM, 0, 0 };
+}
+
+fn bool item_uses_metadata_for_range(Item item)
+{
+    return item == COINS || item == AIR_RUNE || item == WATER_RUNE || item == EARTH_RUNE || item == FIRE_RUNE;
+}
+
+fn ItemStack DropTable.roll(&self, random::Pcg32Random* rng)
+{
+    int roll = random::next_in_range(rng, 0, self.total_weight - 1);
+    int weight = 0;
+    foreach (entry : self.entries)
+    {
+        weight += entry.weight;
+        if (roll < weight)
+        {
+            if (item_uses_metadata_for_range(entry.item.item))
+            {
+                int count = random::next_in_range(rng, entry.item.count - entry.item.metadata, entry.item.count + entry.item.metadata);
+                return { entry.item.item, count, 0 };
+            }
+            return entry.item;
+        }
+    }
+    foreach (sub : self.subtables)
+    {
+        ItemStack item = sub.get_item(&weight, roll);
+        if (item.item != Item.NO_ITEM)
+        {
+            if (item_uses_metadata_for_range(item.item))
+            {
+                int count = random::next_in_range(rng, item.count - item.metadata, item.count + item.metadata);
+                return { item.item, count, 0 };
+            }
+            return item;
+        }
+    }
+    return { Item.NO_ITEM, 0, 0 };
+}
+
+DropTable starting_room_weapons;
+DropTable starting_room_supplies;
+
+DropTable[10] crate_loot;
+
+fn void init_drop_tables()
+{
+    starting_room_weapons.new_init({},
+        { { SWORD0, 1, 0 }, 300 },
+        { { BOW0, 1, 0 }, 200 },
+        { { STAFF0, 1, 0 }, 100 },
+        { { SWORD1, 1, 0 }, 3 },
+        { { BOW1, 1, 0 }, 2 },
+        { { STAFF1, 1, 0 }, 1 },
+    );
+    starting_room_supplies.new_init({},
+        { { FOOD, 1, 0}, 20 },
+        { { PICKAXE, 1, 0}, 5 },
+        { { AXE, 1, 0}, 5 },
+        { { COINS, 10, 5}, 5 },
+        { { COINS, 50, 20}, 5 },
+        { { AIR_RUNE, 20, 5}, 5 },
+        { { WATER_RUNE, 20, 5}, 5 },
+        { { EARTH_RUNE, 20, 5}, 5 },
+        { { FIRE_RUNE, 20, 5}, 5 },
+    );
+
+    crate_loot[0].new_init({ &starting_room_supplies },
+        { { COINS, 50, 20}, 5 },
+        { { ORE1, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT1, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 5 },
+    );
+    crate_loot[1].new_init({ &starting_room_supplies },
+        { { COINS, 50, 20}, 5 },
+        { { ORE1, 1, 0}, 5 },
+        { { ORE2, 1, 0}, 1 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT1, 1, 0}, 5 },
+        { { INGOT2, 1, 0}, 1 },
+        { { POTION1, 1, 0}, 5 },
+        { { POTION2, 1, 0}, 1 },
+    );
+    crate_loot[2].new_init({ &starting_room_supplies },
+        { { COINS, 50, 20}, 5 },
+        { { ORE1, 1, 0}, 3 },
+        { { ORE2, 1, 0}, 3 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT1, 1, 0}, 3 },
+        { { INGOT2, 1, 0}, 3 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 1 },
+        { { AMULET1, 1, 0}, 1 },
+    );
+    crate_loot[3].new_init({ &starting_room_supplies },
+        { { COINS, 70, 20}, 5 },
+        { { ORE2, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT2, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 1 },
+        { { AMULET1, 1, 0}, 1 },
+    );
+    crate_loot[4].new_init({ &starting_room_supplies },
+        { { COINS, 90, 20}, 5 },
+        { { ORE2, 1, 0}, 5 },
+        { { ORE3, 1, 0}, 1 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT2, 1, 0}, 5 },
+        { { INGOT3, 1, 0}, 1 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 2 },
+        { { RING2, 1, 0}, 1 },
+        { { AMULET1, 1, 0}, 2 },
+        { { AMULET2, 1, 0}, 1 },
+    );
+    crate_loot[5].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE2, 1, 0}, 3 },
+        { { ORE3, 1, 0}, 3 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT2, 1, 0}, 3 },
+        { { INGOT3, 1, 0}, 3 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 4 },
+        { { RING2, 1, 0}, 2 },
+        { { AMULET1, 1, 0}, 4 },
+        { { AMULET2, 1, 0}, 2 },
+    );
+    crate_loot[5].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE2, 1, 0}, 1 },
+        { { ORE3, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT2, 1, 0}, 1 },
+        { { INGOT3, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 3 },
+        { { RING2, 1, 0}, 3 },
+        { { RING3, 1, 0}, 1 },
+        { { AMULET1, 1, 0}, 3 },
+        { { AMULET2, 1, 0}, 3 },
+        { { AMULET3, 1, 0}, 1 },
+    );
+    crate_loot[6].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE3, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT3, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 2 },
+        { { RING2, 1, 0}, 2 },
+        { { RING3, 1, 0}, 2 },
+        { { AMULET1, 1, 0}, 2 },
+        { { AMULET2, 1, 0}, 2 },
+        { { AMULET3, 1, 0}, 2 },
+    );
+    crate_loot[7].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE3, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT3, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 2 },
+        { { RING2, 1, 0}, 2 },
+        { { RING3, 1, 0}, 2 },
+        { { AMULET1, 1, 0}, 2 },
+        { { AMULET2, 1, 0}, 2 },
+        { { AMULET3, 1, 0}, 2 },
+    );
+    crate_loot[8].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE3, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT3, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 2 },
+        { { RING2, 1, 0}, 2 },
+        { { RING3, 1, 0}, 2 },
+        { { AMULET1, 1, 0}, 2 },
+        { { AMULET2, 1, 0}, 2 },
+        { { AMULET3, 1, 0}, 2 },
+    );
+    crate_loot[9].new_init({ &starting_room_supplies },
+        { { COINS, 100, 20}, 5 },
+        { { ORE3, 1, 0}, 5 },
+        { { LOGS, 1, 0}, 5 },
+        { { INGOT3, 1, 0}, 5 },
+        { { POTION1, 1, 0}, 3 },
+        { { POTION2, 1, 0}, 3 },
+        { { POTION3, 1, 0}, 3 },
+        { { RING1, 1, 0}, 2 },
+        { { RING2, 1, 0}, 2 },
+        { { RING3, 1, 0}, 2 },
+        { { AMULET1, 1, 0}, 2 },
+        { { AMULET2, 1, 0}, 2 },
+        { { AMULET3, 1, 0}, 2 },
+    );
 }

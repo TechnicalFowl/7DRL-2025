@@ -275,6 +275,17 @@ fn void Zone.set_terrain(&self, int x, int y, TerrainType terr)
     cell.terrain = terr;
 }
 
+fn void Zone.fill_terrain(&self, IVec2 pos, IVec2 size, TerrainType terr)
+{
+    for (int y = pos[1]; y < pos[1] + size[1]; ++y)
+    {
+        for (int x = pos[0]; x < pos[0] + size[0]; ++x)
+        {
+            self.set_terrain(x, y, terr);
+        }
+    }
+}
+
 fn void Zone.set_object(&self, int x, int y, ObjectType obj)
 {
     ZoneCell* cell = self.get_cell(x, y);

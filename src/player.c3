@@ -521,6 +521,65 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             log("You chop down the tree.");
         }
     }
+    else if (cell.object == OBJ_CRATE)
+    {
+        gui::open_popup("Search Crate");
+        cell.object = OBJ_OPEN_CRATE;
+        log("You search the crate.");
+
+        int count = random::next_in_range(&g_rng, 3, 5);
+        DropTable* table = &crate_loot[current_floor.depth];
+        
+        for (int i = 0; i < count; ++i)
+        {
+            ItemStack item = table.roll(&g_rng);
+            storage_contents.push(item);
+        }
+    }
+    else if (cell.object == OBJ_OPEN_CRATE)
+    {
+        log("The crate is empty.");
+    }
+    else if (cell.object == OBJ_STUMP)
+    {
+        log("The remains of a tree.");
+    }
+    else if (cell.object == OBJ_ROCKS)
+    {
+        log("There is no ore available in this rock.");
+    }
+    else if (cell.object == OBJ_FURNACE)
+    {
+        bool done = false;
+        for (int i = 0; i < INVENTORY_SIZE; ++i)
+        {
+            ItemStack* item = &player.inventory[i];
+            if (item.item == ORE1 || item.item == ORE2 || item.item == ORE3)
+            {
+                ItemStack result = { Item.INGOT1 + (item.item - Item.ORE1), 1, 0 };
+                if (player.is_inventory_full(result))
+                {
+                    log("Your inventory is full.");
+                }
+                else
+                {
+                    player.add_item(result);
+                    item.count -= 1;
+                    if (item.count == 0)
+                    {
+                        item.item = NO_ITEM;
+                    }
+                    log("You smelt the ore into an ingot.");
+                }
+                done = true;
+                break;
+            }
+        }
+        if (!done)
+        {
+            log("You have no ore to smelt.");
+        }
+    }
     else
     {
         log("Nothing interesting happens.");
