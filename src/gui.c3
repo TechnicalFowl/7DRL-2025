@@ -172,7 +172,7 @@ fn void text(String text, rl::Color color=colors::BLANK)
     window.cursor = { window.newline_start, window.cursor[1] + 1 };
 }
 
-fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::BLANK)
+fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::BLANK, bool disabled=false)
 {
     if (color == colors::BLANK) color = get_color(GuiColor.WINDOW_TEXT);
     if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
@@ -186,9 +186,10 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
 
     int x = rl::getMouseX() / (dg::font_size / 2);
     int y = rl::getMouseY() / dg::font_size;
-    bool hovered = x >= window.cursor.x && x < window.cursor.x + btn_w && y == window.cursor.y;
+    bool hovered = x >= window.cursor.x && x < window.cursor.x + btn_w && y == window.cursor.y && !disabled;
     if (hovered) color = get_color(GuiColor.HOVERED_TEXT);
-    bool can_receive_input = gui_data.can_receive_input(window) && window.open_frame < gui_data.frame_index - 1;
+    if (disabled) color = colors::DARK_GREY;
+    bool can_receive_input = !disabled && gui_data.can_receive_input(window) && window.open_frame < gui_data.frame_index - 1;
     bool pressed = hovered && can_receive_input && rl::isMouseButtonPressed(rl::MouseButton.LEFT);
     if (can_receive_input && shortcut != 0 && rl::isKeyPressed(shortcut)) pressed = true;
 

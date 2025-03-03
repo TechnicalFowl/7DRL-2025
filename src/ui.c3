@@ -18,11 +18,29 @@ int inv_minimenu_target;
 int minimenu_height;
 
 IVec2 grab_target;
+int inv_use_source;
+
+enum InvAction
+{
+    NO_ACTION,
+    ACT_EQUIP,
+    ACT_DROP,
+    ACT_USE,
+    ACT_EXAMINE,
+}
+InvAction inv_action;
+ulong inv_action_changed;
+
+fn bool ui_wants_keys()
+{
+    return gui::want_key_input() || inv_action != NO_ACTION || inv_use_source != -1;
+}
 
 fn void init_ui()
 {
     sidebar_tab = INVENTORY;
     sidebar_width = 54;
+    inv_use_source = -1;
 }
 
 fn void draw_ui()
@@ -37,6 +55,26 @@ fn void draw_ui()
     if (debug_info_bar)
     {
         gui::push_bottombar(string::tformat("K:%s M:%s", gui::want_key_input() ? "true" : "false", gui::want_mouse_input() ? "true" : "false"));
+    }
+    else if (inv_use_source != -1)
+    {
+        gui::push_bottombar(string::tformat("Use item on what? (Select in inventory, or bump into target, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+    }
+    else if (inv_action != NO_ACTION)
+    {
+        switch (inv_action)
+        {
+        case ACT_EQUIP:
+            gui::push_bottombar(string::tformat("Equip which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+        case ACT_DROP:
+            gui::push_bottombar(string::tformat("Drop which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+        case ACT_USE:
+            gui::push_bottombar(string::tformat("Use which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+        case ACT_EXAMINE:
+            gui::push_bottombar(string::tformat("Examine which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+        case NO_ACTION:
+            unreachable();
+        }
     }
     else
     {
@@ -71,6 +109,32 @@ fn void draw_ui()
 
     bool can_get_input = gui::gui_data.can_receive_input(sidebar_window);
 
+    if (can_get_input && (inv_use_source != -1 || inv_action != NO_ACTION) && is_key_pressed(CANCEL, false))
+    {
+        inv_use_source = -1;
+        inv_action = NO_ACTION;
+    }
+    else if (can_get_input && inv_use_source == -1 && inv_action == NO_ACTION)
+    {
+        if (is_key_pressed(EQUIP, allow_repeat: false, consume_press: true))
+        {
+            inv_action = ACT_EQUIP;
+        }
+        else if (is_key_pressed(DROP, allow_repeat: false, consume_press: true))
+        {
+            inv_action = ACT_DROP;
+        }
+        else if (is_key_pressed(USE, allow_repeat: false, consume_press: true))
+        {
+            inv_action = ACT_USE;
+        }
+        else if (is_key_pressed(EXAMINE, allow_repeat: false, consume_press: true))
+        {
+            inv_action = ACT_EXAMINE;
+        }
+        inv_action_changed = gui::gui_data.frame_index;
+    }
+
     if (can_get_input && is_key_pressed(EQUIPMENT_TAB, false))
     {
         sidebar_tab = EQUIPMENT;
@@ -78,6 +142,8 @@ fn void draw_ui()
 
     if (sidebar_tab == EQUIPMENT)
     {
+        inv_use_source = -1;
+        inv_action = NO_ACTION;
         gui::text("");
         for (int i = 0; i < pl.equipment.len; ++i)
         {
@@ -154,6 +220,7 @@ fn void draw_ui()
     if (sidebar_tab == INVENTORY)
     {
         gui::text("");
+        bool valid_inv_action = (inv_action != NO_ACTION && gui::gui_data.frame_index - 1 > inv_action_changed) || inv_use_source != -1;
         for (int i = 0; i < pl.inventory.len; ++i)
         {
             ItemStack* stack = &pl.inventory[i];
@@ -161,11 +228,42 @@ fn void draw_ui()
             {
                 ItemInfo* info = &g_items.items[stack.item];
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
-                if (gui::button(string::tformat("%s%s", info.name, count)))
+                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: inv_use_source != -1 && inv_use_source == i))
                 {
-                    inv_minimenu_target = i;
-                    minimenu_height = sidebar_window.cursor.y;
-                    gui::open_popup("Item Menu");
+                    if (inv_use_source != -1)
+                    {
+                        pl.use_item_pair(inv_use_source, i);
+                        inv_use_source = -1;
+                    }
+                    else if (inv_action != NO_ACTION)
+                    {
+                        switch (inv_action)
+                        {
+                        case ACT_EQUIP:
+                            ItemStack replaced = pl.equip(*stack);
+                            pl.inventory[i] = { NO_ITEM, 0, 0 };
+                            if (replaced.item != NO_ITEM)
+                            {
+                                pl.add_item(replaced);
+                            }
+                        case ACT_DROP:
+                            g_zone.drop_item(...pl.get_position(), *stack);
+                            pl.inventory[i] = { NO_ITEM, 0, 0 };
+                        case ACT_USE:
+                            inv_use_source = i;
+                        case ACT_EXAMINE:
+                            break;
+                        case NO_ACTION:
+                            unreachable();
+                        }
+                        inv_action = NO_ACTION;
+                    }
+                    else
+                    {
+                        inv_minimenu_target = i;
+                        minimenu_height = sidebar_window.cursor.y;
+                        gui::open_popup("Item Menu");
+                    }
                 }
             }
             else
@@ -201,6 +299,7 @@ fn void draw_ui()
         }
         if (gui::button("Use", get_bind(USE)[0]))
         {
+            inv_use_source = inv_minimenu_target;
             gui::close_current_popup();
         }
         if (gui::button("Examine", get_bind(EXAMINE)[0]))
@@ -250,6 +349,8 @@ fn void draw_ui()
     {
         if (is_key_pressed(SPAWN_ITEM, false))
         {
+            inv_use_source = -1;
+            inv_action = NO_ACTION;
             gui::open_popup("Spawn Item");
         }
     }
@@ -306,8 +407,7 @@ fn void draw_ui()
     popup_size = {60, 5 + (int) cell.dropped_items.len()};
     if (gui::begin_popup("Grab Item", {term_width / 3 - popup_size.x / 2, term_height / 2 - popup_size.y / 2}, popup_size))
     {
-        gui::text("Grab Item");
-        gui::same_line(5);
+        gui::same_line(20);
         if (gui::button("Close", get_bind(CANCEL)[0]))
         {
             gui::close_current_popup();
@@ -339,4 +439,80 @@ fn void draw_ui()
         }
         gui::end_popup();
     }
+
+    popup_size = {100, 15};
+    if (gui::begin_popup("Smith Item", {term_width / 3 - popup_size.x / 2, term_height / 3 - popup_size.y / 2}, popup_size))
+    {
+        gui::same_line(20);
+        if (gui::button("Close", get_bind(CANCEL)[0]))
+        {
+            gui::close_current_popup();
+        }
+        gui::text("");
+        if (gui::button("Novite Sword (3x Novite Ingot)", rl::KEY_A, disabled: !pl.has_item(INGOT1, 3)))
+        {
+            if (do_smith({ SWORD1, 1, 0 }, { INGOT1, 3, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Novite Staff (1x Novite Ingot, 1x Logs, 10x Air Runes)", rl::KEY_B, disabled: !pl.has_item(INGOT1) || !pl.has_item(LOGS) || !pl.has_item(AIR_RUNE, 10)))
+        {
+            if (do_smith({ STAFF1, 1, 0 }, { INGOT1, 1, 0 }, { LOGS, 1, 0 }, { AIR_RUNE, 10, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Novite Bow (2x Novite Ingot, 1x Logs)", rl::KEY_C, disabled: !pl.has_item(INGOT1, 2) || !pl.has_item(LOGS)))
+        {
+            if (do_smith({ BOW1, 1, 0 }, { INGOT1, 1, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Fractite Sword (3x Fractite Ingot)", rl::KEY_D, disabled: !pl.has_item(INGOT2, 3)))
+        {
+            if (do_smith({ SWORD2, 1, 0 }, { INGOT2, 3, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Fractite Staff (1x Fractite Ingot, 1x Logs, 50x Water Runes)", rl::KEY_E, disabled: !pl.has_item(INGOT2) || !pl.has_item(LOGS) || !pl.has_item(WATER_RUNE, 50)))
+        {
+            if (do_smith({ STAFF2, 1, 0 }, { INGOT2, 1, 0 }, { LOGS, 1, 0 }, { WATER_RUNE, 50, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Fractite Bow (2x Fractite Ingot, 1x Logs)", rl::KEY_F, disabled: !pl.has_item(INGOT2, 2) || !pl.has_item(LOGS)))
+        {
+            if (do_smith({ BOW2, 1, 0 }, { INGOT2, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Promethium Sword (3x Promethium Ingot)", rl::KEY_G, disabled: !pl.has_item(INGOT3, 3)))
+        {
+            if (do_smith({ SWORD3, 1, 0 }, { INGOT3, 3, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Promethium Staff (1x Promethium Ingot, 1x Logs, 100x Fire Runes)", rl::KEY_H, disabled: !pl.has_item(INGOT3) || !pl.has_item(LOGS) || !pl.has_item(FIRE_RUNE, 100)))
+        {
+            if (do_smith({ STAFF3, 1, 0 }, { INGOT3, 1, 0 }, { LOGS, 1, 0 }, { FIRE_RUNE, 100, 0 })) gui::close_current_popup();
+        }
+        if (gui::button("Promethium Bow (2x Promethium Ingot, 1x Logs)", rl::KEY_I, disabled: !pl.has_item(INGOT3, 2) || !pl.has_item(LOGS)))
+        {
+            if (do_smith({ BOW3, 1, 0 }, { INGOT3, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+        }
+        gui::end_popup();
+    }
+}
+
+fn bool do_smith(ItemStack result, ItemStack... ingredients)
+{
+    Player* pl = (Player*) g_zone.player;
+    for (int i = 0; i < ingredients.len; ++i)
+    {
+        if (!pl.has_item(ingredients[i].item, ingredients[i].count))
+        {
+            return false;
+        }
+    }
+    for (int i = 0; i < ingredients.len; ++i)
+    {
+        bool removed = pl.remove_item(ingredients[i]);
+        assert(removed);
+    }
+    ItemStack remaining = pl.add_item(result);
+    if (remaining.item != NO_ITEM)
+    {
+        for (int i = 0; i < ingredients.len; ++i)
+        {
+            pl.add_item(ingredients[i]);
+        }
+        return false;
+    }
+    log(string::new_format("You smith a %s!", g_items.items[result.item].name));
+    return true;
 }

@@ -181,14 +181,20 @@ fn bool is_key_down(Input i)
     return bind.down;
 }
 
-fn bool is_key_pressed(Input i, bool allow_repeat=true)
+fn bool is_key_pressed(Input i, bool allow_repeat=true, bool consume_press=false)
 {
     KeyBind*! bind = g_keymap.binds.get(i.ordinal);
     if (catch bind)
     {
         return false;
     }
-    return bind.down && (!bind.was_down || (allow_repeat && bind.repeat));
+    bool pressed = bind.down && (!bind.was_down || (allow_repeat && bind.repeat));
+    if (pressed && consume_press)
+    {
+        bind.was_down = bind.down;
+        bind.repeat = false;
+    }
+    return pressed;
 }
 
 fn String getKeyName(KeyboardKey k)

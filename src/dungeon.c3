@@ -163,6 +163,7 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     {
     case STARTING:
         zone.set_object(pos.x + 4, pos.y + 4, OBJ_TRADER);
+        if (random::next_in_range(rng, 0, 0) == 0) zone.set_object(pos.x + 12, pos.y + 4, OBJ_ANVIL);
     case BOSS:
         self.spawn_exit_hole(zone);
         switch (boss_ordering[floor.depth])
