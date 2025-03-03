@@ -38,6 +38,15 @@ bool devmode;
 
 double elapsed_time;
 
+enum GameState
+{
+    PLAYING,
+    MAIN_MENU,
+    GAME_OVER,
+    VICTORY,
+}
+GameState game_state;
+
 struct Settings
 {
     double hover_tooltip_delay;

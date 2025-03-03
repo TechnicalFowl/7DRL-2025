@@ -31,6 +31,13 @@ struct MonsterInfo
     Appearance[3] looks;
 
     double range;
+    int max_health;
+
+    CombatStyle style;
+    int attack;
+    int strength;
+    int defence;
+    int[3] defence_bonus;
 }
 
 struct MonsterCache
@@ -43,15 +50,15 @@ MonsterCache g_mobs;
 fn void MonsterCache.new_init(&self)
 {
     self.mob_names.new_init();
-    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5 };
-    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4 };
-    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5 };
-    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5 };
-    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7 };
-    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6 };
-    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7 };
-    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5 };
-    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4 };
+    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 7, MELEE, 10, 10, 10, {0, -10, 10} };
+    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 7, RANGED, 10, 10, 10, {-10, 0, 10} };
+    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 5, MAGIC, 10, 10, 10, {10, 0, -10} };
+    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 30, 30, 30, {0, -40, 40} };
+    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 30, 30, 30, {-40, 0, 40} };
+    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 30, 30, 30, {40, 0, -40} };
+    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 50, 50, 50, {50, 0, -50} };
+    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 50, 50, 50, {0, -50, 50} };
+    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 50, 50, 50, {-50, 0, 50} };
     
     for (int i = 0; i < MONSTER_COUNT; ++i)
     {
@@ -75,6 +82,8 @@ struct Monster (Entity)
 
     MonsterType type;
     MonsterInfo* info;
+
+    int health;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -85,17 +94,24 @@ fn void Monster.set_position(&self, IVec2 pos) @dynamic => self.entity.set_posit
 fn Appearance Monster.get_look(&self) @dynamic => self.entity.get_look();
 fn double Monster.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Monster.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
+fn bool Monster.is_dead(&self) @dynamic => self.health <= 0;
 
 fn void Monster.new_init(&self, Zone* z, MonsterType t, IVec2 p)
 {
     self.type = t;
     self.info = &g_mobs.mobs[t.ordinal];
     self.entity.new_init(z, self.info.name, p, ...self.info.looks);
+    self.health = self.info.max_health;
 }
 
 fn void Monster.free(&self) @dynamic
 {
     self.entity.free();
+}
+
+fn void Monster.take_damage(&self, int dmg)
+{
+    self.health -= dmg;
 }
 
 enum Behavior

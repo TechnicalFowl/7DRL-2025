@@ -16,8 +16,13 @@ struct Player (Entity)
 
     VisibilityTracker vis;
 
+    int health;
+
     ItemStack[INVENTORY_SIZE] inventory;
     ItemStack[EquipmentSlot.elements] equipment;
+
+    int[Skill.elements] level;
+    int[Skill.elements] experience;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -32,6 +37,7 @@ fn void Player.set_position(&self, IVec2 pos) @dynamic
 fn Appearance Player.get_look(&self) @dynamic => self.entity.get_look();
 fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
+fn bool Player.is_dead(&self) @dynamic => self.health <= 0;
 
 // Implement EntityVisibility
 fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
@@ -55,6 +61,9 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
     self.nav_delay = 0.1f;
 
     self.vis.new_init(z);
+
+    self.give_exp(HITPOINTS, EXPERIENCE_TABLE[10], supress_message: true);
+    self.health = self.level[Skill.HITPOINTS];
 }
 
 fn void Player.free(&self) @dynamic
@@ -184,12 +193,41 @@ fn void Player.use_item_pair(&self, int first, int second)
     log("Nothing interesting happens.");
 }
 
+fn void Player.give_exp(&self, Skill skill, int exp, bool supress_message=false)
+{
+    self.experience[skill] += exp;
+    int prev_level = self.level[skill];
+    self.level[skill] = get_level(self.experience[skill]);
+    if (prev_level != self.level[skill])
+    {
+        if (!supress_message) log(string::new_format("You have reached level %d in %s.", self.level[skill], skill));
+        if (skill == HITPOINTS)
+        {
+            self.health += (self.level[skill] - prev_level);
+        }
+    }
+}
+
 fn Action Player.moveOrInteract(&self, IVec2 dir)
 {
     ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
     if (cell.isPassable())
     {
         return do_move(dir);
+    }
+    else
+    {
+        return do_interact(dir);
+    }
+}
+
+fn Action Player.tryInteract(&self, IVec2 dir)
+{
+    ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    if (cell.isPassable())
+    {
+        inv_use_source = -1;
+        return null;
     }
     else
     {
@@ -332,6 +370,65 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 return null;
             }
         }
+        else if (inv_use_source != -1)
+        {
+            bool is_shift = is_key_down(DIAGONAL_UP);
+            bool is_ctrl = is_key_down(DIAGONAL_DOWN);
+            if (is_key_pressed(MOVE_UP))
+            {
+                return self.tryInteract({0, -1});
+            }
+            if (is_key_pressed(MOVE_DOWN))
+            {
+                return self.tryInteract({0, 1});
+            }
+            if (is_key_pressed(MOVE_LEFT))
+            {
+                if (is_shift)
+                {
+                    return self.tryInteract({-1, -1});
+                }
+                else if (is_ctrl)
+                {
+                    return self.tryInteract({-1, 1});
+                }
+                else
+                {
+                    return self.tryInteract({-1, 0});
+                }
+            }
+            if (is_key_pressed(MOVE_RIGHT))
+            {
+                if (is_shift)
+                {
+                    return self.tryInteract({1, -1});
+                }
+                else if (is_ctrl)
+                {
+                    return self.tryInteract({1, 1});
+                }
+                else
+                {
+                    return self.tryInteract({1, 0});
+                }
+            }
+            if (is_key_pressed(MOVE_UP_RIGHT))
+            {
+                return self.tryInteract({1, -1});
+            }
+            if (is_key_pressed(MOVE_DOWN_RIGHT))
+            {
+                return self.tryInteract({1, 1});
+            }
+            if (is_key_pressed(MOVE_DOWN_LEFT))
+            {
+                return self.tryInteract({-1, 1});
+            }
+            if (is_key_pressed(MOVE_UP_LEFT))
+            {
+                return self.tryInteract({-1, -1});
+            }
+        }
     }
     else
     {
@@ -378,7 +475,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         {
             if (item.item == ORE1 || item.item == ORE2 || item.item == ORE3)
             {
-                ItemStack result = { Item.INGOT1 + (item.item - Item.ORE1), 1, 0 };
+                int ore_tier = (item.item - Item.ORE1);
+                ItemStack result = { Item.INGOT1 + ore_tier, 1, 0 };
                 if (player.is_inventory_full(result))
                 {
                     log("Your inventory is full.");
@@ -392,9 +490,19 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                         player.inventory[inv_use_source] = { NO_ITEM, 0, 0 };
                     }
                     log("You smelt the ore into an ingot.");
+                    player.give_exp(SMITHING, 175 * (1 << ore_tier));
                 }
                 inv_use_source = -1;
                 return;
+            }
+            else if (item.item == LOGS)
+            {
+                log("You burn the logs in the furnace.");
+                player.inventory[inv_use_source].count -= 1;
+                if (player.inventory[inv_use_source].count == 0)
+                {
+                    player.inventory[inv_use_source] = { NO_ITEM, 0, 0 };
+                }
             }
         }
         else if (cell.object == OBJ_ORE_ROCK1 || cell.object == OBJ_ORE_ROCK2 || cell.object == OBJ_ORE_ROCK3)
@@ -405,7 +513,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 inv_use_source = -1;
                 return;
             }
-            ItemStack result_item = { Item.ORE1 + (cell.object - OBJ_ORE_ROCK1), 1, 0 };
+            int ore_tier = (cell.object - OBJ_ORE_ROCK1);
+            ItemStack result_item = { Item.ORE1 + ore_tier, 1, 0 };
             if (player.is_inventory_full(result_item))
             {
                 log("Your inventory is full.");
@@ -415,6 +524,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 player.add_item(result_item);
                 cell.object = OBJ_ROCKS;
                 log("You mine the ore.");
+                player.give_exp(MINING, 400 * (1 << ore_tier));
             }
             inv_use_source = -1;
             return;
@@ -437,9 +547,38 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 player.add_item(result_item);
                 cell.object = OBJ_STUMP;
                 log("You chop down the tree.");
+                player.give_exp(WOODCUTTING, 250);
             }
             inv_use_source = -1;
             return;
+        }
+        else if (cell.object == OBJ_STUMP)
+        {
+            if (item.item == AXE)
+            {
+                log("You can't get any more wood from this stump.");
+                inv_use_source = -1;
+                return;
+            }
+        }
+        else if (cell.object == OBJ_ROCKS)
+        {
+            if (item.item == PICKAXE)
+            {
+                log("You can't get any useful ore from these rocks.");
+                cell.object = OBJ_SMALL_ROCKS;
+                inv_use_source = -1;
+                return;
+            }
+        }
+        else if (is_wall_terrain(cell.terrain))
+        {
+            if (item.item == PICKAXE)
+            {
+                log("The bricks are too hard to break.");
+                inv_use_source = -1;
+                return;
+            }
         }
         log("Nothing interesting happens.");
         inv_use_source = -1;
@@ -486,7 +625,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             log("You need a pickaxe to mine ore.");
             return;
         }
-        ItemStack item = { Item.ORE1 + (cell.object - OBJ_ORE_ROCK1), 1, 0 };
+        int ore_tier = (cell.object - OBJ_ORE_ROCK1);
+        ItemStack item = { Item.ORE1 + ore_tier, 1, 0 };
         if (player.is_inventory_full(item))
         {
             log("Your inventory is full.");
@@ -496,6 +636,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             player.add_item(item);
             cell.object = OBJ_ROCKS;
             log("You mine the ore.");
+            player.give_exp(MINING, 400 * (1 << ore_tier));
         }
     }
     else if (cell.object == OBJ_ANVIL)
@@ -519,6 +660,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             player.add_item(item);
             cell.object = OBJ_STUMP;
             log("You chop down the tree.");
+            player.give_exp(WOODCUTTING, 250);
         }
     }
     else if (cell.object == OBJ_CRATE)
@@ -556,7 +698,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             ItemStack* item = &player.inventory[i];
             if (item.item == ORE1 || item.item == ORE2 || item.item == ORE3)
             {
-                ItemStack result = { Item.INGOT1 + (item.item - Item.ORE1), 1, 0 };
+                int ore_tier = (item.item - Item.ORE1);
+                ItemStack result = { Item.INGOT1 + ore_tier, 1, 0 };
                 if (player.is_inventory_full(result))
                 {
                     log("Your inventory is full.");
@@ -570,6 +713,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                         item.item = NO_ITEM;
                     }
                     log("You smelt the ore into an ingot.");
+                    player.give_exp(SMITHING, 175 * (1 << ore_tier));
                 }
                 done = true;
                 break;
@@ -578,6 +722,36 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         if (!done)
         {
             log("You have no ore to smelt.");
+        }
+    }
+    else if (!cell.entities.is_empty())
+    {
+        Entity target = cell.entities[0];
+        if (target.type == Monster.typeid)
+        {
+            Monster* monster = (Monster*) target;
+            int damage = player.calculate_melee_damage(monster);
+            String success = damage > 0 ? "attack" : "miss";
+            monster.take_damage(damage);
+            String killed = "";
+            if (monster.is_dead())
+            {
+                killed = " and killed";
+            }
+            DString ending;
+            ending.temp_init();
+            if (damage < 5) ending.append_char('.');
+            for (int i = 0; i < damage/5; ++i)
+            {
+                ending.append_char('!');
+            }
+            log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending));
+            player.give_exp(MELEE, damage * 30);
+            player.give_exp(HITPOINTS, damage * 10);
+        }
+        else
+        {
+            log("Nothing interesting happens.");
         }
     }
     else
@@ -591,4 +765,46 @@ fn InteractAction* do_interact(IVec2 dir)
     InteractAction* move_action = mem::temp_alloc(InteractAction);
     move_action.dir = dir;
     return move_action;
+}
+
+fn int[3] Player.get_style_stats(&self, CombatStyle style)
+{
+    int[3] stats = {0, 0, 0};
+    foreach (item: self.equipment)
+    {
+        if (item.item != NO_ITEM)
+        {
+            ItemInfo* info = &g_items.items[item.item];
+            assert(info.stats);
+            stats[0] += info.stats.accuracy[style];
+            stats[1] += info.stats.strength[style];
+            stats[2] += info.stats.defence[style];
+        }
+    }
+    return stats;
+}
+
+fn int Player.calculate_melee_damage(&self, Monster* target)
+{
+    MonsterInfo* target_info = target.info;
+    int str = self.level[Skill.MELEE] + 9;
+    int[3] stats = self.get_style_stats(MELEE);
+    int max_hit = (str * (stats[1] + 64) + 320) / 640;
+    int atk = self.level[Skill.MELEE] + 9;
+    int attack_roll = atk * (stats[0] + 64);
+    int defence_roll = (target_info.defence + 9) * (target_info.defence_bonus[0] + 16);
+    float hit_chance;
+    if (attack_roll > defence_roll)
+    {
+        hit_chance = 1.0f - (defence_roll + 2.0f) / (2.0f * (attack_roll + 1.0f));
+    }
+    else
+    {
+        hit_chance = attack_roll / (2.0f * (defence_roll + 1.0f));
+    }
+    bool hit = random::next_float(&g_rng) < hit_chance;
+    io::printfn("Attach: max_hit %d, atk %d, attack_roll %d, defence_roll %d, hit_chance %.01f%%, hit %s", max_hit, atk, attack_roll, defence_roll, hit_chance * 100, hit ? "yes" : "no");
+    if (!hit) return 0;
+    int damage = random::next_in_range(&g_rng, 1, max_hit);
+    return damage;
 }

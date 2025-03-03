@@ -76,6 +76,7 @@ interface Entity
     fn Appearance get_look();
     fn double get_idle_time();
     fn void give_idle_time(double time);
+    fn bool is_dead();
 
     fn Action next_action(double max_time);
 }
@@ -117,6 +118,7 @@ fn void EntityCommon.give_idle_time(&self, double time) @dynamic
 {
     self.idle_time += time;
 }
+fn bool EntityCommon.is_dead(&self) @dynamic => false;
 
 fn void EntityCommon.new_init(&self, Zone* z, String n, IVec2 p, Appearance idle1, Appearance idle2, Appearance point)
 {
@@ -128,7 +130,6 @@ fn void EntityCommon.new_init(&self, Zone* z, String n, IVec2 p, Appearance idle
 
 fn void EntityCommon.free(&self) @dynamic
 {
-    self.name.free();
 }
 
 fn Action EntityCommon.next_action(&self, double max_time) @dynamic

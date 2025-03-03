@@ -86,7 +86,8 @@ fn void draw_ui()
         gui::push_bottombar(string::tformat("T:%.0f", elapsed_time));
     }
 
-    int log_height = math::clamp((term_height - 2) / 5, 7, 15);
+    int inv_height = 34;
+    int log_height = term_height - inv_height;
     gui::begin_window("Log", {map_width, 0}, {sidebar_width, log_height});
     
     long start = math::max(log_messages.len() - log_height + 2, 0l);
@@ -195,7 +196,15 @@ fn void draw_ui()
             }
         }
         
-        gui::vertical_separator(27);
+        gui::vertical_separator(7);
+        gui::text("         Accuracy     Damage      Defence");
+        int[3] melee_stats = pl.get_style_stats(MELEE);
+        gui::text(string::tformat("Melee        %4d       %4d         %4d", ...melee_stats));
+        int[3] ranged_stats = pl.get_style_stats(RANGED);
+        gui::text(string::tformat("Ranged       %4d       %4d         %4d", ...ranged_stats));
+        int[3] magic_stats = pl.get_style_stats(MAGIC);
+        gui::text(string::tformat("Magic        %4d       %4d         %4d", ...magic_stats));
+        gui::vertical_separator(9);
         gui::text(string::tformat("%5s: Unequip Item         %5s: Drop Item", getKeyName(get_bind(EQUIP)[0]), getKeyName(get_bind(DROP)[0])));
         gui::text(string::tformat("                            %5s: Examine Item", getKeyName(get_bind(EXAMINE)[0])));
     }
@@ -331,7 +340,7 @@ fn void draw_ui()
             }
         }
         
-        gui::vertical_separator(9);
+        gui::vertical_separator(2);
         gui::text(string::tformat("%5s: Equip Item           %5s: Drop Item", getKeyName(get_bind(EQUIP)[0]), getKeyName(get_bind(DROP)[0])));
         gui::text(string::tformat("%5s: Use Item             %5s: Examine Item", getKeyName(get_bind(USE)[0]), getKeyName(get_bind(EXAMINE)[0])));
     }
@@ -403,7 +412,11 @@ fn void draw_ui()
 
     if (sidebar_tab == SKILLS)
     {
-
+        gui::vertical_separator(2);
+        for (int i = 0; i < Skill.elements; ++i)
+        {
+            gui::text(string::tformat("%-12s %d", Skill.names[i], pl.level[i]));
+        }
     }
 
     gui::end_window();

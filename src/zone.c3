@@ -250,6 +250,7 @@ fn double Zone.update(&self)
         while (!actions.is_empty())
         {
             EntityAction* next = actions.pop()!!;
+            if (next.entity.is_dead()) continue;
             next.next_action.apply(next.entity);
             if (next.remaining_time > 0)
             {
@@ -257,6 +258,24 @@ fn double Zone.update(&self)
                 if (continuation == null) continue;
                 double cont_duraction = continuation.duration();
                 actions.push(make_entity_action(next.entity, continuation, next.duration + cont_duraction, next.remaining_time - cont_duraction));
+            }
+        }
+
+        if (self.player.is_dead())
+        {
+            log("Oh dear you are dead.");
+            return max_time;
+        }
+
+        for (int i = (int) self.all_entities.len() - 1; i >= 0; --i)
+        {
+            Entity e = self.all_entities[i];
+            if (e.is_dead())
+            {
+                ZoneCell* cell = self.get_cell(...e.get_position());
+                cell.entities.remove_item(e);
+                self.all_entities.remove_at(i);
+                e.free();
             }
         }
 
@@ -463,11 +482,14 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
             else if (is_visible && !cell.entities.is_empty())
             {
                 Entity first = cell.entities.first()!!;
-                Appearance look = first.get_look();
-                bool is_textmode = textmode || look.sprite_index < 0;
-                char gl = is_textmode ? look.glyph : (char) look.sprite_index;
-                rl::Color color = is_textmode ? look.color : colors::WHITE;
-                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                if (!first.is_dead())
+                {
+                    Appearance look = first.get_look();
+                    bool is_textmode = textmode || look.sprite_index < 0;
+                    char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+                    rl::Color color = is_textmode ? look.color : colors::WHITE;
+                    terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                }
             }
             else if (is_visible && !cell.dropped_items.is_empty())
             {
