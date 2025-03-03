@@ -7,27 +7,144 @@ import std::io;
 import std::math;
 import raylib5::rl;
 
-struct ZoneTerrain
+enum TerrainType : inline int
 {
-    Appearance look;
-    rl::Color bg;
-    bool passable;
+    EMPTY_VOID,
+
+    TERR_WALL_NORTH,
+    TERR_WALL_EAST,
+    TERR_WALL_SOUTH,
+    TERR_WALL_WEST,
+    TERR_WALL_NE,
+    TERR_WALL_NW,
+    TERR_WALL_SE,
+    TERR_WALL_SW,
+    TERR_PILLAR,
+
+    TERR_GRASS,
+    TERR_DIRT,
+    TERR_STONE,
+    TERR_BRICKS,
+
+    TERR_DOOR_NORTH_L,
+    TERR_DOOR_NORTH_R,
+    TERR_DOOR_EAST_U,
+    TERR_DOOR_EAST_L,
+    TERR_DOOR_SOUTH_L,
+    TERR_DOOR_SOUTH_R,
+    TERR_DOOR_WEST_U,
+    TERR_DOOR_WEST_L,
+
+    TERR_EXIT_WALL_L,
+    TERR_EXIT_WALL_R,
+    TERR_EXIT_HOLE_L,
+    TERR_EXIT_HOLE_R,
 }
 
-struct ZoneObject
+struct TerrainInfo
 {
-    Appearance look;
+    TerrainType type;
+    String name;
     bool passable;
+    Appearance look;
+    rl::Color bg;
 }
+
+TerrainInfo[*] g_terrain_info = {
+    { EMPTY_VOID, "Empty", false, EMPTY_LOOK, colors::BLACK },
+    { TERR_WALL_NORTH, "Wall", false, WALL_NORTH, colors::BLACK },
+    { TERR_WALL_EAST, "Wall", false, WALL_EAST, colors::BLACK },
+    { TERR_WALL_SOUTH, "Wall", false, WALL_SOUTH, colors::BLACK },
+    { TERR_WALL_WEST, "Wall", false, WALL_WEST, colors::BLACK },
+    { TERR_WALL_NE, "Wall", false, WALL_NE, colors::BLACK },
+    { TERR_WALL_NW, "Wall", false, WALL_NW, colors::BLACK },
+    { TERR_WALL_SE, "Wall", false, WALL_SE, colors::BLACK },
+    { TERR_WALL_SW, "Wall", false, WALL_SW, colors::BLACK },
+    { TERR_PILLAR, "Pillar", false, PILLAR, colors::BLACK },
+    { TERR_GRASS, "Grass", true, FLOOR_GRASS, colors::BLACK },
+    { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK },
+    { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK },
+    { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK },
+    { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK },
+    { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK },
+    { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK },
+    { TERR_DOOR_EAST_L, "Door", false, DOOR_EAST_L, colors::BLACK },
+    { TERR_DOOR_SOUTH_L, "Door", false, DOOR_SOUTH_L, colors::BLACK },
+    { TERR_DOOR_SOUTH_R, "Door", false, DOOR_SOUTH_R, colors::BLACK },
+    { TERR_DOOR_WEST_U, "Door", false, DOOR_WEST_U, colors::BLACK },
+    { TERR_DOOR_WEST_L, "Door", false, DOOR_WEST_L, colors::BLACK },
+    { TERR_EXIT_WALL_L, "Wall", false, EXIT_WALL_L, colors::BLACK },
+    { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK },
+    { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK },
+    { TERR_EXIT_HOLE_R, "Exit", false, EXIT_HOLE_R, colors::BLACK },
+};
+
+fn bool is_wall_terrain(TerrainType t) => t >= TERR_WALL_NORTH && t <= TERR_PILLAR;
+fn bool is_door_terrain(TerrainType t) => t >= TERR_DOOR_NORTH_L && t <= TERR_DOOR_WEST_L;
+fn bool is_exit_terrain(TerrainType t) => t >= TERR_EXIT_WALL_L && t <= TERR_EXIT_HOLE_R;
+
+enum ObjectType : inline int
+{
+    OBJ_EMPTY,
+    OBJ_SMALL_ROCKS,
+    OBJ_ROCKS,
+    OBJ_TREE,
+    OBJ_STUMP,
+    OBJ_CRATE,
+    OBJ_OPEN_CRATE,
+    OBJ_SMALL_BOXES,
+    OBJ_ANVIL,
+    OBJ_FURNACE,
+    OBJ_CAMPFIRE,
+    OBJ_FIRE_PIT,
+    OBJ_TORCH,
+    OBJ_GRAVE,
+    OBJ_GRAVE2,
+    OBJ_ORE_ROCK1,
+    OBJ_ORE_ROCK2,
+    OBJ_ORE_ROCK3,
+    OBJ_TRADER,
+}
+
+struct ObjectInfo
+{
+    ObjectType type;
+    String name;
+    bool passable;
+    Appearance look;
+}
+
+ObjectInfo[*] g_object_info = {
+    { OBJ_EMPTY, "Empty", true, EMPTY_LOOK },
+    { OBJ_SMALL_ROCKS, "Small Rocks", false, SMALL_ROCKS },
+    { OBJ_ROCKS, "Rocks", false, ROCKS },
+    { OBJ_TREE, "Tree", false, TREE },
+    { OBJ_STUMP, "Stump", false, STUMP },
+    { OBJ_CRATE, "Crate", false, CRATE },
+    { OBJ_OPEN_CRATE, "Open Crate", false, OPEN_CRATE },
+    { OBJ_SMALL_BOXES, "Small Boxes", false, SMALL_BOXES },
+    { OBJ_ANVIL, "Anvil", false, ANVIL },
+    { OBJ_FURNACE, "Furnace", false, FURNACE },
+    { OBJ_CAMPFIRE, "Campfire", false, CAMPFIRE },
+    { OBJ_FIRE_PIT, "Fire Pit", false, FIRE_PIT },
+    { OBJ_TORCH, "Torch", false, TORCH },
+    { OBJ_GRAVE, "Grave", false, GRAVE },
+    { OBJ_GRAVE2, "Grave 2", false, GRAVE2 },
+    { OBJ_ORE_ROCK1, "Ore Rock 1", false, ORE_ROCK1 },
+    { OBJ_ORE_ROCK2, "Ore Rock 2", false, ORE_ROCK2 },
+    { OBJ_ORE_ROCK3, "Ore Rock 3", false, ORE_ROCK3 },
+    { OBJ_TRADER, "Trader", false, TRADER },
+};
 
 struct ZoneCell
 {
-    ZoneTerrain terrain;
-    ZoneObject object;
+    TerrainType terrain;
+    ObjectType object;
+    List(<ItemStack>) dropped_items;
     List(<Entity>) entities;
 }
 
-fn bool ZoneCell.isPassable(&self) => self.terrain.passable && self.object.passable && self.entities.is_empty();
+fn bool ZoneCell.isPassable(&self) => g_terrain_info[self.terrain].passable && g_object_info[self.object].passable && self.entities.is_empty();
 
 struct Zone
 {
@@ -40,6 +157,9 @@ struct Zone
     List(<Entity>) all_entities;
 
     IVec2 last_render_min;
+
+    IVec2 last_mouse_pos;
+    double mouse_hover_time;
 }
 
 fn void Zone.new_init(&self, ZoneDescription desc)
@@ -52,8 +172,9 @@ fn void Zone.new_init(&self, ZoneDescription desc)
     for (int i = 0; i < self.width * self.height; ++i)
     {
         ZoneCell* cell = &self.cells[i];
-        cell.terrain = { EMPTY_LOOK, colors::BLACK, false };
-        cell.object = { EMPTY_LOOK, true };
+        cell.terrain = EMPTY_VOID;
+        cell.object = OBJ_EMPTY;
+        cell.dropped_items.new_init();
         cell.entities.new_init();
     }
 
@@ -75,6 +196,7 @@ fn void Zone.free(&self)
 {
     for (int i = 0; i < self.width * self.height; ++i)
     {
+        self.cells[i].dropped_items.free();
         self.cells[i].entities.free();
     }
     mem::free(self.cells);
@@ -147,19 +269,41 @@ fn ZoneCell* Zone.get_cell(&self, int x, int y)
     return &self.cells[y * self.width + x];
 }
 
-fn void Zone.set_terrain(&self, int x, int y, Appearance look, rl::Color bg, bool passable)
+fn void Zone.set_terrain(&self, int x, int y, TerrainType terr)
 {
     ZoneCell* cell = self.get_cell(x, y);
-    cell.terrain.look = look;
-    cell.terrain.bg = bg;
-    cell.terrain.passable = passable;
+    cell.terrain = terr;
 }
 
-fn void Zone.set_object(&self, int x, int y, Appearance look, bool passable)
+fn void Zone.set_object(&self, int x, int y, ObjectType obj)
 {
     ZoneCell* cell = self.get_cell(x, y);
-    cell.object.look = look;
-    cell.terrain.passable = passable;
+    cell.object = obj;
+}
+
+fn void Zone.drop_item(&self, int x, int y, ItemStack item)
+{
+    assert(item.item != NO_ITEM);
+    ZoneCell* cell = self.get_cell(x, y);
+    ItemInfo* info = &g_items.items[item.item];
+    foreach (&i: cell.dropped_items)
+    {
+        if (i.item == item.item)
+        {
+            i.count += item.count;
+            if (i.count > info.stack_size)
+            {
+                item.count = i.count - info.stack_size;
+                i.count = info.stack_size;
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+    assert(item.count > 0);
+    cell.dropped_items.push(item);
 }
 
 fn void Zone.add_player(&self, Entity e)
@@ -185,7 +329,7 @@ fn IVec2 Zone.get_player_position(&self)
 fn IVec2 Zone.get_mouse_position(&self)
 {
     int x = self.last_render_min[0] + rl::getMouseX() / (font_size * map_zoom);
-    int y = self.last_render_min[1] + rl::getMouseY() / (font_size * map_zoom);
+    int y = self.last_render_min[1] + (rl::getMouseY() - 16) / (font_size * map_zoom);
     return {x, y};
 }
 
@@ -239,7 +383,7 @@ struct ZoneRenderSettings
     IVec2 offset;
 }
 
-fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings settings)
+fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneRenderSettings settings)
 {
     IVec2 hsize = {terminal.width / 2, terminal.height / 2};
     IVec2 focus = hsize;
@@ -270,17 +414,18 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
     for (int y = min[1]; y < max[1]; ++y)
     {
         if (y < 0 || y >= self.height) continue;
-        int term_y = y - min[1];
-        for (int x = min[0]; x < max[0]; ++x)
+        int term_y = y - min.y;
+        for (int x = min.x; x < max.x; ++x)
         {
             if (x < 0 || x >= self.width) continue;
             if (vis != null && !vis.is_explored({x, y})) continue;
-            int term_x = x - min[0];
+            int term_x = x - min.x;
             ZoneCell* cell = &self.cells[x + y * self.width];
-            ZoneTerrain terr = cell.terrain;
             bool is_visible = true;// vis == null || vis.is_visible({x, y});
-            terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
+            //terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
+            if (cell.terrain != EMPTY_VOID)
             {
+                TerrainInfo terr = g_terrain_info[cell.terrain];
                 Appearance look = terr.look;
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
@@ -291,9 +436,10 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 }
                 terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
-            if (cell.object.look.color != colors::BLANK)
+            if (cell.object != OBJ_EMPTY)
             {
-                Appearance look = cell.object.look;
+                ObjectInfo obj = g_object_info[cell.object];
+                Appearance look = obj.look;
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
                 rl::Color color = is_textmode ? look.color : colors::WHITE;
@@ -301,7 +447,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 {
                     color = color.grayscale().darken(0.4f);
                 }
-                terminal.set_tile(term_x, term_y, gl, color, 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
             else if (is_visible && !cell.entities.is_empty())
             {
@@ -310,10 +456,56 @@ fn void Zone.render(&self, VirtualTerminal* terminal, ZoneRenderSettings setting
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
                 rl::Color color = is_textmode ? look.color : colors::WHITE;
-                terminal.set_tile(term_x, term_y, gl, color, 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+            }
+            else if (is_visible && !cell.dropped_items.is_empty())
+            {
+                ItemStack first = cell.dropped_items.first()!!;
+                ItemInfo* info = &g_items.items[first.item];
+                Appearance look = info.look;
+                bool is_textmode = textmode || look.sprite_index < 0;
+                char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+                rl::Color color = is_textmode ? look.color : colors::WHITE;
+                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
             }
         }
     }
+
+    /*
+    IVec2 mpos = self.get_mouse_position();
+    if (mpos == self.last_mouse_pos && !is_ui_hovered)
+    {
+        self.mouse_hover_time += rl::getFrameTime();
+
+        if (g_settings.hover_tooltip_delay > 0 && self.mouse_hover_time > g_settings.hover_tooltip_delay)
+        {
+            ZoneCell* cell = self.get_cell(...mpos);
+            int height = cell.object == OBJ_EMPTY ? 1 : 2;
+            height += (int) cell.entities.len();
+            if (height < 2) height = 2;
+            double time_in_hover = self.mouse_hover_time - g_settings.hover_tooltip_delay;
+            int animation_step = (int) (time_in_hover / 0.02);
+            bool left_justify = rl::getMouseX() < (ui.width - sidebar_width - 16) * 8;
+            if (left_justify)
+            {
+                IVec2 ui_pos = (mpos - min) * map_zoom;
+                ui_pos += {map_zoom + 1, 1};
+                ui_pos.x *= 2;
+                if (ui_pos.y + height > ui.height) ui_pos.y -= height;
+                // @Todo: maybe tooltips later lol
+            }
+            else
+            {
+
+            }
+        }
+    }
+    else
+    {
+        self.mouse_hover_time = 0;
+        self.last_mouse_pos = self.get_mouse_position();
+    }
+    */
 }
 
 fn double get_diag_heuristic(IVec2 a, IVec2 b)
@@ -374,7 +566,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
             ZoneCell* cell = self.get_cell(...next);
-            if (cell.terrain.look.glyph == '+' && next != to)
+            if (is_door_terrain(cell.terrain) && next != to)
             {
                 double new_cost = current.cost + 1;
                 double h_cost = new_cost + get_diag_heuristic(next, to);
@@ -426,7 +618,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
                 ZoneCell* cell = self.get_cell(...next);
-                if (cell.terrain.look.glyph == '+')
+                if (is_door_terrain(cell.terrain) && next != to)
                 {
                     double new_cost = current.cost + 1.414;
                     double h_cost = new_cost + get_diag_heuristic(next, to);

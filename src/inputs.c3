@@ -11,10 +11,23 @@ enum Input : inline int
     MOVE_DOWN,
     MOVE_LEFT,
     MOVE_RIGHT,
+    MOVE_UP_LEFT,
+    MOVE_UP_RIGHT,
+    MOVE_DOWN_LEFT,
+    MOVE_DOWN_RIGHT,
     DIAGONAL_UP,
     DIAGONAL_DOWN,
 
     WAIT,
+    CANCEL,
+
+    QUAFF,
+    GRAB,
+    DROP,
+    USE,
+    EXAMINE,
+    EQUIP,
+    ZAP,
 
     EQUIPMENT_TAB,
     INVENTORY_TAB,
@@ -28,6 +41,7 @@ enum Input : inline int
     PATH_TO_BOSS,
     REVEAL_MAP,
     NEXT_FLOOR,
+    SPAWN_ITEM,
 }
 
 struct KeyBind
@@ -66,26 +80,40 @@ fn void init_inputs()
     g_keymap.repeat_delay = 0.5;
     g_keymap.repeat_rate = 0.1;
 
-    createBind(MOVE_UP, rl::KEY_UP);
-    createBind(MOVE_DOWN, rl::KEY_DOWN);
-    createBind(MOVE_LEFT, rl::KEY_LEFT);
-    createBind(MOVE_RIGHT, rl::KEY_RIGHT);
+    createBind(MOVE_UP, rl::KEY_UP, rl::KEY_KP_8);
+    createBind(MOVE_DOWN, rl::KEY_DOWN, rl::KEY_KP_2);
+    createBind(MOVE_LEFT, rl::KEY_LEFT, rl::KEY_KP_4);
+    createBind(MOVE_RIGHT, rl::KEY_RIGHT, rl::KEY_KP_6);
+    createBind(MOVE_UP_LEFT, rl::KEY_KP_7);
+    createBind(MOVE_UP_RIGHT, rl::KEY_KP_9);
+    createBind(MOVE_DOWN_LEFT, rl::KEY_KP_1);
+    createBind(MOVE_DOWN_RIGHT, rl::KEY_KP_3);
     createBind(DIAGONAL_UP, rl::KEY_LEFT_SHIFT, rl::KEY_RIGHT_SHIFT);
     createBind(DIAGONAL_DOWN, rl::KEY_LEFT_CONTROL, rl::KEY_RIGHT_CONTROL);
 
-    createBind(WAIT, rl::KEY_SPACE);
+    createBind(WAIT, rl::KEY_SPACE, rl::KEY_KP_5);
+    createBind(CANCEL, rl::KEY_ESCAPE);
+
+    createBind(QUAFF, rl::KEY_Q);
+    createBind(GRAB, rl::KEY_G);
+    createBind(DROP, rl::KEY_D);
+    createBind(USE, rl::KEY_F);
+    createBind(EXAMINE, rl::KEY_X);
+    createBind(EQUIP, rl::KEY_E);
+    createBind(ZAP, rl::KEY_Z);
 
     createBind(EQUIPMENT_TAB, rl::KEY_U);
     createBind(INVENTORY_TAB, rl::KEY_I);
     createBind(SPELLBOOK_TAB, rl::KEY_O);
     createBind(SKILLS_TAB, rl::KEY_P);
-
+    
     createBind(TOGGLE_ZOOM, rl::KEY_LEFT_ALT, rl::KEY_RIGHT_ALT);
     createBind(TOGGLE_TEXTMODE, rl::KEY_F1);
 
     createBind(PATH_TO_BOSS, rl::KEY_F11);
     createBind(REVEAL_MAP, rl::KEY_F12);
     createBind(NEXT_FLOOR, rl::KEY_F10);
+    createBind(SPAWN_ITEM, rl::KEY_INSERT);
 }
 
 fn KeyboardKey[2] get_bind(Input in)

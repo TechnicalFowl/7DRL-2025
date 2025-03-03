@@ -111,7 +111,7 @@ fn void push_bottombar(String text)
     }
 }
 
-fn void begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
+fn GuiWindow* begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
 {
     GuiWindow* window;
     if (try GuiWindow* w = gui_data.windows.get(title))
@@ -129,6 +129,7 @@ fn void begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
     window.flags = 0;
     if (border) window.flags |= WINDOW_FLAG_BORDER;
     window.last_frame = gui_data.frame_index;
+    if (window.open_frame == 0) window.open_frame = gui_data.frame_index;
     window.cursor = {pos[0], pos[1] };
     window.last_end = window.cursor;
     window.newline_start = window.cursor[0];
@@ -147,6 +148,7 @@ fn void begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
     }
 
     gui_data.window_stack.push(window);
+    return window;
 }
 
 fn void same_line(int x = 1)
@@ -174,21 +176,23 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
 {
     if (color == colors::BLANK) color = get_color(GuiColor.WINDOW_TEXT);
     if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
-    String shortcut_name = shortcut != 0 ? string::tformat("%c: ", (int) shortcut) : "";
-    String text = string::tformat("[%s%s]", shortcut_name, next);
+    String shortcut_name = shortcut != 0 ? string::tformat("%3s: ", dg::getKeyName(shortcut)) : "";
+    String text = string::tformat("%s%s", shortcut_name, next);
     GuiWindow* window = gui_data.window_stack.last()!!;
     IVec2 clip_size = window.get_text_clip_size();
     if (clip_size[0] <= 0 || clip_size[1] <= 0) return false;
+    String clip_text = text.len > clip_size[0] ? text[..clip_size[0]] : text;
+    int btn_w = clip_text.len;
 
     int x = rl::getMouseX() / (dg::font_size / 2);
     int y = rl::getMouseY() / dg::font_size;
-    bool hovered = x >= window.cursor.x && x < window.cursor.x + clip_size.x && y == window.cursor.y;
+    bool hovered = x >= window.cursor.x && x < window.cursor.x + btn_w && y == window.cursor.y;
     if (hovered) color = get_color(GuiColor.HOVERED_TEXT);
-    bool pressed = hovered && rl::isMouseButtonPressed(rl::MouseButton.LEFT);
-    if (gui_data.can_receive_input(window) && shortcut != 0 && rl::isKeyPressed(shortcut)) pressed = true;
+    bool can_receive_input = gui_data.can_receive_input(window) && window.open_frame < gui_data.frame_index - 1;
+    bool pressed = hovered && can_receive_input && rl::isMouseButtonPressed(rl::MouseButton.LEFT);
+    if (can_receive_input && shortcut != 0 && rl::isKeyPressed(shortcut)) pressed = true;
 
     int prio = get_setting(GuiSetting.PRIORITY);
-    String clip_text = text.len > clip_size[0] ? text[..clip_size[0]] : text;
     dg::ui_term.write(...window.cursor, clip_text, color, prio);
     window.last_end = window.cursor + {clip_text.len, 0};
     window.cursor = { window.newline_start, window.cursor[1] + 1 };
@@ -199,6 +203,18 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
 fn void end_window()
 {
     if (catch gui_data.window_stack.pop()) unreachable("No window to end");
+}
+
+fn bool is_popup_open(String title)
+{
+    foreach (w: gui_data.popup_stack)
+    {
+        if (w == title)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 fn void open_popup(String title)
@@ -228,7 +244,8 @@ fn bool begin_popup(String title, IVec2 pos, IVec2 size, bool border=true)
     {
         return false;
     }
-    begin_window(title, pos, size, border);
+    GuiWindow* w = begin_window(title, pos, size, border);
+    w.flags |= WINDOW_FLAG_POPUP;
     return true;
 }
 
@@ -245,14 +262,14 @@ fn void end_popup()
 
 fn bool want_mouse_input()
 {
-    int x = rl::getMouseX() / dg::font_size;
+    int x = rl::getMouseX() / (dg::font_size / 2);
     int y = rl::getMouseY() / dg::font_size;
-    return is_in_window({x, y});
+    return is_in_window({x, y}) || !gui_data.popup_stack.is_empty();
 }
 
 fn bool want_key_input()
 {
-    return gui_data.can_receive_input(null);
+    return !gui_data.can_receive_input(null);
 }
 
 fn bool is_in_window(IVec2 pos)
@@ -281,6 +298,7 @@ struct GuiWindow
     uint flags;
 
     ulong last_frame;
+    ulong open_frame;
 
     IVec2 cursor;
     IVec2 last_end;
@@ -363,7 +381,7 @@ fn bool GuiData.can_receive_input(&self, GuiWindow* window)
 {
     if (window && window.flags & WINDOW_FLAG_POPUP)
     {
-        assert(!gui_data.popup_stack.is_empty(), "No popup to receive input");
+        if (gui_data.popup_stack.is_empty()) return false;
         return gui_data.popup_stack.last()!! == window.title;
     }
     return self.popup_stack.is_empty();
@@ -404,4 +422,12 @@ fn void GuiData.render(&self)
     {
         gui_data.had_statusbar = false;
     }
+
+    self.windows.@each(; String name, GuiWindow* window)
+    {
+        if (window.last_frame < self.frame_index - 2)
+        {
+            window.open_frame = 0;
+        }
+    };
 }

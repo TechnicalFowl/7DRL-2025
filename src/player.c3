@@ -4,6 +4,8 @@ import std::io;
 import std::math;
 import raylib5::rl;
 
+const INVENTORY_SIZE = 26;
+
 struct Player (Entity)
 {
     inline EntityCommon entity;
@@ -13,6 +15,9 @@ struct Player (Entity)
     float nav_delay;
 
     VisibilityTracker vis;
+
+    ItemStack[INVENTORY_SIZE] inventory;
+    ItemStack[EquipmentSlot.elements] equipment;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -59,6 +64,63 @@ fn void Player.free(&self) @dynamic
     self.vis.free();
 }
 
+fn bool Player.is_inventory_full(&self, ItemStack item)
+{
+    ItemInfo* info = &g_items.items[item.item];
+    foreach (&slot: self.inventory)
+    {
+        if (slot.item == NO_ITEM) return false;
+        if (slot.item == item.item)
+        {
+            if (slot.count + item.count <= info.stack_size) return false;
+            item.count -= info.stack_size - slot.count;
+        }
+    }
+    return true;
+}
+
+fn ItemStack Player.add_item(&self, ItemStack item)
+{
+    assert(item.item != NO_ITEM);
+    ItemInfo* info = &g_items.items[item.item];
+    int empty_slot = -1;
+    for (int i = 0; i < self.inventory.len; ++i)
+    {
+        ItemStack* slot = &self.inventory[i];
+        if (slot.item == NO_ITEM)
+        {
+            if (empty_slot == -1) empty_slot = i;
+        }
+        else if (slot.item == item.item)
+        {
+            if (slot.count + item.count <= info.stack_size)
+            {
+                slot.count += item.count;
+                return {NO_ITEM, 0, 0};
+            }
+            item.count -= info.stack_size - slot.count;
+            slot.count = info.stack_size;
+        }
+    }
+    assert(item.count > 0);
+    if (empty_slot != -1)
+    {
+        self.inventory[empty_slot] = item;
+        return {NO_ITEM, 0, 0};
+    }
+    return item;
+}
+
+fn ItemStack Player.equip(&self, ItemStack item)
+{
+    assert(item.item != NO_ITEM);
+    ItemInfo* info = &g_items.items[item.item];
+    assert(info.stats, "Item is not equippable");
+    ItemStack old_item = self.equipment[info.stats.slot];
+    self.equipment[info.stats.slot] = item;
+    return old_item;
+}
+
 fn Action Player.moveOrInteract(&self, IVec2 dir)
 {
     ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
@@ -74,7 +136,7 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
 
 fn Action Player.next_action(&self, double max_time) @dynamic
 {
-    if (devmode)
+    if (devmode && !gui::want_key_input())
     {
         if (is_key_pressed(REVEAL_MAP, false))
         {
@@ -82,7 +144,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         }
     }
 
-    if (rl::isMouseButtonPressed(rl::MouseButton.LEFT))
+    if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
     {
         if (self.nav.is_idle())
         {
@@ -97,90 +159,114 @@ fn Action Player.next_action(&self, double max_time) @dynamic
 
     if (self.nav.is_idle())
     {
-        if (devmode)
+        if (!gui::want_key_input())
         {
-            if (is_key_down(PATH_TO_BOSS))
+            if (devmode)
             {
-                for (int y= 0; y < 8 && self.nav.is_idle(); ++y)
+                if (is_key_down(PATH_TO_BOSS))
                 {
-                    for (int x = 0; x < 8 && self.nav.is_idle(); ++x)
+                    for (int y= 0; y < 8 && self.nav.is_idle(); ++y)
                     {
-                        Room* r = current_floor.rooms.get({x, y})!!;
-                        if (r.type == BOSS)
+                        for (int x = 0; x < 8 && self.nav.is_idle(); ++x)
                         {
-                            IVec2 pos = {x * 17 + 8, y * 17 + 8};
-                            self.nav.path_to(self.get_zone(), self.get_position(), pos);
+                            Room* r = current_floor.rooms.get({x, y})!!;
+                            if (r.type == BOSS)
+                            {
+                                IVec2 pos = {x * 17 + 8, y * 17 + 8};
+                                self.nav.path_to(self.get_zone(), self.get_position(), pos);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (is_key_pressed(WAIT) || math::abs(rl::getMouseWheelMove()) > 0.01)
-        {
-            return do_wait(1.0);
-        }
-
-        bool is_shift = is_key_down(DIAGONAL_UP);
-        bool is_ctrl = is_key_down(DIAGONAL_DOWN);
-        if (is_key_pressed(MOVE_UP))
-        {
-            if (is_shift || is_ctrl)
+            if (is_key_pressed(WAIT) || math::abs(rl::getMouseWheelMove()) > 0.01)
             {
-                log("Invalid move.");
+                return do_wait(1.0);
             }
-            else
+
+            bool is_shift = is_key_down(DIAGONAL_UP);
+            bool is_ctrl = is_key_down(DIAGONAL_DOWN);
+            if (is_key_pressed(MOVE_UP))
             {
                 return self.moveOrInteract({0, -1});
             }
-        }
-        if (is_key_pressed(MOVE_DOWN))
-        {
-            if (is_shift || is_ctrl)
-            {
-                log("Invalid move.");
-            }
-            else
+            if (is_key_pressed(MOVE_DOWN))
             {
                 return self.moveOrInteract({0, 1});
             }
-        }
-        if (is_key_pressed(MOVE_LEFT))
-        {
-            if (is_shift && is_ctrl)
+            if (is_key_pressed(MOVE_LEFT))
             {
-                log("Invalid move.");
+                if (is_shift)
+                {
+                    return self.moveOrInteract({-1, -1});
+                }
+                else if (is_ctrl)
+                {
+                    return self.moveOrInteract({-1, 1});
+                }
+                else
+                {
+                    return self.moveOrInteract({-1, 0});
+                }
             }
-            else if (is_shift)
+            if (is_key_pressed(MOVE_RIGHT))
             {
-                return self.moveOrInteract({-1, -1});
+                if (is_shift)
+                {
+                    return self.moveOrInteract({1, -1});
+                }
+                else if (is_ctrl)
+                {
+                    return self.moveOrInteract({1, 1});
+                }
+                else
+                {
+                    return self.moveOrInteract({1, 0});
+                }
             }
-            else if (is_ctrl)
-            {
-                return self.moveOrInteract({-1, 1});
-            }
-            else
-            {
-                return self.moveOrInteract({-1, 0});
-            }
-        }
-        if (is_key_pressed(MOVE_RIGHT))
-        {
-            if (is_shift && is_ctrl)
-            {
-                log("Invalid move.");
-            }
-            else if (is_shift)
+            if (is_key_pressed(MOVE_UP_RIGHT))
             {
                 return self.moveOrInteract({1, -1});
             }
-            else if (is_ctrl)
+            if (is_key_pressed(MOVE_DOWN_RIGHT))
             {
                 return self.moveOrInteract({1, 1});
             }
-            else
+            if (is_key_pressed(MOVE_DOWN_LEFT))
             {
-                return self.moveOrInteract({1, 0});
+                return self.moveOrInteract({-1, 1});
+            }
+            if (is_key_pressed(MOVE_UP_LEFT))
+            {
+                return self.moveOrInteract({-1, -1});
+            }
+            if (is_key_pressed(GRAB))
+            {
+                ZoneCell* cell = self.get_zone().get_cell(...self.get_position());
+                if (cell.dropped_items.is_empty())
+                {
+                    log("There is nothing to grab here.");
+                }
+                else if (cell.dropped_items.len() == 1)
+                {
+                    ItemStack item = cell.dropped_items[0];
+                    if (self.is_inventory_full(item))
+                    {
+                        log("Your inventory is full.");
+                    }
+                    else
+                    {
+                        self.add_item(cell.dropped_items[0]);
+                        cell.dropped_items.clear();
+                    }
+                }
+                else
+                {
+                    grab_target = self.get_position();
+                    gui::open_popup("Grab Item");
+                }
+                return null;
             }
         }
     }
@@ -197,7 +283,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             {
                 return do_move(next_move);
             }
-            else if (next_cell.terrain.look.glyph == '+')
+            else if (is_door_terrain(next_cell.terrain))
             {
                 return do_interact(next_move);
             }
@@ -222,7 +308,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     IVec2 new_pos = entity.get_position() + self.dir;
 
     ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
-    if (cell.terrain.look.glyph == '+')
+    if (is_door_terrain(cell.terrain))
     {
         Room* r = find_room(new_pos)!!;
         Direction dir = get_door_direction(new_pos);
@@ -254,7 +340,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         Player* player = (Player*) entity;
         player.explore(next_room.position, next_room.size);
     }
-    else if (cell.terrain.look.glyph == '>')
+    else if (is_exit_terrain(cell.terrain))
     {
         want_exit_floor = true;
     }

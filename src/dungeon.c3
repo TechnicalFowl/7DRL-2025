@@ -139,17 +139,17 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
         switch (d.direction)
         {
         case NORTH:
-            zone.set_terrain(pos.x + 7, pos.y, DOOR_NORTH_L, colors::BLACK, false);
-            zone.set_terrain(pos.x + 8, pos.y, DOOR_NORTH_R, colors::BLACK, false);
+            zone.set_terrain(pos.x + 7, pos.y, TERR_DOOR_NORTH_L);
+            zone.set_terrain(pos.x + 8, pos.y, TERR_DOOR_NORTH_R);
         case EAST:
-            zone.set_terrain(pos.x + 15, pos.y + 7, DOOR_EAST_U, colors::BLACK, false);
-            zone.set_terrain(pos.x + 15, pos.y + 8, DOOR_EAST_L, colors::BLACK, false);
+            zone.set_terrain(pos.x + 15, pos.y + 7, TERR_DOOR_EAST_U);
+            zone.set_terrain(pos.x + 15, pos.y + 8, TERR_DOOR_EAST_L);
         case SOUTH:
-            zone.set_terrain(pos.x + 7, pos.y + 15, DOOR_SOUTH_L, colors::BLACK, false);
-            zone.set_terrain(pos.x + 8, pos.y + 15, DOOR_SOUTH_R, colors::BLACK, false);
+            zone.set_terrain(pos.x + 7, pos.y + 15, TERR_DOOR_SOUTH_L);
+            zone.set_terrain(pos.x + 8, pos.y + 15, TERR_DOOR_SOUTH_R);
         case WEST:
-            zone.set_terrain(pos.x, pos.y + 7, DOOR_WEST_U, colors::BLACK, false);
-            zone.set_terrain(pos.x, pos.y + 8, DOOR_WEST_L, colors::BLACK, false);
+            zone.set_terrain(pos.x, pos.y + 7, TERR_DOOR_WEST_U);
+            zone.set_terrain(pos.x, pos.y + 8, TERR_DOOR_WEST_L);
         default:
             unreachable();
         }
@@ -162,7 +162,7 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     switch (self.type)
     {
     case STARTING:
-        zone.set_terrain(pos.x + 4, pos.y + 4, TRADER, colors::BLACK, false);
+        zone.set_object(pos.x + 4, pos.y + 4, OBJ_TRADER);
     case BOSS:
         self.spawn_exit_hole(zone);
         switch (boss_ordering[floor.depth])
@@ -263,118 +263,118 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
 
                     if (up && left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, PILLAR, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_PILLAR);
                     }
                     else if (!up && !left && upleft)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, WALL_SE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_WALL_SE);
                     }
                     else if (y == 0 && left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, WALL_NE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_WALL_NE);
                     }
                     else if (x == 0 && up)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, WALL_SW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_WALL_SW);
                     }
                     else if (left && !up)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, WALL_EAST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_WALL_EAST);
                     }
                     else if (up && !left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, WALL_SOUTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, TERR_WALL_SOUTH);
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0, EMPTY_LOOK, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0, EMPTY_VOID);
                     }
 
                     if (up && right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, PILLAR, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_PILLAR);
                     }
                     else if (!up && !right && upright)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, WALL_SW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_WALL_SW);
                     }
                     else if (y == 0 && right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, WALL_NW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_WALL_NW);
                     }
                     else if (x == 4 && up)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, WALL_SE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_WALL_SE);
                     }
                     else if (right && !up)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, WALL_WEST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_WALL_WEST);
                     }
                     else if (up && !right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, WALL_SOUTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, TERR_WALL_SOUTH);
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, EMPTY_LOOK, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0, EMPTY_VOID);
                     }
 
                     if (down && left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, PILLAR, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_PILLAR);
                     }
                     else if (!down && !left && downleft)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, WALL_NE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_WALL_NE);
                     }
                     else if (y == 4 && left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, WALL_SE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_WALL_SE);
                     }
                     else if (x == 0 && down)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, WALL_NW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_WALL_NW);
                     }
                     else if (left && !down)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, WALL_EAST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_WALL_EAST);
                     }
                     else if (down && !left)
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, WALL_NORTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, TERR_WALL_NORTH);
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, EMPTY_LOOK, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0, pos.y + y0 + 1 + h, EMPTY_VOID);
                     }
 
                     if (down && right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, PILLAR, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_PILLAR);
                     }
                     else if (!down && !right && downright)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, WALL_NW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_WALL_NW);
                     }
                     else if (y == 4 && right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, WALL_SW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_WALL_SW);
                     }
                     else if (x == 4 && down)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, WALL_NE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_WALL_NE);
                     }
                     else if (right && !down)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, WALL_WEST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_WALL_WEST);
                     }
                     else if (down && !right)
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, WALL_NORTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, TERR_WALL_NORTH);
                     }
                     else
                     {
-                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, EMPTY_LOOK, colors::BLACK, false);
+                        zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + 1 + h, EMPTY_VOID);
                     }
 
 
@@ -382,42 +382,42 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                     {
                         for (int xx = 0; xx < w; ++xx)
                         {
-                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + yy + 1, EMPTY_LOOK, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + yy + 1, EMPTY_VOID);
                         }
                         if (left)
                         {
-                            zone.set_terrain(pos.x + x0, pos.y + y0 + yy + 1, WALL_EAST, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0, pos.y + y0 + yy + 1, TERR_WALL_EAST);
                         }
                         else
                         {
-                            zone.set_terrain(pos.x + x0, pos.y + y0 + yy + 1, EMPTY_LOOK, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0, pos.y + y0 + yy + 1, EMPTY_VOID);
                         }
                         if (right)
                         {
-                            zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + yy + 1, WALL_WEST, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + yy + 1, TERR_WALL_WEST);
                         }
                         else
                         {
-                            zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + yy + 1, EMPTY_LOOK, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + 1 + w, pos.y + y0 + yy + 1, EMPTY_VOID);
                         }
                     }
                     for (int xx = 0; xx < w; ++xx)
                     {
                         if (up)
                         {
-                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0, WALL_SOUTH, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0, TERR_WALL_SOUTH);
                         }
                         else
                         {
-                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0, EMPTY_LOOK, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0, EMPTY_VOID);
                         }
                         if (down)
                         {
-                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + 1 + h, WALL_NORTH, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + 1 + h, TERR_WALL_NORTH);
                         }
                         else
                         {
-                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + 1 + h, EMPTY_LOOK, colors::BLACK, false);
+                            zone.set_terrain(pos.x + x0 + xx + 1, pos.y + y0 + 1 + h, EMPTY_VOID);
                         }
                     }
                 }
@@ -454,34 +454,34 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         break;
                     case TREE:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, TREE, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), TREE, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                        zone.set_object(...p0, OBJ_TREE);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_TREE);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
                     case STUMP:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, STUMP, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                        zone.set_object(...p0, OBJ_STUMP);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
                     case ROCK:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, ROCKS, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ROCKS, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), SMALL_ROCKS, false);
+                        zone.set_object(...p0, OBJ_ROCKS);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ROCKS);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_SMALL_ROCKS);
                     case ORE:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, ORE_ROCK1, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ORE_ROCK1, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ROCKS, false);
+                        zone.set_object(...p0, OBJ_ORE_ROCK1);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ORE_ROCK1);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ROCKS);
                     case FURNACE:
                         IVec2 p0 = get_random_pos(rng, min, {size.x, 1});
-                        zone.set_object(...p0, FURNACE, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), CRATE, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OPEN_CRATE, false);
+                        zone.set_object(...p0, OBJ_FURNACE);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OBJ_CRATE);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OBJ_OPEN_CRATE);
                     case ANVIL:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, ANVIL, false);
+                        zone.set_object(...p0, OBJ_ANVIL);
                     case STORE_CACHE:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, CRATE, false);
+                        zone.set_object(...p0, OBJ_CRATE);
                     case SMALL_WARRIOR:
                         int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
                         int count = random::next_in_range(rng, 1, 3);
@@ -524,10 +524,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
                     case GRAVESITE:
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, GRAVE, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), GRAVE2, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), SMALL_ROCKS, false);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), STUMP, false);
+                        zone.set_object(...p0, OBJ_GRAVE);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_GRAVE2);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_SMALL_ROCKS);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
                     }
                 }
             }
@@ -543,29 +543,6 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     default:
         break;
     }
-
-    bool debug_notes = false;
-    if (debug_notes)
-    {
-        zone.set_terrain(pos.x, pos.y + 16, {'D', colors::WHITE, -1}, colors::BLACK, false);
-        zone.set_terrain(pos.x + 1, pos.y + 16, {':', colors::WHITE, -1}, colors::BLACK, false);
-        zone.set_terrain(pos.x + 2, pos.y + 16, {(char) (self.distance_from_start / 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
-        zone.set_terrain(pos.x + 3, pos.y + 16, {(char) (self.distance_from_start % 10) + '0', colors::WHITE, -1}, colors::BLACK, false);
-
-        switch (self.type)
-        {
-        case STARTING:
-            zone.set_terrain(pos.x + 15, pos.y + 16, {'S', colors::WHITE, -1}, colors::BLACK, false);
-        case BOSS:
-            zone.set_terrain(pos.x + 15, pos.y + 16, {'B', colors::WHITE, -1}, colors::BLACK, false);
-        case STANDARD:
-            zone.set_terrain(pos.x + 15, pos.y + 16, {'R', colors::WHITE, -1}, colors::BLACK, false);
-        case SPECIAL:
-            zone.set_terrain(pos.x + 15, pos.y + 16, {'P', colors::WHITE, -1}, colors::BLACK, false);
-        default:
-            zone.set_terrain(pos.x + 15, pos.y + 16, {'?', colors::WHITE, -1}, colors::BLACK, false);
-        }
-    }
 }
 
 fn void Room.spawn_exit_hole(&self, Zone* zone)
@@ -574,17 +551,17 @@ fn void Room.spawn_exit_hole(&self, Zone* zone)
     if (self.doors[Direction.NORTH.ordinal - 1].type != WALL)
     {
         // Offset to the right
-        zone.set_terrain(pos.x + 12, pos.y, EXIT_WALL_L, colors::BLACK, false);
-        zone.set_terrain(pos.x + 13, pos.y, EXIT_WALL_R, colors::BLACK, false);
-        zone.set_terrain(pos.x + 12, pos.y + 1, EXIT_HOLE_L, colors::BLACK, false);
-        zone.set_terrain(pos.x + 13, pos.y + 1, EXIT_HOLE_R, colors::BLACK, false);
+        zone.set_terrain(pos.x + 12, pos.y, TERR_EXIT_WALL_L);
+        zone.set_terrain(pos.x + 13, pos.y, TERR_EXIT_WALL_R);
+        zone.set_terrain(pos.x + 12, pos.y + 1, TERR_EXIT_HOLE_L);
+        zone.set_terrain(pos.x + 13, pos.y + 1, TERR_EXIT_HOLE_R);
     }
     else
     {
-        zone.set_terrain(pos.x + 7, pos.y, EXIT_WALL_L, colors::BLACK, false);
-        zone.set_terrain(pos.x + 8, pos.y, EXIT_WALL_R, colors::BLACK, false);
-        zone.set_terrain(pos.x + 7, pos.y + 1, EXIT_HOLE_L, colors::BLACK, false);
-        zone.set_terrain(pos.x + 8, pos.y + 1, EXIT_HOLE_R, colors::BLACK, false);
+        zone.set_terrain(pos.x + 7, pos.y, TERR_EXIT_WALL_L);
+        zone.set_terrain(pos.x + 8, pos.y, TERR_EXIT_WALL_R);
+        zone.set_terrain(pos.x + 7, pos.y + 1, TERR_EXIT_HOLE_L);
+        zone.set_terrain(pos.x + 8, pos.y + 1, TERR_EXIT_HOLE_R);
     }
 }
 

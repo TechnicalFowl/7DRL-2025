@@ -38,6 +38,17 @@ bool devmode;
 
 double elapsed_time;
 
+struct Settings
+{
+    double hover_tooltip_delay;
+}
+Settings g_settings;
+
+fn void load_default_settings()
+{
+    g_settings.hover_tooltip_delay = 1.0;
+}
+
 fn void log(String message, rl::Color color = colors::WHITE)
 {
     log_messages.push({message, color});
@@ -201,35 +212,35 @@ fn void GeneratorData.generate(&self, Zone* zone)
                 {
                     if (rx == 0 && ry == 0)
                     {
-                        zone.set_terrain(pos.x+ rx, pos.y + ry, WALL_NW, colors::BLACK, false);
+                        zone.set_terrain(pos.x+ rx, pos.y + ry, TERR_WALL_NW);
                     }
                     else if (rx == 0 && ry == size.y - 1)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SW, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_SW);
                     }
                     else if (rx == size.x - 1 && ry == 0)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_NE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_NE);
                     }
                     else if (rx == size.x - 1 && ry == size.y - 1)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SE, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_SE);
                     }
                     else if (rx == 0)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_WEST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_WEST);
                     }
                     else if (rx == size.x - 1)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_EAST, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_EAST);
                     }
                     else if (ry == 0)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_NORTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_NORTH);
                     }
                     else if (ry == size.y - 1)
                     {
-                        zone.set_terrain(pos.x + rx, pos.y + ry, WALL_SOUTH, colors::BLACK, false);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, TERR_WALL_SOUTH);
                     }
                     else
                     {
@@ -239,24 +250,24 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
                         double fval = v0 * (4.0 / 7.0) + v1 * (2.0 / 7.0) + v2 * (1.0 / 7.0);
 
-                        Appearance floor;
+                        TerrainType floor;
                         if (fval < -0.3)
                         {
-                            floor = FLOOR_SLABS;
+                            floor = TERR_BRICKS;
                         }
                         else if (fval < 0.0)
                         {
-                            floor = FLOOR_STONE;
+                            floor = TERR_STONE;
                         }
                         else if (fval < 0.2)
                         {
-                            floor = FLOOR_DIRT;
+                            floor = TERR_DIRT;
                         }
                         else
                         {
-                            floor = FLOOR_GRASS;
+                            floor = TERR_GRASS;
                         }
-                        zone.set_terrain(pos.x + rx, pos.y + ry, floor, colors::BLACK, true);
+                        zone.set_terrain(pos.x + rx, pos.y + ry, floor);
                     }
                 }
             }
@@ -319,6 +330,8 @@ fn int main(String[] args)
             rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Developer mode enabled");
         }
     }
+
+    load_default_settings();
 
     random::seed_entropy(&g_rng);
     generate_whole_dungeon_stuff(&g_rng);
@@ -394,19 +407,22 @@ fn int main(String[] args)
 
             update_inputs();
             
-            if (is_key_pressed(TOGGLE_TEXTMODE, false))
+            if (!gui::want_key_input())
             {
-                textmode = !textmode;
-            }
-            
-            if (is_key_pressed(TOGGLE_ZOOM, false))
-            {
-                map_zoom = map_zoom == 1 ? 3 : 1;
+                if (is_key_pressed(TOGGLE_TEXTMODE, false))
+                {
+                    textmode = !textmode;
+                }
                 
-                int new_width = rl::getScreenWidth();
-                int new_height = rl::getScreenHeight();
-                map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
-                ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
+                if (is_key_pressed(TOGGLE_ZOOM, false))
+                {
+                    map_zoom = map_zoom == 1 ? 3 : 1;
+                    
+                    int new_width = rl::getScreenWidth();
+                    int new_height = rl::getScreenHeight();
+                    map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
+                    ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
+                }
             }
 
             map_term.clear(colors::BLANK);
@@ -421,7 +437,7 @@ fn int main(String[] args)
                 onUpdate(elapsed);
             }
             ZoneRenderSettings settings = { { 15 / map_zoom, 0 } };
-            g_zone.render(&map_term, settings);
+            g_zone.render(&map_term, &ui_term, settings);
 
             onRender();
             gui::gui_data.render();
@@ -431,7 +447,7 @@ fn int main(String[] args)
             
             rl::endDrawing();
 
-            if (want_exit_floor || (devmode && is_key_pressed(NEXT_FLOOR, false)))
+            if (want_exit_floor || (devmode && !gui::want_key_input() && is_key_pressed(NEXT_FLOOR, false)))
             {
                 if (current_floor.depth == 10)
                 {
