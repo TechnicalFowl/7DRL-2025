@@ -64,6 +64,7 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 
     self.give_exp(HITPOINTS, EXPERIENCE_TABLE[10], supress_message: true);
     self.health = self.level[Skill.HITPOINTS];
+    self.equipment[EquipmentSlot.WEAPON] = { Item.BOW1, 1, 0 };
 }
 
 fn void Player.free(&self) @dynamic
@@ -193,6 +194,21 @@ fn void Player.use_item_pair(&self, int first, int second)
     log("Nothing interesting happens.");
 }
 
+fn void Player.quaff(&self, ItemStack stack)
+{
+    switch (stack.item)
+    {
+    case FOOD:
+        self.health = math::min(self.health + 5, self.level[Skill.HITPOINTS]);
+        log("You eat the food.");
+    case POTION1:
+        self.health = math::min(self.health + 10, self.level[Skill.HITPOINTS]);
+        log("You drink the potion.");
+    default:
+        log(string::new_format("You consume the %s, it tastes awful.", g_items.items[stack.item].name));
+    }
+}
+
 fn void Player.give_exp(&self, Skill skill, int exp, bool supress_message=false)
 {
     self.experience[skill] += exp;
@@ -226,13 +242,31 @@ fn Action Player.tryInteract(&self, IVec2 dir)
     ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
     if (cell.isPassable())
     {
-        inv_use_source = -1;
+        inv_action = NO_ACTION;
         return null;
     }
     else
     {
         return do_interact(dir);
     }
+}
+
+fn IVec2 Player.get_room(&self)
+{
+    return self.get_position() / 17;
+}
+
+fn CombatStyle Player.getAttackStyle(&self)
+{
+    return getStyle(self.equipment[EquipmentSlot.WEAPON].item);
+}
+
+fn double Player.getAttackRange(&self)
+{
+    Item item = self.equipment[EquipmentSlot.WEAPON].item;
+    if (item == NO_ITEM) return 1.5;
+    ItemInfo* info = &g_items.items[item];
+    return info.stats.range;
 }
 
 fn Action Player.next_action(&self, double max_time) @dynamic
@@ -242,19 +276,6 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         if (is_key_pressed(REVEAL_MAP, false))
         {
             self.vis.explored.clear_to(true);
-        }
-    }
-
-    if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
-    {
-        if (self.nav.is_idle())
-        {
-            IVec2 pos = math::clamp(self.get_zone().get_mouse_position(), IVec2 {0, 0}, IVec2 {self.get_zone().width - 1, self.get_zone().height - 1});
-            self.nav.path_to(self.get_zone(), self.get_position(), pos);
-        }
-        else
-        {
-            self.nav.abort();
         }
     }
 
@@ -284,6 +305,23 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             if (is_key_pressed(WAIT) || math::abs(rl::getMouseWheelMove()) > 0.01)
             {
                 return do_wait(1.0);
+            }
+            
+            if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
+            {
+                IVec2 pos = math::clamp(self.get_zone().get_mouse_position(), IVec2 {0, 0}, IVec2 {self.get_zone().width - 1, self.get_zone().height - 1});
+                ZoneCell* cell = self.get_zone().get_cell(...pos);
+                if (!cell.entities.is_empty()
+                        && self.get_room() == pos / 17
+                        && self.getAttackStyle() != MELEE
+                        && ivec2_distance(self.get_position(), pos) <= self.getAttackRange())
+                {
+                    return do_ranged_attack(1.0, pos);
+                }
+                else
+                {
+                    self.nav.path_to(self.get_zone(), self.get_position(), pos);
+                }
             }
 
             bool is_shift = is_key_down(DIAGONAL_UP);
@@ -364,13 +402,13 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 }
                 else
                 {
-                    grab_target = self.get_position();
+                    inv_action_target = self.get_position();
                     gui::open_popup("Grab Item");
                 }
                 return null;
             }
         }
-        else if (inv_use_source != -1)
+        else if (inv_action == ACT_USE_ON)
         {
             bool is_shift = is_key_down(DIAGONAL_UP);
             bool is_ctrl = is_key_down(DIAGONAL_DOWN);
@@ -429,28 +467,48 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 return self.tryInteract({-1, -1});
             }
         }
+        else if (inv_action == ACT_AIM)
+        {
+            if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
+            {
+                inv_action = NO_ACTION;
+                return do_ranged_attack(1.0, inv_action_target);
+            }
+            if (is_key_pressed(ZAP, false, true))
+            {
+                inv_action = NO_ACTION;
+                return do_ranged_attack(1.0, inv_action_target);
+            }
+        }
     }
     else
     {
-        self.nav_delay -= rl::getFrameTime();
-        if (self.nav_delay <= 0)
+        if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
         {
-            self.nav_delay = 0.1f;
-            IVec2 next_pos = self.nav.next_point();
-            IVec2 next_move = next_pos - self.entity.position;
-            ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
-            if (next_cell.isPassable())
+            self.nav.abort();
+        }
+        else
+        {
+            self.nav_delay -= rl::getFrameTime();
+            if (self.nav_delay <= 0)
             {
-                return do_move(next_move);
-            }
-            else if (is_door_terrain(next_cell.terrain))
-            {
-                return do_interact(next_move);
-            }
-            else
-            {
-                self.nav.abort();
-                return do_interact(next_move);
+                self.nav_delay = 0.1f;
+                IVec2 next_pos = self.nav.next_point();
+                IVec2 next_move = next_pos - self.entity.position;
+                ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
+                if (next_cell.isPassable())
+                {
+                    return do_move(next_move);
+                }
+                else if (is_door_terrain(next_cell.terrain))
+                {
+                    return do_interact(next_move);
+                }
+                else
+                {
+                    self.nav.abort();
+                    return do_interact(next_move);
+                }
             }
         }
     }
@@ -468,9 +526,10 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     IVec2 new_pos = entity.get_position() + self.dir;
     Player* player = (Player*) entity;
     ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
-    if (inv_use_source != -1)
+    if (inv_action == ACT_USE_ON)
     {
-        ItemStack item = player.inventory[inv_use_source];
+        inv_action = NO_ACTION;
+        ItemStack item = player.inventory[inv_action_source];
         if (cell.object == OBJ_FURNACE)
         {
             if (item.item == ORE1 || item.item == ORE2 || item.item == ORE3)
@@ -484,24 +543,23 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 else
                 {
                     player.add_item(result);
-                    player.inventory[inv_use_source].count -= 1;
-                    if (player.inventory[inv_use_source].count == 0)
+                    player.inventory[inv_action_source].count -= 1;
+                    if (player.inventory[inv_action_source].count == 0)
                     {
-                        player.inventory[inv_use_source] = { NO_ITEM, 0, 0 };
+                        player.inventory[inv_action_source] = { NO_ITEM, 0, 0 };
                     }
                     log("You smelt the ore into an ingot.");
                     player.give_exp(SMITHING, 175 * (1 << ore_tier));
                 }
-                inv_use_source = -1;
                 return;
             }
             else if (item.item == LOGS)
             {
                 log("You burn the logs in the furnace.");
-                player.inventory[inv_use_source].count -= 1;
-                if (player.inventory[inv_use_source].count == 0)
+                player.inventory[inv_action_source].count -= 1;
+                if (player.inventory[inv_action_source].count == 0)
                 {
-                    player.inventory[inv_use_source] = { NO_ITEM, 0, 0 };
+                    player.inventory[inv_action_source] = { NO_ITEM, 0, 0 };
                 }
             }
         }
@@ -510,7 +568,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             if (item.item != PICKAXE)
             {
                 log("You need a pickaxe to mine ore.");
-                inv_use_source = -1;
                 return;
             }
             int ore_tier = (cell.object - OBJ_ORE_ROCK1);
@@ -526,7 +583,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 log("You mine the ore.");
                 player.give_exp(MINING, 400 * (1 << ore_tier));
             }
-            inv_use_source = -1;
             return;
         }
         else if (cell.object == OBJ_TREE)
@@ -534,7 +590,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             if (item.item != AXE)
             {
                 log("You need an axe to chop down trees.");
-                inv_use_source = -1;
                 return;
             }
             ItemStack result_item = { LOGS, 1, 0 };
@@ -549,7 +604,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 log("You chop down the tree.");
                 player.give_exp(WOODCUTTING, 250);
             }
-            inv_use_source = -1;
             return;
         }
         else if (cell.object == OBJ_STUMP)
@@ -557,7 +611,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             if (item.item == AXE)
             {
                 log("You can't get any more wood from this stump.");
-                inv_use_source = -1;
                 return;
             }
         }
@@ -567,7 +620,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             {
                 log("You can't get any useful ore from these rocks.");
                 cell.object = OBJ_SMALL_ROCKS;
-                inv_use_source = -1;
                 return;
             }
         }
@@ -576,12 +628,10 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             if (item.item == PICKAXE)
             {
                 log("The bricks are too hard to break.");
-                inv_use_source = -1;
                 return;
             }
         }
         log("Nothing interesting happens.");
-        inv_use_source = -1;
     }
     else if (is_door_terrain(cell.terrain))
     {
@@ -730,8 +780,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         if (target.type == Monster.typeid)
         {
             Monster* monster = (Monster*) target;
-            int damage = player.calculate_melee_damage(monster);
-            String success = damage > 0 ? "attack" : "miss";
+            int damage = player.calculate_damage(monster, MELEE);
+            String success = damage > 0 ? "hit" : "miss";
             monster.take_damage(damage);
             String killed = "";
             if (monster.is_dead())
@@ -745,7 +795,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             {
                 ending.append_char('!');
             }
-            log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending));
+            log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), colors::GREEN);
             player.give_exp(MELEE, damage * 30);
             player.give_exp(HITPOINTS, damage * 10);
         }
@@ -784,15 +834,15 @@ fn int[3] Player.get_style_stats(&self, CombatStyle style)
     return stats;
 }
 
-fn int Player.calculate_melee_damage(&self, Monster* target)
+fn int Player.calculate_damage(&self, Monster* target, CombatStyle style)
 {
     MonsterInfo* target_info = target.info;
-    int str = self.level[Skill.MELEE] + 9;
-    int[3] stats = self.get_style_stats(MELEE);
+    int str = self.level[Skill.MELEE.ordinal + style.ordinal] + 9;
+    int[3] stats = self.get_style_stats(style);
     int max_hit = (str * (stats[1] + 64) + 320) / 640;
-    int atk = self.level[Skill.MELEE] + 9;
+    int atk = self.level[Skill.MELEE.ordinal + style.ordinal] + 9;
     int attack_roll = atk * (stats[0] + 64);
-    int defence_roll = (target_info.defence + 9) * (target_info.defence_bonus[0] + 16);
+    int defence_roll = (target_info.defence + 9) * (target_info.defence_bonus[style] + 16);
     float hit_chance;
     if (attack_roll > defence_roll)
     {
@@ -802,9 +852,90 @@ fn int Player.calculate_melee_damage(&self, Monster* target)
     {
         hit_chance = attack_roll / (2.0f * (defence_roll + 1.0f));
     }
+
+    float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.getAttackRange());
+    hit_chance *= math::clamp(1.0f - range / 2, 0.1f, 1.0f);
+
     bool hit = random::next_float(&g_rng) < hit_chance;
-    io::printfn("Attach: max_hit %d, atk %d, attack_roll %d, defence_roll %d, hit_chance %.01f%%, hit %s", max_hit, atk, attack_roll, defence_roll, hit_chance * 100, hit ? "yes" : "no");
+    io::printfn("Player attack: max_hit %d, atk %d, attack_roll %d, defence_roll %d, hit_chance %.01f%%, hit %s", max_hit, atk, attack_roll, defence_roll, hit_chance * 100, hit ? "yes" : "no");
     if (!hit) return 0;
     int damage = random::next_in_range(&g_rng, 1, max_hit);
     return damage;
+}
+
+fn PlayerRangedAction* do_ranged_attack(double time, IVec2 target)
+{
+    PlayerRangedAction* attack = mem::temp_alloc(PlayerRangedAction);
+    attack.time = time;
+    attack.target = target;
+    return attack;
+}
+
+struct PlayerRangedAction (Action)
+{
+    double time;
+    IVec2 target;
+    bool los;
+}
+fn double PlayerRangedAction.duration(&self) @dynamic => self.time;
+
+fn bool PlayerRangedAction.lineCB(&self, IVec2 next)
+{
+    ZoneCell* cell = g_zone.get_cell(...next);
+    if (cell.isTerrainPassable())
+    {
+        return true;
+    }
+    else
+    {
+        self.los = false;
+        return false;
+    }
+}
+
+fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
+{
+    Player* player = (Player*) entity;
+    ZoneCell* target_cell = player.get_zone().get_cell(...self.target);
+    if (target_cell.entities.is_empty())
+    {
+        log("Your attack doesn't hit anything.");
+        return;
+    }
+    self.los = true;
+    line(player.get_position(), self.target, (LineCallback) &PlayerRangedAction.lineCB, self);
+    if (!self.los)
+    {
+        log("You can't see your target.");
+        return;
+    }
+    Entity target = target_cell.entities[0];
+    if (target.type == Monster.typeid)
+    {
+        CombatStyle style = getStyle(player.equipment[EquipmentSlot.WEAPON].item);
+        assert(style != MELEE);
+        Monster* monster = (Monster*) target;
+        int damage = player.calculate_damage(monster, style);
+        String success = damage > 0 ? "hit" : "miss";
+        monster.take_damage(damage);
+        String killed = "";
+        if (monster.is_dead())
+        {
+            killed = " and killed";
+        }
+        DString ending;
+        ending.temp_init();
+        if (damage < 5) ending.append_char('.');
+        for (int i = 0; i < damage/5; ++i)
+        {
+            ending.append_char('!');
+        }
+        log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), colors::GREEN);
+        player.give_exp(Skill.from_ordinal(Skill.MELEE.ordinal + style.ordinal), damage * 20);
+        player.give_exp(HITPOINTS, damage * 2);
+    }
+    else
+    {
+        log("Your attack doesn't hit anything.");
+    }
 }

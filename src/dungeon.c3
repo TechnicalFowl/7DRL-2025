@@ -505,7 +505,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, OBJ_CRATE);
                     case SMALL_WARRIOR:
-                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int tier = current_floor.depth / 3;
+                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
+                        tier = math::clamp(tier, 0, 2);
                         int count = random::next_in_range(rng, 1, 3);
                         for (int i = 0; i < count; ++i)
                         {
@@ -514,7 +517,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                             spawn_monster(zone, p0, WARRIOR_TYPES[tier]);
                         }
                     case SMALL_ARCHER:
-                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int tier = current_floor.depth / 3;
+                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
+                        tier = math::clamp(tier, 0, 2);
                         int count = random::next_in_range(rng, 1, 3);
                         for (int i = 0; i < count; ++i)
                         {
@@ -523,7 +529,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                             spawn_monster(zone, p0, ARCHER_TYPES[tier]);
                         }
                     case SMALL_MAGE:
-                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int tier = current_floor.depth / 3;
+                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
+                        tier = math::clamp(tier, 0, 2);
                         int count = random::next_in_range(rng, 1, 3) / 2;
                         for (int i = 0; i < count; ++i)
                         {
@@ -532,12 +541,18 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                             spawn_monster(zone, p0, MAGE_TYPES[tier]);
                         }
                     case MOB_GROUP:
-                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int tier = current_floor.depth / 3;
+                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
+                        tier = math::clamp(tier, 0, 2);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
                     case BIG_GROUP:
-                        int tier = math::clamp(current_floor.depth / 3 + random::next_in_range(rng, -1, 1), 0, 2);
+                        int tier = current_floor.depth / 3;
+                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
+                        tier = math::clamp(tier, 0, 2);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), ARCHER_TYPES[tier]);

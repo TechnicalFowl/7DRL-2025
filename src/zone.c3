@@ -145,6 +145,7 @@ struct ZoneCell
 }
 
 fn bool ZoneCell.isPassable(&self) => g_terrain_info[self.terrain].passable && g_object_info[self.object].passable && self.entities.is_empty();
+fn bool ZoneCell.isTerrainPassable(&self) => g_terrain_info[self.terrain].passable;
 
 struct Zone
 {
@@ -504,41 +505,59 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
         }
     }
 
-    /*
-    IVec2 mpos = self.get_mouse_position();
-    if (mpos == self.last_mouse_pos && !is_ui_hovered)
     {
-        self.mouse_hover_time += rl::getFrameTime();
-
-        if (g_settings.hover_tooltip_delay > 0 && self.mouse_hover_time > g_settings.hover_tooltip_delay)
+        IVec2 mpos = self.get_mouse_position();
+        if (mpos == self.last_mouse_pos)
         {
-            ZoneCell* cell = self.get_cell(...mpos);
-            int height = cell.object == OBJ_EMPTY ? 1 : 2;
-            height += (int) cell.entities.len();
-            if (height < 2) height = 2;
-            double time_in_hover = self.mouse_hover_time - g_settings.hover_tooltip_delay;
-            int animation_step = (int) (time_in_hover / 0.02);
-            bool left_justify = rl::getMouseX() < (ui.width - sidebar_width - 16) * 8;
-            if (left_justify)
+            if (!gui::want_mouse_input())
             {
-                IVec2 ui_pos = (mpos - min) * map_zoom;
-                ui_pos += {map_zoom + 1, 1};
-                ui_pos.x *= 2;
-                if (ui_pos.y + height > ui.height) ui_pos.y -= height;
-                // @Todo: maybe tooltips later lol
-            }
-            else
-            {
+                self.mouse_hover_time += rl::getFrameTime();
 
+                if (g_settings.hover_tooltip_delay > 0 && self.mouse_hover_time > g_settings.hover_tooltip_delay)
+                {
+                    ZoneCell* cell = self.get_cell(...mpos);
+                    int height = cell.object == OBJ_EMPTY ? 1 : 2;
+                    height += (int) cell.entities.len();
+                    if (height < 2) height = 2;
+                    double time_in_hover = self.mouse_hover_time - g_settings.hover_tooltip_delay;
+                    int animation_step = (int) (time_in_hover / 0.02);
+                    bool left_justify = rl::getMouseX() < (ui.width - sidebar_width - 16) * 8;
+                    if (left_justify)
+                    {
+                        IVec2 tt_pos = (mpos - min) * map_zoom;
+                        tt_pos += {map_zoom + 1, 1};
+                        tt_pos.x *= 2;
+                        if (tt_pos.y + height > ui.height) tt_pos.y -= height;
+                        // @Todo: maybe tooltips later lol
+                    }
+                    else
+                    {
+
+                    }
+                }
             }
         }
+        else
+        {
+            self.mouse_hover_time = 0;
+            self.last_mouse_pos = self.get_mouse_position();
+            if (inv_action == ACT_AIM && !gui::want_mouse_input())
+            {
+                inv_action_target = self.last_mouse_pos;
+            }
+        }
+        IVec2 ui_pos = ((inv_action == ACT_AIM ? inv_action_target : mpos) - min) * map_zoom;
+        ui_pos.y += 1;
+        ui_pos.x *= 2;
+        if (ui_pos.x >= 0 && ui_pos.y >= 0 && ui_pos.x + map_zoom * 2 < ui.width && ui_pos.y + map_zoom < ui.height)
+        {
+            double now = rl::getTime() / 2;
+            double frac = now - (int) now;
+            float t = (float) math::abs(frac - 0.5) * 0.2;
+            rl::Color bg = lerp(colors::BLANK, inv_action == ACT_AIM ? colors::RED : colors::BLANK, t + 0.3);
+            ui.fill_background(ui_pos.x, ui_pos.y, map_zoom * 2, map_zoom, bg);
+        }
     }
-    else
-    {
-        self.mouse_hover_time = 0;
-        self.last_mouse_pos = self.get_mouse_position();
-    }
-    */
 }
 
 fn double get_diag_heuristic(IVec2 a, IVec2 b)

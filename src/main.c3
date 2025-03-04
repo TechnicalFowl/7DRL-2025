@@ -35,6 +35,7 @@ bool show_visibility;
 DungeonFloor* current_floor;
 
 bool devmode;
+bool devmode_immortal;
 
 double elapsed_time;
 
@@ -67,6 +68,8 @@ struct GeneratorData
 {
     ulong seed;
     int depth;
+
+    Player* old_player;
 }
 
 fn void GeneratorData.generate(&self, Zone* zone)
@@ -286,42 +289,45 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
     Player* pl = mem::new(Player);
     pl.new_init(zone, "Player", {start.x * 17 + 7, start.y * 17 + 8});
+
+    if (self.old_player)
+    {
+        pl.health = self.old_player.health;
+        pl.inventory = self.old_player.inventory;
+        pl.equipment = self.old_player.equipment;
+        pl.level = self.old_player.level;
+        pl.experience = self.old_player.experience;
+    }
+
     zone.add_player(pl);
     pl.explore(start_room.position, {16, 16});
 }
 
-fn void onUpdate(double elapsed)
-{
-
-}
-
-fn void onRender()
-{
-    draw_ui();
-}
-
 fn void load_zone(ZoneDescription desc)
 {
-    if (g_zone)
-    {
-        g_zone.free();
-        mem::free(g_zone);
-    }
+    Zone* old_zone = g_zone;
     g_zone = mem::new(Zone);
     g_zone.new_init(desc);
+    if (old_zone)
+    {
+        old_zone.free();
+        mem::free(old_zone);
+    }
 }
 
 fn void load_floor(int depth)
 {
     ZoneDescription initial_zone;
     initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
-    GeneratorData generator = { 165361613 * ((ulong) depth + 1), depth };
+    GeneratorData generator = { 165361613 * ((ulong) depth + 1), depth, g_zone ? (Player*) g_zone.player : null };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
 
     log("You descend further into the depths of Daemonheim...", colors::RED);
 
     load_zone(initial_zone);
+
+    inv_action = NO_ACTION;
 }
 
 fn int main(String[] args)
@@ -385,8 +391,8 @@ fn int main(String[] args)
     g_mobs.new_init();
 
     ZoneDescription initial_zone;
-    initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
-    GeneratorData generator = { (ulong) g_rng.next_long(), 0 };
+    initial_zone.new_init("tutorial", 17 * 8, 17 * 8);
+    GeneratorData generator = { (ulong) g_rng.next_long(), 0, null };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
 
@@ -397,6 +403,8 @@ fn int main(String[] args)
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Starting game loop...");
     
+    game_state = PLAYING;
+
     log("You descend into the depths of Daemonheim...", colors::RED);
 
     while (!rl::windowShouldClose())
@@ -415,23 +423,29 @@ fn int main(String[] args)
             rl::clearBackground(colors::BLACK);
 
             update_inputs();
-            
-            if (!gui::want_key_input())
+
+            switch (game_state)
             {
-                if (is_key_pressed(TOGGLE_TEXTMODE, false))
+            case PLAYING:
+                if (!gui::want_key_input())
                 {
-                    textmode = !textmode;
-                }
-                
-                if (is_key_pressed(TOGGLE_ZOOM, false))
-                {
-                    map_zoom = map_zoom == 1 ? 3 : 1;
+                    if (is_key_pressed(TOGGLE_TEXTMODE, false))
+                    {
+                        textmode = !textmode;
+                    }
                     
-                    int new_width = rl::getScreenWidth();
-                    int new_height = rl::getScreenHeight();
-                    map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
-                    ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
+                    if (is_key_pressed(TOGGLE_ZOOM, false))
+                    {
+                        map_zoom = map_zoom == 1 ? 3 : 1;
+                        
+                        int new_width = rl::getScreenWidth();
+                        int new_height = rl::getScreenHeight();
+                        map_term.on_resize((new_width / font_size) / map_zoom, (new_height / font_size) / map_zoom);
+                        ui_term.on_resize((new_width / font_size) * 2, (new_height / font_size));
+                    }
                 }
+            default:
+                break;
             }
 
             map_term.clear(colors::BLANK);
@@ -439,19 +453,34 @@ fn int main(String[] args)
             
             gui::gui_data.start_frame();
 
-            double elapsed = g_zone.update();
-            if (elapsed > 0.0)
+            switch (game_state)
             {
-                elapsed_time += elapsed;
-                onUpdate(elapsed);
+            case PLAYING:
+                double elapsed = g_zone.update();
+                if (elapsed > 0.0)
+                {
+                    elapsed_time += elapsed;
+                    
+                    Player* player = (Player*) g_zone.player;
+                    if (player.health <= 0)
+                    {
+                        game_state = GAME_OVER;
+                    }
+                }
+                ZoneRenderSettings settings = { { 15 / map_zoom, 0 } };
+                g_zone.render(&map_term, &ui_term, settings);
+
+                draw_ui();
+                map_term.render(map_zoom, {0, 16});
+            case MAIN_MENU:
+                draw_mainmenu();
+            case GAME_OVER:
+                draw_gameover();
+            case VICTORY:
+                draw_victory();
             }
-            ZoneRenderSettings settings = { { 15 / map_zoom, 0 } };
-            g_zone.render(&map_term, &ui_term, settings);
-
-            onRender();
+            
             gui::gui_data.render();
-
-            map_term.render(map_zoom, {0, 16});
             ui_term.render(1);
             
             rl::endDrawing();
@@ -471,4 +500,29 @@ fn int main(String[] args)
     
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Shutting down...");
     return 0;
+}
+
+fn void draw_mainmenu()
+{
+    int term_width = ui_term.width;
+    int term_height = ui_term.height;
+
+}
+
+fn void draw_gameover()
+{
+    int term_width = ui_term.width;
+    int term_height = ui_term.height;
+
+    IVec2 pos = {term_width / 2, term_height / 3};
+    ui_term.write_centered(...pos, "You have been defeated.", colors::WHITE);
+}
+
+fn void draw_victory()
+{
+    int term_width = ui_term.width;
+    int term_height = ui_term.height;
+
+    IVec2 pos = {term_width / 2, term_height / 3};
+    ui_term.write_centered(...pos, "You were victorious!", colors::WHITE);
 }

@@ -148,6 +148,16 @@ fn Color Color.randomize(&self, Random rng, float pct)
     };
 }
 
+fn Color lerp(Color a, Color b, float t)
+{
+    return {
+        (char) math::clamp(math::floor(a.r * (1.0f - t) + b.r * t), 0, 255),
+        (char) math::clamp(math::floor(a.g * (1.0f - t) + b.g * t), 0, 255),
+        (char) math::clamp(math::floor(a.b * (1.0f - t) + b.b * t), 0, 255),
+        (char) math::clamp(math::floor(a.a * (1.0f - t) + b.a * t), 0, 255)
+    };
+}
+
 module dg::colors;
 
 import std::math::random;

@@ -116,6 +116,28 @@ fn void VirtualTerminal.fill_background(&self, int x0, int y0, int w, int h, rl:
     }
 }
 
+fn void VirtualTerminal.box_background(&self, int x0, int y0, int w, int h, rl::Color bg, int priority=0)
+{
+    int x_min = math::max(0, x0);
+    int y_min = math::max(0, y0);
+    int x_max = math::min(self.width - 1, x0 + w - 1);
+    int y_max = math::min(self.height - 1, y0 + h - 1);
+
+    for (int x = x_min; x <= x_max; x++)
+    {
+        self.set_background(x, y_min, bg, priority);
+        self.set_background(x, y_max, bg, priority);
+    }
+
+    for (int y = y_min + 1; y < y_max; y++)
+    {
+        self.set_background(x_min, y, bg, priority);
+        self.set_background(x_max, y, bg, priority);
+        self.set_background(x_min + 1, y, bg, priority);
+        self.set_background(x_max - 1, y, bg, priority);
+    }
+}
+
 <*
 @require x >= 0 && x <= self.width
 @require y >= 0 && y <= self.height
@@ -232,6 +254,15 @@ fn void VirtualTerminal.box_tile(&self, int x0, int y0, int w, int h, bool doubl
 *>
 fn void VirtualTerminal.write(&self, int x, int y, String text, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
+    foreach (c: text)
+    {
+        self.set_tile(x++, y, c, fg, priority, override_font);
+    }
+}
+
+fn void VirtualTerminal.write_centered(&self, int x, int y, String text, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
+{
+    x -= text.len / 2;
     foreach (c: text)
     {
         self.set_tile(x++, y, c, fg, priority, override_font);
