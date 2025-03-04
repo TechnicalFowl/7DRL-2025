@@ -641,7 +641,7 @@ fn void draw_ui()
                 ItemInfo* info = &g_items.items[stack.item];
                 gui::icon(info.look);
                 int last_len = info.name.len + 2;
-                if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + i)))
+                if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + (cell.dropped_items.len() - i - 1))))
                 {
                     if (pl.is_inventory_full(stack))
                     {

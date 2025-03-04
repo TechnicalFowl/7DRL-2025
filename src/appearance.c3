@@ -15,6 +15,8 @@ const Appearance FLOOR_STONE = { 15 * 16 + 9, colors::DARKER_GREY, 0 * 16 + 0 };
 const Appearance FLOOR_DIRT = { ',', {90, 79, 46, 255}, 1 * 16 + 0 };
 const Appearance FLOOR_SLABS = { 15 * 16 + 9, colors::DARK_GREY, 2 * 16 + 0 };
 const Appearance FLOOR_GRASS = { ',', {37, 66, 40, 255}, 3 * 16 + 0 };
+const Appearance FLOOR_ROUGH_STONE = { '.', colors::DARK_GREY, 11 * 16 + 5 };
+const Appearance FLOOR_CLEAN_STONE = { '.', colors::DARKER_GREY, 11 * 16 + 6 };
 
 const Appearance WALL_NORTH = { '#', {220, 220, 220, 255}, 0 * 16 + 3 };
 const Appearance WALL_SOUTH = { '#', {220, 220, 220, 255}, 2 * 16 + 3 };
@@ -61,9 +63,21 @@ const Appearance ORE_ROCK3 = { 4, { 243, 192, 37, 255}, 5 * 16 + 11 };
 const Appearance TRADER = { 'T', colors::DARK_GREEN, 4 * 16 + 4 };
 
 const Appearance PLAYER_NAKED = { '@', {255, 255, 255, 255}, 4 * 16 + 2 };
+const Appearance NAKED_IDLE1 = { '@', {255, 255, 255, 255}, 11 * 16 + 2 };
+const Appearance NAKED_IDLE2 = { '@', {255, 255, 255, 255}, 11 * 16 + 1 };
+const Appearance NAKED_POINT = { '@', {255, 255, 255, 255}, 11 * 16 + 0 };
+
 const Appearance WARRIOR_IDLE1 = { '@', {255, 255, 255, 255}, 6 * 16 + 2 };
 const Appearance WARRIOR_IDLE2 = { '@', {255, 255, 255, 255}, 6 * 16 + 1 };
 const Appearance WARRIOR_POINT = { '@', {255, 255, 255, 255}, 6 * 16 + 0 };
+
+const Appearance MAGE_IDLE1 = { '@', {255, 255, 255, 255}, 5 * 16 + 2 };
+const Appearance MAGE_IDLE2 = { '@', {255, 255, 255, 255}, 5 * 16 + 1 };
+const Appearance MAGE_POINT = { '@', {255, 255, 255, 255}, 5 * 16 + 0 };
+
+const Appearance RANGER_IDLE1 = { '@', {255, 255, 255, 255}, 7 * 16 + 2 };
+const Appearance RANGER_IDLE2 = { '@', {255, 255, 255, 255}, 7 * 16 + 1 };
+const Appearance RANGER_POINT = { '@', {255, 255, 255, 255}, 7 * 16 + 0 };
 
 const Appearance GOBLIN_IDLE1 = { 'g', {116, 122, 82, 255}, 9 * 16 + 5 };
 const Appearance GOBLIN_IDLE2 = { 'g', {116, 122, 82, 255}, 9 * 16 + 4 };

@@ -78,33 +78,43 @@ enum SpecialRoomType
     LOGGING_CAMP,
 }
 
-enum HotspotType : (int weight)
+enum HotspotType : (int weight, uint exclusive_mask)
 {
-    EMPTY_SPOT = 40,
-    TREE = 5,
-    STUMP = 3,
-    ROCK = 3,
-    ORE = 5,
-    FURNACE = 2,
-    ANVIL = 2,
-    STORE_CACHE = 8,
-    SMALL_WARRIOR = 4,
-    SMALL_ARCHER = 4,
-    SMALL_MAGE = 4,
-    MOB_GROUP = 2,
-    BIG_GROUP = 1,
-    GRAVESITE = 5,
+    EMPTY_SPOT = {40, 0},
+    TREE = {5, 0},
+    STUMP = {3, 0},
+    ROCK = {3, 0},
+    ORE = {5, 0},
+    FURNACE = {4, 0x1020},
+    STORE_CACHE = {8, 0x1000},
+    SMALL_WARRIOR = {4, 0xc00},
+    SMALL_ARCHER = {4, 0xc00},
+    SMALL_MAGE = {4, 0xc00},
+    MOB_GROUP = {2, 0xc00},
+    BIG_GROUP = {1, 0xc00},
+    GRAVESITE = {5, 0x60},
 }
 
 int hotspot_total_weight;
 
-fn HotspotType get_random_hotspot(random::Pcg32Random* rng)
+fn HotspotType get_random_hotspot(random::Pcg32Random* rng, uint existing_mask)
 {
-    int r = random::next_in_range(rng, 0, hotspot_total_weight - 1);
-    for (int i = 0; i < HotspotType.elements; ++i)
+    for (int j = 0; j < 100; ++j)
     {
-        r -= HotspotType.from_ordinal(i).weight;
-        if (r < 0) return HotspotType.from_ordinal(i);
+        int r = random::next_in_range(rng, 0, hotspot_total_weight - 1);
+        for (int i = 0; i < HotspotType.elements; ++i)
+        {
+            r -= HotspotType.from_ordinal(i).weight;
+            if (r < 0)
+            {
+                HotspotType hotspot = HotspotType.from_ordinal(i);
+                if ((hotspot.exclusive_mask & existing_mask) == 0)
+                {
+                    return hotspot;
+                }
+                break; // reroll
+            }
+        }
     }
     unreachable();
 }
@@ -263,6 +273,8 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
             if (meta_grid[5] == 1 && meta_grid[15] == 1) meta_grid[10] = random::next_in_range(rng, 0, 1);
             if (meta_grid[11] == 1 && meta_grid[16] == 1 && meta_grid[10] == 1) meta_grid[11] = random::next_in_range(rng, 0, 1);
         }
+
+        uint hotspot_mask = 0;
 
         for (int y = 0; y < 5; ++y)
         {
@@ -443,9 +455,14 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         }
                     }
                 }
-                else if ((x == 2 && (y == 0 || y == 4)) || (y == 2 && (x == 0 || x == 4)))
+                else if ((x == 2
+                        && ((y == 0 && self.doors[Direction.NORTH.ordinal - 1].type != WALL)
+                            || (y == 4 && self.doors[Direction.SOUTH.ordinal - 1].type != WALL)))
+                    || (y == 2
+                        && ((x == 0 && self.doors[Direction.WEST.ordinal - 1].type != WALL)
+                            || (x == 4 && self.doors[Direction.EAST.ordinal - 1].type != WALL))))
                 {
-
+                    // Don't place anything in front of the doors
                 }
                 else
                 {
@@ -469,7 +486,8 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                     {
                         size.y -= 1;
                     }
-                    HotspotType hst = get_random_hotspot(rng);
+                    HotspotType hst = get_random_hotspot(rng, hotspot_mask);
+                    hotspot_mask |= (1 << hst.ordinal);
                     switch (hst)
                     {
                     case EMPTY_SPOT:
@@ -494,16 +512,16 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ORE_ROCK1);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ROCKS);
                     case FURNACE:
-                        IVec2 p0 = get_random_pos(rng, min, {size.x, 1});
-                        zone.set_object(...p0, OBJ_FURNACE);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OBJ_CRATE);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0, pos + {x0, y0 + 1}, pos + {x0 + 1, y0 + 1}, pos + {x0 + 2, y0 + 1}), OBJ_OPEN_CRATE);
-                    case ANVIL:
-                        IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, OBJ_ANVIL);
+                        zone.fill_terrain(min, size, TERR_BRICKS);
+                        IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_FURNACE);
+                        IVec2 p1 = get_random_pos(rng, min, size, p0); zone.set_object(...p1, OBJ_ANVIL);
+                        IVec2 p2 = get_random_pos(rng, min, size, p0, p1); zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
                     case STORE_CACHE:
-                        IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, OBJ_CRATE);
+                        IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
+                        IVec2 p1 = get_random_pos(rng, min, size, p0);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...p1, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
+                        IVec2 p2 = get_random_pos(rng, min, size, p0, p1);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
                     case SMALL_WARRIOR:
                         int tier = current_floor.depth / 3;
                         if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;

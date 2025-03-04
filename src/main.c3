@@ -27,6 +27,8 @@ int map_zoom = 3;
 VirtualTerminal map_term;
 VirtualTerminal ui_term;
 
+const int FLOOR_SIZE = 4;
+
 Zone* g_zone;
 bool want_exit_floor;
 
@@ -88,9 +90,9 @@ fn void GeneratorData.generate(&self, Zone* zone)
     current_floor = mem::new(DungeonFloor);
     current_floor.new_init(self.depth);
 
-    for (int y = 0; y < 8; ++y)
+    for (int y = 0; y < FLOOR_SIZE; ++y)
     {
-        for (int x = 0; x < 8; ++x)
+        for (int x = 0; x < FLOOR_SIZE; ++x)
         {
             Room* room = mem::new(Room);
             room.new_init({x * 17, y * 17}, {16, 16});
@@ -103,12 +105,12 @@ fn void GeneratorData.generate(&self, Zone* zone)
     placed.temp_init();
     adjacent.temp_init();
 
-    IVec2 start = {random::next_in_range(&rng, 1, 6), random::next_in_range(&rng, 1, 6)};
+    IVec2 start = {random::next_in_range(&rng, 0, FLOOR_SIZE - 1), random::next_in_range(&rng, 0, FLOOR_SIZE - 1)};
     placed.set(start, true);
-    adjacent.set({ start.x + 1, start.y }, true);
-    adjacent.set({ start.x - 1, start.y }, true);
-    adjacent.set({ start.x, start.y + 1 }, true);
-    adjacent.set({ start.x, start.y - 1 }, true);
+    if (start.x < FLOOR_SIZE - 1) adjacent.set({ start.x + 1, start.y }, true);
+    if (start.x > 0) adjacent.set({ start.x - 1, start.y }, true);
+    if (start.y < FLOOR_SIZE - 1) adjacent.set({ start.x, start.y + 1 }, true);
+    if (start.y > 0) adjacent.set({ start.x, start.y - 1 }, true);
 
     while (!adjacent.is_empty())
     {
@@ -117,9 +119,9 @@ fn void GeneratorData.generate(&self, Zone* zone)
         IVec2 next = keys[random::next_in_range(&rng, 0, (int) keys.len - 1)];
         List(<Direction>) neighbors;
         if (next.x > 0 && placed.get({next.x - 1, next.y}) ?? false) neighbors.push(WEST);
-        if (next.x < 7 && placed.get({next.x + 1, next.y}) ?? false) neighbors.push(EAST);
+        if (next.x < FLOOR_SIZE - 1 && placed.get({next.x + 1, next.y}) ?? false) neighbors.push(EAST);
         if (next.y > 0 && placed.get({next.x, next.y - 1}) ?? false) neighbors.push(NORTH);
-        if (next.y < 7 && placed.get({next.x, next.y + 1}) ?? false) neighbors.push(SOUTH);
+        if (next.y < FLOOR_SIZE - 1 && placed.get({next.x, next.y + 1}) ?? false) neighbors.push(SOUTH);
         assert(neighbors.len() > 0, "No neighbors for room");
 
         Direction neighbor = neighbors[random::next_in_range(&rng, 0, (int) neighbors.len() - 1)];
@@ -139,9 +141,9 @@ fn void GeneratorData.generate(&self, Zone* zone)
         adjacent.remove(next);
 
         if (next.x > 0 && !(placed.get({next.x - 1, next.y}) ?? false)) adjacent.set({next.x - 1, next.y}, true);
-        if (next.x < 7 && !(placed.get({next.x + 1, next.y}) ?? false)) adjacent.set({next.x + 1, next.y}, true);
+        if (next.x < FLOOR_SIZE - 1 && !(placed.get({next.x + 1, next.y}) ?? false)) adjacent.set({next.x + 1, next.y}, true);
         if (next.y > 0 && !(placed.get({next.x, next.y - 1}) ?? false)) adjacent.set({next.x, next.y - 1}, true);
-        if (next.y < 7 && !(placed.get({next.x, next.y + 1}) ?? false)) adjacent.set({next.x, next.y + 1}, true);
+        if (next.y < FLOOR_SIZE - 1 && !(placed.get({next.x, next.y + 1}) ?? false)) adjacent.set({next.x, next.y + 1}, true);
     }
 
     Room* start_room = current_floor.rooms.get(start)!!;
@@ -166,7 +168,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
             frontier.push({next.x - 1, next.y, next.z + 1});
             seen.set({next.x - 1, next.y}, next.z + 1);
         }
-        if (room.doors[Direction.EAST.ordinal - 1].type != WALL && next.x < 7 && (seen.get({next.x + 1, next.y}) ?? 99) > next.z + 1)
+        if (room.doors[Direction.EAST.ordinal - 1].type != WALL && next.x < FLOOR_SIZE - 1 && (seen.get({next.x + 1, next.y}) ?? 99) > next.z + 1)
         {
             frontier.push({next.x + 1, next.y, next.z + 1});
             seen.set({next.x + 1, next.y}, next.z + 1);
@@ -176,7 +178,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
             frontier.push({next.x, next.y - 1, next.z + 1});
             seen.set({next.x, next.y - 1}, next.z + 1);
         }
-        if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL && next.y < 7 && (seen.get({next.x, next.y + 1}) ?? 99) > next.z + 1)
+        if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL && next.y < FLOOR_SIZE - 1 && (seen.get({next.x, next.y + 1}) ?? 99) > next.z + 1)
         {
             frontier.push({next.x, next.y + 1, next.z + 1});
             seen.set({next.x, next.y + 1}, next.z + 1);
@@ -210,9 +212,9 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
     float noise_scale = 12;
     
-    for (int y = 0; y < 8; ++y)
+    for (int y = 0; y < FLOOR_SIZE; ++y)
     {
-        for (int x = 0; x < 8; ++x)
+        for (int x = 0; x < FLOOR_SIZE; ++x)
         {
             if (!(placed.get({x, y}) ?? false)) continue;
             Room* room = current_floor.rooms.get({x, y})!!;
@@ -265,7 +267,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
                         TerrainType floor;
                         if (fval < -0.3)
                         {
-                            floor = TERR_BRICKS;
+                            floor = TERR_CLEAN_STONE;
                         }
                         else if (fval < 0.0)
                         {
@@ -273,11 +275,11 @@ fn void GeneratorData.generate(&self, Zone* zone)
                         }
                         else if (fval < 0.2)
                         {
-                            floor = TERR_DIRT;
+                            floor = TERR_ROUGH_STONE;
                         }
                         else
                         {
-                            floor = TERR_GRASS;
+                            floor = TERR_DIRT;
                         }
                         zone.set_terrain(pos.x + rx, pos.y + ry, floor);
                     }
@@ -318,7 +320,7 @@ fn void load_zone(ZoneDescription desc)
 fn void load_floor(int depth)
 {
     ZoneDescription initial_zone;
-    initial_zone.new_init("dungeon", 17 * 8, 17 * 8);
+    initial_zone.new_init("dungeon", 17 * FLOOR_SIZE, 17 * FLOOR_SIZE);
     GeneratorData generator = { 165361613 * ((ulong) depth + 1), depth, g_zone ? (Player*) g_zone.player : null };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
@@ -391,7 +393,7 @@ fn int main(String[] args)
     g_mobs.new_init();
 
     ZoneDescription initial_zone;
-    initial_zone.new_init("tutorial", 17 * 8, 17 * 8);
+    initial_zone.new_init("tutorial", 17 * FLOOR_SIZE, 17 * FLOOR_SIZE);
     GeneratorData generator = { (ulong) g_rng.next_long(), 0, null };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;

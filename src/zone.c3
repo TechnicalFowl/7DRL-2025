@@ -25,6 +25,8 @@ enum TerrainType : inline int
     TERR_DIRT,
     TERR_STONE,
     TERR_BRICKS,
+    TERR_ROUGH_STONE,
+    TERR_CLEAN_STONE,
 
     TERR_DOOR_NORTH_L,
     TERR_DOOR_NORTH_R,
@@ -65,6 +67,8 @@ TerrainInfo[*] g_terrain_info = {
     { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK },
     { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK },
     { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK },
+    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK },
+    { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK },
     { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK },
     { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK },
     { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK },
@@ -504,7 +508,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 
                 if (cell.dropped_items.len() > 1)
                 {
-                    IVec2 ui_pos = IVec2 { term_x * 2 * map_zoom + 5, term_y * map_zoom + 1};
+                    IVec2 ui_pos = IVec2 { term_x * 2 * map_zoom + map_zoom * 2 - 1, term_y * map_zoom + 1};
                     ui.set_tile(...ui_pos, '+', colors::WHITE, 0);
                 }
             }
