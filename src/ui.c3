@@ -265,6 +265,7 @@ fn void draw_ui()
             {
                 gui::same_line();
                 ItemInfo* info = &g_items.items[stack.item];
+                gui::icon(info.look);
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
                 if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0)))
                 {
@@ -331,6 +332,7 @@ fn void draw_ui()
         }
         ItemInfo* info = &g_items.items[stack.item];
         String count = stack.count > 1 ? string::tformat("x%d", stack.count) : "";
+        gui::icon(info.look);
         gui::text(string::tformat("%s%s", info.name, count));
         if (gui::button("Unequip", get_bind(EQUIP)[0]))
         {
@@ -412,6 +414,7 @@ fn void draw_ui()
             if (stack.item != NO_ITEM)
             {
                 ItemInfo* info = &g_items.items[stack.item];
+                gui::icon(info.look);
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
                 if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: (inv_action == ACT_USE_ON && inv_action_source == i) || (inv_action == ACT_EQUIP && info.stats == null) || (inv_action == ACT_QUAFF && !is_consumable(stack.item))))
                 {
@@ -481,12 +484,23 @@ fn void draw_ui()
             return;
         }
         ItemInfo* info = &g_items.items[stack.item];
-        String count = stack.count > 1 ? string::tformat("x%d", stack.count) : "";
+        String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
+        gui::icon(info.look);
         gui::text(string::tformat("%s%s", info.name, count));
         if (info.stats && gui::button("Equip", get_bind(EQUIP)[0]))
         {
             ItemStack old_stack = pl.equip(stack);
             pl.inventory[inv_minimenu_target] = old_stack;
+            gui::close_current_popup();
+        }
+        if (is_consumable(stack.item) && gui::button("Quaff", get_bind(QUAFF)[0]))
+        {
+            pl.quaff(stack);
+            pl.inventory[inv_minimenu_target].count--;
+            if (pl.inventory[inv_minimenu_target].count == 0)
+            {
+                pl.inventory[inv_minimenu_target] = { NO_ITEM, 0, 0 };
+            }
             gui::close_current_popup();
         }
         if (gui::button("Drop", get_bind(DROP)[0]))
@@ -571,6 +585,7 @@ fn void draw_ui()
         {
             ItemInfo* info = &g_items.items[i];
             int last_len = info.name.len + 2;
+            gui::icon(info.look);
             if (gui::button(info.name))
             {
                 Item item = Item.from_ordinal(i);
@@ -620,25 +635,28 @@ fn void draw_ui()
             {
                 gui::close_current_popup();
             }
-            for (int i = 0; i < cell.dropped_items.len(); ++i)
+            for (int i = (int)cell.dropped_items.len() -1; i >= 0; --i)
             {
                 ItemStack stack = cell.dropped_items[i];
                 ItemInfo* info = &g_items.items[stack.item];
+                gui::icon(info.look);
                 int last_len = info.name.len + 2;
                 if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + i)))
                 {
                     if (pl.is_inventory_full(stack))
                     {
                         log("Inventory is full!");
-                        gui::close_current_popup();
                     }
                     else
                     {
                         pl.add_item(stack);
                         cell.dropped_items.remove_at(i);
-                        gui::close_current_popup();
                     }
                 }
+            }
+            if (cell.dropped_items.is_empty())
+            {
+                gui::close_current_popup();
             }
             gui::end_popup();
         }
@@ -653,38 +671,47 @@ fn void draw_ui()
             gui::close_current_popup();
         }
         gui::text("");
+        gui::icon(g_items.items[Item.SWORD1].look);
         if (gui::button("Novite Sword (3x Novite Ingot)", rl::KEY_A, disabled: !pl.has_item(INGOT1, 3)))
         {
             if (do_smith({ SWORD1, 1, 0 }, { INGOT1, 3, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.STAFF1].look);
         if (gui::button("Novite Staff (1x Novite Ingot, 1x Logs, 10x Air Runes)", rl::KEY_B, disabled: !pl.has_item(INGOT1) || !pl.has_item(LOGS) || !pl.has_item(AIR_RUNE, 10)))
         {
             if (do_smith({ STAFF1, 1, 0 }, { INGOT1, 1, 0 }, { LOGS, 1, 0 }, { AIR_RUNE, 10, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.BOW1].look);
         if (gui::button("Novite Bow (2x Novite Ingot, 1x Logs)", rl::KEY_C, disabled: !pl.has_item(INGOT1, 2) || !pl.has_item(LOGS)))
         {
             if (do_smith({ BOW1, 1, 0 }, { INGOT1, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.SWORD2].look);
         if (gui::button("Fractite Sword (3x Fractite Ingot)", rl::KEY_D, disabled: !pl.has_item(INGOT2, 3)))
         {
             if (do_smith({ SWORD2, 1, 0 }, { INGOT2, 3, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.STAFF2].look);
         if (gui::button("Fractite Staff (1x Fractite Ingot, 1x Logs, 50x Water Runes)", rl::KEY_E, disabled: !pl.has_item(INGOT2) || !pl.has_item(LOGS) || !pl.has_item(WATER_RUNE, 50)))
         {
             if (do_smith({ STAFF2, 1, 0 }, { INGOT2, 1, 0 }, { LOGS, 1, 0 }, { WATER_RUNE, 50, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.BOW2].look);
         if (gui::button("Fractite Bow (2x Fractite Ingot, 1x Logs)", rl::KEY_F, disabled: !pl.has_item(INGOT2, 2) || !pl.has_item(LOGS)))
         {
             if (do_smith({ BOW2, 1, 0 }, { INGOT2, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.SWORD3].look);
         if (gui::button("Promethium Sword (3x Promethium Ingot)", rl::KEY_G, disabled: !pl.has_item(INGOT3, 3)))
         {
             if (do_smith({ SWORD3, 1, 0 }, { INGOT3, 3, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.STAFF3].look);
         if (gui::button("Promethium Staff (1x Promethium Ingot, 1x Logs, 100x Fire Runes)", rl::KEY_H, disabled: !pl.has_item(INGOT3) || !pl.has_item(LOGS) || !pl.has_item(FIRE_RUNE, 100)))
         {
             if (do_smith({ STAFF3, 1, 0 }, { INGOT3, 1, 0 }, { LOGS, 1, 0 }, { FIRE_RUNE, 100, 0 })) gui::close_current_popup();
         }
+        gui::icon(g_items.items[Item.BOW3].look);
         if (gui::button("Promethium Bow (2x Promethium Ingot, 1x Logs)", rl::KEY_I, disabled: !pl.has_item(INGOT3, 2) || !pl.has_item(LOGS)))
         {
             if (do_smith({ BOW3, 1, 0 }, { INGOT3, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();

@@ -501,6 +501,12 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
                 rl::Color color = is_textmode ? look.color : colors::WHITE;
                 terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                
+                if (cell.dropped_items.len() > 1)
+                {
+                    IVec2 ui_pos = IVec2 { term_x * 2 * map_zoom + 5, term_y * map_zoom + 1};
+                    ui.set_tile(...ui_pos, '+', colors::WHITE, 0);
+                }
             }
         }
     }

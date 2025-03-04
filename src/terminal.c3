@@ -277,7 +277,7 @@ fn void VirtualTerminal.drawTile(&self, Vec2f p, Vec2f offs, char c, rl::Color c
     };
     rl::Rectangle dest = {
         p.x * self.font.width * zoom + offs.x, p.y * self.font.height * zoom + offs.y,
-        self.font.width * zoom, self.font.height * zoom
+        font.width * zoom, font.height * zoom
     };
 
     rl::drawTexturePro(font.texture, src, dest, { 0, 0 }, 0, col);
@@ -296,6 +296,18 @@ fn void VirtualTerminal.render(&self, float zoom, Vec2f offset={0, 0})
                 self.font.width * zoom, self.font.height * zoom
             };
             if (cell.bg.a > 0) rl::drawRectangleRec(dest, cell.bg);
+        }
+    }
+    rl::beginBlendMode(0);
+    for (int y = 0; y < self.height; y++)
+    {
+        for (int x = 0; x < self.width; x++)
+        {
+            VCell* cell = &self.buffer[self.width * y + x];
+            rl::Rectangle dest = {
+                (float) x * self.font.width * zoom + offset.x, (float) y * self.font.height * zoom + offset.y,
+                self.font.width * zoom, self.font.height * zoom
+            };
             for (int i = 0; i < 2; i++)
             {
                 VCellLayer* layer = &cell.layers[i];

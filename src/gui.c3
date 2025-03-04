@@ -165,6 +165,18 @@ fn void vertical_separator(int y)
     window.cursor = { window.newline_start, window.cursor.y + y };
 }
 
+fn void icon(Appearance look)
+{
+    if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
+    GuiWindow* window = gui_data.window_stack.last()!!;
+    int prio = get_setting(GuiSetting.PRIORITY);
+    bool is_textmode = dg::textmode || look.sprite_index < 0;
+    char gl = is_textmode ? look.glyph : (char) look.sprite_index;
+    rl::Color color = is_textmode ? look.color : colors::WHITE;
+    dg::ui_term.set_tile(...window.cursor, gl, color, prio + 1, is_textmode ? dg::textmode_font : dg::sprite_font);
+    window.cursor.x += 2;
+}
+
 fn void text(String text, rl::Color color=colors::BLANK)
 {
     if (color == colors::BLANK) color = get_color(GuiColor.WINDOW_TEXT);

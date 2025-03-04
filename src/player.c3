@@ -62,9 +62,9 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 
     self.vis.new_init(z);
 
+    for (int i = 0; i < Skill.elements; ++i) self.level[i] = 1;
     self.give_exp(HITPOINTS, EXPERIENCE_TABLE[10], supress_message: true);
     self.health = self.level[Skill.HITPOINTS];
-    self.equipment[EquipmentSlot.WEAPON] = { Item.BOW1, 1, 0 };
 }
 
 fn void Player.free(&self) @dynamic
@@ -930,7 +930,7 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
         {
             ending.append_char('!');
         }
-        log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), colors::GREEN);
+        log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), damage > 0 ? colors::GREEN : colors::ORANGE);
         player.give_exp(Skill.from_ordinal(Skill.MELEE.ordinal + style.ordinal), damage * 20);
         player.give_exp(HITPOINTS, damage * 2);
     }
