@@ -37,6 +37,33 @@ enum TerrainType : inline int
     TERR_DOOR_WEST_U,
     TERR_DOOR_WEST_L,
 
+    TERR_ODOOR_NORTH_L,
+    TERR_ODOOR_NORTH_R,
+    TERR_ODOOR_EAST_U,
+    TERR_ODOOR_EAST_L,
+    TERR_ODOOR_SOUTH_L,
+    TERR_ODOOR_SOUTH_R,
+    TERR_ODOOR_WEST_U,
+    TERR_ODOOR_WEST_L,
+
+    TERR_LDOOR_NORTH_L,
+    TERR_LDOOR_NORTH_R,
+    TERR_LDOOR_EAST_U,
+    TERR_LDOOR_EAST_L,
+    TERR_LDOOR_SOUTH_L,
+    TERR_LDOOR_SOUTH_R,
+    TERR_LDOOR_WEST_U,
+    TERR_LDOOR_WEST_L,
+
+    TERR_BDOOR_NORTH_L,
+    TERR_BDOOR_NORTH_R,
+    TERR_BDOOR_EAST_U,
+    TERR_BDOOR_EAST_L,
+    TERR_BDOOR_SOUTH_L,
+    TERR_BDOOR_SOUTH_R,
+    TERR_BDOOR_WEST_U,
+    TERR_BDOOR_WEST_L,
+
     TERR_EXIT_WALL_L,
     TERR_EXIT_WALL_R,
     TERR_EXIT_HOLE_L,
@@ -63,12 +90,14 @@ TerrainInfo[*] g_terrain_info = {
     { TERR_WALL_SE, "Wall", false, WALL_SE, colors::BLACK },
     { TERR_WALL_SW, "Wall", false, WALL_SW, colors::BLACK },
     { TERR_PILLAR, "Pillar", false, PILLAR, colors::BLACK },
+
     { TERR_GRASS, "Grass", true, FLOOR_GRASS, colors::BLACK },
     { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK },
     { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK },
     { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK },
     { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK },
     { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK },
+
     { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK },
     { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK },
     { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK },
@@ -77,6 +106,34 @@ TerrainInfo[*] g_terrain_info = {
     { TERR_DOOR_SOUTH_R, "Door", false, DOOR_SOUTH_R, colors::BLACK },
     { TERR_DOOR_WEST_U, "Door", false, DOOR_WEST_U, colors::BLACK },
     { TERR_DOOR_WEST_L, "Door", false, DOOR_WEST_L, colors::BLACK },
+
+    { TERR_ODOOR_NORTH_L, "Open Door", false, DOOR_OPEN_NORTH_L, colors::BLACK },
+    { TERR_ODOOR_NORTH_R, "Open Door", false, DOOR_OPEN_NORTH_R, colors::BLACK },
+    { TERR_ODOOR_EAST_U, "Open Door", false, DOOR_OPEN_EAST_U, colors::BLACK },
+    { TERR_ODOOR_EAST_L, "Open Door", false, DOOR_OPEN_EAST_L, colors::BLACK },
+    { TERR_ODOOR_SOUTH_L, "Open Door", false, DOOR_OPEN_SOUTH_L, colors::BLACK },
+    { TERR_ODOOR_SOUTH_R, "Open Door", false, DOOR_OPEN_SOUTH_R, colors::BLACK },
+    { TERR_ODOOR_WEST_U, "Open Door", false, DOOR_OPEN_WEST_U, colors::BLACK },
+    { TERR_ODOOR_WEST_L, "Open Door", false, DOOR_OPEN_WEST_L, colors::BLACK },
+
+    { TERR_LDOOR_NORTH_L, "Locked Door", false, DOOR_LOCKED_NORTH_L, colors::BLACK },
+    { TERR_LDOOR_NORTH_R, "Locked Door", false, DOOR_LOCKED_NORTH_R, colors::BLACK },
+    { TERR_LDOOR_EAST_U, "Locked Door", false, DOOR_LOCKED_EAST_U, colors::BLACK },
+    { TERR_LDOOR_EAST_L, "Locked Door", false, DOOR_LOCKED_EAST_L, colors::BLACK },
+    { TERR_LDOOR_SOUTH_L, "Locked Door", false, DOOR_LOCKED_SOUTH_L, colors::BLACK },
+    { TERR_LDOOR_SOUTH_R, "Locked Door", false, DOOR_LOCKED_SOUTH_R, colors::BLACK },
+    { TERR_LDOOR_WEST_U, "Locked Door", false, DOOR_LOCKED_WEST_U, colors::BLACK },
+    { TERR_LDOOR_WEST_L, "Locked Door", false, DOOR_LOCKED_WEST_L, colors::BLACK },
+
+    { TERR_BDOOR_NORTH_L, "Boss Door", false, DOOR_BOSS_NORTH_L, colors::BLACK },
+    { TERR_BDOOR_NORTH_R, "Boss Door", false, DOOR_BOSS_NORTH_R, colors::BLACK },
+    { TERR_BDOOR_EAST_U, "Boss Door", false, DOOR_BOSS_EAST_U, colors::BLACK },
+    { TERR_BDOOR_EAST_L, "Boss Door", false, DOOR_BOSS_EAST_L, colors::BLACK },
+    { TERR_BDOOR_SOUTH_L, "Boss Door", false, DOOR_BOSS_SOUTH_L, colors::BLACK },
+    { TERR_BDOOR_SOUTH_R, "Boss Door", false, DOOR_BOSS_SOUTH_R, colors::BLACK },
+    { TERR_BDOOR_WEST_U, "Boss Door", false, DOOR_BOSS_WEST_U, colors::BLACK },
+    { TERR_BDOOR_WEST_L, "Boss Door", false, DOOR_BOSS_WEST_L, colors::BLACK },
+
     { TERR_EXIT_WALL_L, "Wall", false, EXIT_WALL_L, colors::BLACK },
     { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK },
     { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK },
@@ -84,7 +141,8 @@ TerrainInfo[*] g_terrain_info = {
 };
 
 fn bool is_wall_terrain(TerrainType t) => t >= TERR_WALL_NORTH && t <= TERR_PILLAR;
-fn bool is_door_terrain(TerrainType t) => t >= TERR_DOOR_NORTH_L && t <= TERR_DOOR_WEST_L;
+fn bool is_door_terrain(TerrainType t) => t >= TERR_DOOR_NORTH_L && t <= TERR_BDOOR_WEST_L;
+fn bool is_locked_door_terrain(TerrainType t) => t >= TERR_LDOOR_NORTH_L && t <= TERR_LDOOR_WEST_L;
 fn bool is_exit_terrain(TerrainType t) => t >= TERR_EXIT_WALL_L && t <= TERR_EXIT_HOLE_R;
 
 enum ObjectType : inline int

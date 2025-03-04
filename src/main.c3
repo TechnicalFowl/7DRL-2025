@@ -53,12 +53,14 @@ GameState game_state;
 struct Settings
 {
     double hover_tooltip_delay;
+    bool scroll_to_wait;
 }
 Settings g_settings;
 
 fn void load_default_settings()
 {
     g_settings.hover_tooltip_delay = 1.0;
+    g_settings.scroll_to_wait = true;
 }
 
 fn void log(String message, rl::Color color = colors::WHITE)
@@ -206,6 +208,38 @@ fn void GeneratorData.generate(&self, Zone* zone)
     IVec2 boss_pos = farthest[random::next_in_range(&rng, 0, (int) farthest.len() - 1)];
     Room* boss_room = current_floor.rooms.get(boss_pos)!!;
     boss_room.type = BOSS;
+    
+    for (int y = 0; y < FLOOR_SIZE; ++y)
+    {
+        for (int x = 0; x < FLOOR_SIZE; ++x)
+        {
+            if (!(placed.get({x, y}) ?? false)) continue;
+            Room* room = current_floor.rooms.get({x, y})!!;
+            if (room.type == BOSS)
+            {
+                if (room.doors[Direction.WEST.ordinal - 1].type != WALL)
+                {
+                    room.doors[Direction.WEST.ordinal - 1].type = BOSS;
+                    current_floor.rooms.get({x - 1, y})!!.doors[Direction.EAST.ordinal - 1].type = BOSS;
+                }
+                if (room.doors[Direction.EAST.ordinal - 1].type != WALL)
+                {
+                    room.doors[Direction.EAST.ordinal - 1].type = BOSS;
+                    current_floor.rooms.get({x + 1, y})!!.doors[Direction.WEST.ordinal - 1].type = BOSS;
+                }
+                if (room.doors[Direction.NORTH.ordinal - 1].type != WALL)
+                {
+                    room.doors[Direction.NORTH.ordinal - 1].type = BOSS;
+                    current_floor.rooms.get({x, y - 1})!!.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
+                }
+                if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL)
+                {
+                    room.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
+                    current_floor.rooms.get({x, y + 1})!!.doors[Direction.NORTH.ordinal - 1].type = BOSS;
+                }
+            }
+        }
+    }
 
     OSN_Context* ctx;
     open_simplex_noise((long) rng.next_long(), &ctx);

@@ -302,7 +302,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 }
             }
 
-            if (is_key_pressed(WAIT) || math::abs(rl::getMouseWheelMove()) > 0.01)
+            if (is_key_pressed(WAIT) || (g_settings.scroll_to_wait && math::abs(rl::getMouseWheelMove()) > 0.01))
             {
                 return do_wait(1.0);
             }
@@ -310,6 +310,10 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
             {
                 IVec2 pos = math::clamp(self.get_zone().get_mouse_position(), IVec2 {0, 0}, IVec2 {self.get_zone().width - 1, self.get_zone().height - 1});
+                if (pos == self.get_position())
+                {
+                    return do_grab();
+                }
                 ZoneCell* cell = self.get_zone().get_cell(...pos);
                 if (!cell.entities.is_empty()
                         && self.get_room() == pos / 17
@@ -382,30 +386,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             }
             if (is_key_pressed(GRAB))
             {
-                ZoneCell* cell = self.get_zone().get_cell(...self.get_position());
-                if (cell.dropped_items.is_empty())
-                {
-                    log("There is nothing to grab here.");
-                }
-                else if (cell.dropped_items.len() == 1)
-                {
-                    ItemStack item = cell.dropped_items[0];
-                    if (self.is_inventory_full(item))
-                    {
-                        log("Your inventory is full.");
-                    }
-                    else
-                    {
-                        self.add_item(cell.dropped_items[0]);
-                        cell.dropped_items.clear();
-                    }
-                }
-                else
-                {
-                    inv_action_target = self.get_position();
-                    gui::open_popup("Grab Item");
-                }
-                return null;
+                return do_grab();
             }
         }
         else if (inv_action == ACT_USE_ON)
@@ -525,7 +506,8 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
 {
     IVec2 new_pos = entity.get_position() + self.dir;
     Player* player = (Player*) entity;
-    ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
+    Zone* zone = entity.get_zone();
+    ZoneCell* cell = zone.get_cell(...new_pos);
     if (inv_action == ACT_USE_ON)
     {
         inv_action = NO_ACTION;
@@ -635,34 +617,42 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     }
     else if (is_door_terrain(cell.terrain))
     {
-        Room* r = find_room(new_pos)!!;
-        Direction dir = get_door_direction(new_pos);
-        Door* d = &r.doors[dir.ordinal - 1];
-        assert(d.type == UNLOCKED);
-        switch (dir)
+        if (is_locked_door_terrain(cell.terrain))
         {
-        case NORTH:
-            IVec2 end_pos = entity.get_position() + IVec2{0, -4};
-            if (self.dir.x != 0) end_pos.x += self.dir.x;
-            entity.set_position(end_pos);
-        case EAST:
-            IVec2 end_pos = entity.get_position() + IVec2{4, 0};
-            if (self.dir.y != 0) end_pos.y += self.dir.y;
-            entity.set_position(end_pos);
-        case SOUTH:
-            IVec2 end_pos = entity.get_position() + IVec2{0, 4};
-            if (self.dir.x != 0) end_pos.x += self.dir.x;
-            entity.set_position(end_pos);
-        case WEST:
-            IVec2 end_pos = entity.get_position() + IVec2{-4, 0};
-            if (self.dir.y != 0) end_pos.y += self.dir.y;
-            entity.set_position(end_pos);
-        default:
-            unreachable();
+            log("The door is locked.");
         }
-        log("You go through the door.");
-        Room* next_room = find_room(entity.get_position())!!;
-        player.explore(next_room.position, next_room.size);
+        else
+        {
+            Room* r = find_room(new_pos)!!;
+            Direction dir = get_door_direction(new_pos);
+            Door* d = &r.doors[dir.ordinal - 1];
+            assert(d.type == UNLOCKED);
+            switch (dir)
+            {
+            case NORTH:
+                IVec2 end_pos = entity.get_position() + IVec2{0, -4};
+                if (self.dir.x != 0) end_pos.x += self.dir.x;
+                entity.set_position(end_pos);
+            case EAST:
+                IVec2 end_pos = entity.get_position() + IVec2{4, 0};
+                if (self.dir.y != 0) end_pos.y += self.dir.y;
+                entity.set_position(end_pos);
+            case SOUTH:
+                IVec2 end_pos = entity.get_position() + IVec2{0, 4};
+                if (self.dir.x != 0) end_pos.x += self.dir.x;
+                entity.set_position(end_pos);
+            case WEST:
+                IVec2 end_pos = entity.get_position() + IVec2{-4, 0};
+                if (self.dir.y != 0) end_pos.y += self.dir.y;
+                entity.set_position(end_pos);
+            default:
+                unreachable();
+            }
+            log("You go through the door.");
+            open_door(zone, new_pos);
+            Room* next_room = find_room(entity.get_position())!!;
+            player.explore(next_room.position, next_room.size);
+        }
     }
     else if (is_exit_terrain(cell.terrain))
     {
@@ -810,6 +800,81 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     }
 }
 
+fn void open_door(Zone* zone, IVec2 p)
+{
+    ZoneCell* cell = zone.get_cell(...p);
+    switch (cell.terrain)
+    {
+    case TERR_DOOR_NORTH_L:
+    case TERR_LDOOR_NORTH_L:
+    case TERR_BDOOR_NORTH_L:
+        cell.terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y).terrain = TERR_ODOOR_NORTH_R;
+        zone.get_cell(p.x, p.y - 2).terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y - 2).terrain = TERR_ODOOR_SOUTH_R;
+    case TERR_DOOR_NORTH_R:
+    case TERR_LDOOR_NORTH_R:
+    case TERR_BDOOR_NORTH_R:
+        cell.terrain = TERR_ODOOR_NORTH_R;
+        zone.get_cell(p.x - 1, p.y).terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x - 1, p.y - 2).terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x, p.y - 2).terrain = TERR_ODOOR_SOUTH_R;
+    case TERR_DOOR_EAST_U:
+    case TERR_LDOOR_EAST_U:
+    case TERR_BDOOR_EAST_U:
+        cell.terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x, p.y + 1).terrain = TERR_ODOOR_EAST_L;
+        zone.get_cell(p.x + 2, p.y).terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y + 1).terrain = TERR_ODOOR_WEST_L;
+    case TERR_DOOR_EAST_L:
+    case TERR_LDOOR_EAST_L:
+    case TERR_BDOOR_EAST_L:
+        cell.terrain = TERR_ODOOR_EAST_L;
+        zone.get_cell(p.x, p.y - 1).terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x + 2, p.y - 1).terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y).terrain = TERR_ODOOR_WEST_L;
+    case TERR_DOOR_SOUTH_L:
+    case TERR_LDOOR_SOUTH_L:
+    case TERR_BDOOR_SOUTH_L:
+        cell.terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y).terrain = TERR_ODOOR_SOUTH_R;
+        zone.get_cell(p.x, p.y + 2).terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y + 2).terrain = TERR_ODOOR_NORTH_R;
+    case TERR_DOOR_SOUTH_R:
+    case TERR_LDOOR_SOUTH_R:
+    case TERR_BDOOR_SOUTH_R:
+        cell.terrain = TERR_ODOOR_SOUTH_R;
+        zone.get_cell(p.x - 1, p.y).terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x - 1, p.y + 2).terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x, p.y + 2).terrain = TERR_ODOOR_NORTH_R;
+    case TERR_DOOR_WEST_U:
+    case TERR_LDOOR_WEST_U:
+    case TERR_BDOOR_WEST_U:
+        cell.terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x, p.y + 1).terrain = TERR_ODOOR_WEST_L;
+        zone.get_cell(p.x - 2, p.y).terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y + 1).terrain = TERR_ODOOR_EAST_L;
+    case TERR_DOOR_WEST_L:
+    case TERR_LDOOR_WEST_L:
+    case TERR_BDOOR_WEST_L:
+        cell.terrain = TERR_ODOOR_WEST_L;
+        zone.get_cell(p.x, p.y - 1).terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x - 2, p.y - 1).terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y).terrain = TERR_ODOOR_EAST_L;
+    case TERR_ODOOR_NORTH_L:
+    case TERR_ODOOR_NORTH_R:
+    case TERR_ODOOR_EAST_U:
+    case TERR_ODOOR_EAST_L:
+    case TERR_ODOOR_SOUTH_L:
+    case TERR_ODOOR_SOUTH_R:
+    case TERR_ODOOR_WEST_U:
+    case TERR_ODOOR_WEST_L:
+        break;
+    default:
+        unreachable();
+    }
+}
+
 fn InteractAction* do_interact(IVec2 dir)
 {
     InteractAction* move_action = mem::temp_alloc(InteractAction);
@@ -937,5 +1002,47 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
     else
     {
         log("Your attack doesn't hit anything.");
+    }
+}
+
+fn GrabAction* do_grab()
+{
+    GrabAction* action = mem::temp_alloc(GrabAction);
+    action.time = 0.5;
+    return action;
+}
+
+struct GrabAction (Action)
+{
+    double time;
+}
+
+fn double GrabAction.duration(&self) @dynamic => self.time;
+
+fn void GrabAction.apply(&self, Entity entity) @dynamic
+{
+    Player* player = (Player*) entity;
+    ZoneCell* cell = player.get_zone().get_cell(...player.get_position());
+    if (cell.dropped_items.is_empty())
+    {
+        log("There is nothing to grab here.");
+    }
+    else if (cell.dropped_items.len() == 1)
+    {
+        ItemStack item = cell.dropped_items[0];
+        if (player.is_inventory_full(item))
+        {
+            log("Your inventory is full.");
+        }
+        else
+        {
+            player.add_item(cell.dropped_items[0]);
+            cell.dropped_items.clear();
+        }
+    }
+    else
+    {
+        inv_action_target = player.get_position();
+        gui::open_popup("Grab Item");
     }
 }

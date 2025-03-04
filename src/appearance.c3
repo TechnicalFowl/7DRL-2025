@@ -28,14 +28,41 @@ const Appearance WALL_SE = { '#', {220, 220, 220, 255}, 2 * 16 + 4 };
 const Appearance WALL_SW = { '#', {220, 220, 220, 255}, 2 * 16 + 2 };
 const Appearance PILLAR = { '#', {220, 220, 220, 255}, 1 * 16 + 3 };
 
-const Appearance DOOR_NORTH_L = { '+', colors::BROWN, 0 * 16 + 5 };
-const Appearance DOOR_NORTH_R = { '+', colors::BROWN, 0 * 16 + 6 };
-const Appearance DOOR_EAST_U = { '+', colors::BROWN, 0 * 16 + 10 };
-const Appearance DOOR_EAST_L = { '+', colors::BROWN, 1 * 16 + 10 };
-const Appearance DOOR_SOUTH_L = { '+', colors::BROWN, 1 * 16 + 7 };
-const Appearance DOOR_SOUTH_R = { '+', colors::BROWN, 1 * 16 + 8 };
-const Appearance DOOR_WEST_U = { '+', colors::BROWN, 0 * 16 + 11 };
-const Appearance DOOR_WEST_L = { '+', colors::BROWN, 1 * 16 + 11 };
+const Appearance DOOR_LOCKED_NORTH_L = { '+', colors::GREY, 0 * 16 + 5 };
+const Appearance DOOR_LOCKED_NORTH_R = { '+', colors::GREY, 0 * 16 + 6 };
+const Appearance DOOR_LOCKED_EAST_U = { '+', colors::GREY, 0 * 16 + 10 };
+const Appearance DOOR_LOCKED_EAST_L = { '+', colors::GREY, 1 * 16 + 10 };
+const Appearance DOOR_LOCKED_SOUTH_L = { '+', colors::GREY, 1 * 16 + 7 };
+const Appearance DOOR_LOCKED_SOUTH_R = { '+', colors::GREY, 1 * 16 + 8 };
+const Appearance DOOR_LOCKED_WEST_U = { '+', colors::GREY, 0 * 16 + 11 };
+const Appearance DOOR_LOCKED_WEST_L = { '+', colors::GREY, 1 * 16 + 11 };
+
+const Appearance DOOR_NORTH_L = { '+', colors::BROWN, 12 * 16 + 0 };
+const Appearance DOOR_NORTH_R = { '+', colors::BROWN, 12 * 16 + 1 };
+const Appearance DOOR_EAST_U = { '+', colors::BROWN, 12 * 16 + 2 };
+const Appearance DOOR_EAST_L = { '+', colors::BROWN, 13 * 16 + 2 };
+const Appearance DOOR_SOUTH_L = { '+', colors::BROWN, 13 * 16 + 0 };
+const Appearance DOOR_SOUTH_R = { '+', colors::BROWN, 13 * 16 + 1 };
+const Appearance DOOR_WEST_U = { '+', colors::BROWN, 12 * 16 + 3 };
+const Appearance DOOR_WEST_L = { '+', colors::BROWN, 13 * 16 + 3 };
+
+const Appearance DOOR_BOSS_NORTH_L = { '+', colors::DARK_RED, 12 * 16 + 4 };
+const Appearance DOOR_BOSS_NORTH_R = { '+', colors::DARK_RED, 12 * 16 + 5 };
+const Appearance DOOR_BOSS_EAST_U = { '+', colors::DARK_RED, 12 * 16 + 6 };
+const Appearance DOOR_BOSS_EAST_L = { '+', colors::DARK_RED, 13 * 16 + 6 };
+const Appearance DOOR_BOSS_SOUTH_L = { '+', colors::DARK_RED, 13 * 16 + 4 };
+const Appearance DOOR_BOSS_SOUTH_R = { '+', colors::DARK_RED, 13 * 16 + 5 };
+const Appearance DOOR_BOSS_WEST_U = { '+', colors::DARK_RED, 12 * 16 + 7 };
+const Appearance DOOR_BOSS_WEST_L = { '+', colors::DARK_RED, 13 * 16 + 7 };
+
+const Appearance DOOR_OPEN_NORTH_L = { '/', colors::BROWN, 1 * 16 + 5 };
+const Appearance DOOR_OPEN_NORTH_R = { '\\', colors::BROWN, 1 * 16 + 6 };
+const Appearance DOOR_OPEN_EAST_U = { '\\', colors::BROWN, 0 * 16 + 9 };
+const Appearance DOOR_OPEN_EAST_L = { '/', colors::BROWN, 1 * 16 + 9 };
+const Appearance DOOR_OPEN_SOUTH_L = { '\\', colors::BROWN, 0 * 16 + 7 };
+const Appearance DOOR_OPEN_SOUTH_R = { '/', colors::BROWN, 0 * 16 + 8 };
+const Appearance DOOR_OPEN_WEST_U = { '/', colors::BROWN, 0 * 16 + 12 };
+const Appearance DOOR_OPEN_WEST_L = { '\\', colors::BROWN, 1 * 16 + 12 };
 
 const Appearance EXIT_WALL_L = { '#', {220, 220, 220, 255}, 3 * 16 + 5 };
 const Appearance EXIT_WALL_R = { '#', {220, 220, 220, 255}, 3 * 16 + 6 };

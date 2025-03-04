@@ -23,8 +23,7 @@ enum DoorType
     WALL,
     UNLOCKED,
     LOCKED,
-    SECRET,
-    SKILL_CHECK,
+    BOSS,
 }
 
 struct Door
@@ -116,7 +115,8 @@ fn HotspotType get_random_hotspot(random::Pcg32Random* rng, uint existing_mask)
             }
         }
     }
-    unreachable();
+    //unreachable();
+    return EMPTY_SPOT;
 }
 
 fn IVec2 get_random_pos(random::Pcg32Random* rng, IVec2 pos, IVec2 size, IVec2... avoid)
@@ -146,22 +146,64 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
         Door* d = &self.doors[i];
         if (d.type == WALL) continue;
         assert(d.direction.ordinal == i + 1);
-        switch (d.direction)
+        switch (d.type)
         {
-        case NORTH:
-            zone.set_terrain(pos.x + 7, pos.y, TERR_DOOR_NORTH_L);
-            zone.set_terrain(pos.x + 8, pos.y, TERR_DOOR_NORTH_R);
-        case EAST:
-            zone.set_terrain(pos.x + 15, pos.y + 7, TERR_DOOR_EAST_U);
-            zone.set_terrain(pos.x + 15, pos.y + 8, TERR_DOOR_EAST_L);
-        case SOUTH:
-            zone.set_terrain(pos.x + 7, pos.y + 15, TERR_DOOR_SOUTH_L);
-            zone.set_terrain(pos.x + 8, pos.y + 15, TERR_DOOR_SOUTH_R);
-        case WEST:
-            zone.set_terrain(pos.x, pos.y + 7, TERR_DOOR_WEST_U);
-            zone.set_terrain(pos.x, pos.y + 8, TERR_DOOR_WEST_L);
+        case UNLOCKED:
+            switch (d.direction)
+            {
+            case NORTH:
+                zone.set_terrain(pos.x + 7, pos.y, TERR_DOOR_NORTH_L);
+                zone.set_terrain(pos.x + 8, pos.y, TERR_DOOR_NORTH_R);
+            case EAST:
+                zone.set_terrain(pos.x + 15, pos.y + 7, TERR_DOOR_EAST_U);
+                zone.set_terrain(pos.x + 15, pos.y + 8, TERR_DOOR_EAST_L);
+            case SOUTH:
+                zone.set_terrain(pos.x + 7, pos.y + 15, TERR_DOOR_SOUTH_L);
+                zone.set_terrain(pos.x + 8, pos.y + 15, TERR_DOOR_SOUTH_R);
+            case WEST:
+                zone.set_terrain(pos.x, pos.y + 7, TERR_DOOR_WEST_U);
+                zone.set_terrain(pos.x, pos.y + 8, TERR_DOOR_WEST_L);
+            default:
+                unreachable();
+            }
+        case LOCKED:
+            switch (d.direction)
+            {
+            case NORTH:
+                zone.set_terrain(pos.x + 7, pos.y, TERR_LDOOR_NORTH_L);
+                zone.set_terrain(pos.x + 8, pos.y, TERR_LDOOR_NORTH_R);
+            case EAST:
+                zone.set_terrain(pos.x + 15, pos.y + 7, TERR_LDOOR_EAST_U);
+                zone.set_terrain(pos.x + 15, pos.y + 8, TERR_LDOOR_EAST_L);
+            case SOUTH:
+                zone.set_terrain(pos.x + 7, pos.y + 15, TERR_LDOOR_SOUTH_L);
+                zone.set_terrain(pos.x + 8, pos.y + 15, TERR_LDOOR_SOUTH_R);
+            case WEST:
+                zone.set_terrain(pos.x, pos.y + 7, TERR_LDOOR_WEST_U);
+                zone.set_terrain(pos.x, pos.y + 8, TERR_LDOOR_WEST_L);
+            default:
+                unreachable();
+            }
+        case BOSS:
+            switch (d.direction)
+            {
+            case NORTH:
+                zone.set_terrain(pos.x + 7, pos.y, TERR_BDOOR_NORTH_L);
+                zone.set_terrain(pos.x + 8, pos.y, TERR_BDOOR_NORTH_R);
+            case EAST:
+                zone.set_terrain(pos.x + 15, pos.y + 7, TERR_BDOOR_EAST_U);
+                zone.set_terrain(pos.x + 15, pos.y + 8, TERR_BDOOR_EAST_L);
+            case SOUTH:
+                zone.set_terrain(pos.x + 7, pos.y + 15, TERR_BDOOR_SOUTH_L);
+                zone.set_terrain(pos.x + 8, pos.y + 15, TERR_BDOOR_SOUTH_R);
+            case WEST:
+                zone.set_terrain(pos.x, pos.y + 7, TERR_BDOOR_WEST_U);
+                zone.set_terrain(pos.x, pos.y + 8, TERR_BDOOR_WEST_L);
+            default:
+                unreachable();
+            }
         default:
-            unreachable();
+            break;
         }
     }
     if (self.type == EMPTY)
