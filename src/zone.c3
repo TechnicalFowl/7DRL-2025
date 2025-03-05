@@ -647,9 +647,10 @@ struct AStarStep
     IVec2 pos;
     IVec2 last;
     double cost;
+    double h_cost;
 }
 
-fn bool AStarStep.less(AStarStep* a, AStarStep b) => a.cost < b.cost;
+fn bool AStarStep.less(AStarStep* a, AStarStep b) => a.h_cost < b.h_cost;
 
 const IVec2[4] DIRECT_NEIGHBORS = { {0, -1}, {0, 1}, {-1, 0}, {1, 0} };
 const IVec2[4] DIAGONAL_NEIGHBORS = { {-1, -1}, {1, -1}, {-1, 1}, {1, 1} };
@@ -668,35 +669,41 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
     HashMap(<IVec2, AStarStep>) came_from;
     came_from.temp_init(16);
 
-    frontier.push({from, from, 0});
-    came_from.set(from, {from, from, 0});
+    frontier.push({from, from, 0, 0});
+    came_from.set(from, {from, from, 0, 0});
 
-    //io::printfn("Pathfinding from [%d %d] to [%d %d]", ...from, ...to);
+    const DEBUG_PATHFINDING = false;
+
+    if (DEBUG_PATHFINDING) io::printfn("Pathfinding from [%d %d] to [%d %d]", ...from, ...to);
 
     while (!frontier.is_empty())
     {
         AStarStep current = frontier.pop()!!;
-        //io::printfn("Popped [%d %d] with cost %.1f", ...current.pos, current.cost);
+        if (DEBUG_PATHFINDING) io::printfn("Popped [%d %d] with cost %.1f", ...current.pos, current.cost);
         if (current.pos == to) break;
         
         foreach (n: DIRECT_NEIGHBORS)
         {
             AStarStep save_current = current;
             IVec2 next = current.pos + n;
-            //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
+            if (DEBUG_PATHFINDING) io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
             ZoneCell* cell = self.get_cell(...next);
             if (is_door_terrain(cell.terrain) && next != to)
             {
                 double new_cost = current.cost + 1;
-                double h_cost = new_cost + get_diag_heuristic(next, to);
+                double h_cost = new_cost + (diagonal_moves ? get_diag_heuristic(next, to) : get_heuristic(next, to));
                 AStarStep! existing = came_from.get(next);
-                if (try existing && existing.cost <= h_cost)
-                {}
+                if (try existing && existing.cost <= new_cost)
+                {
+                    if (DEBUG_PATHFINDING) io::printfn("    Skipped door [%d %d] because it's already pathed with cost %.1f (new_cost was %.1f)", ...next, existing.cost, new_cost);
+                    current = save_current;
+                    continue;
+                }
                 else
                 {
-                    AStarStep next_step = {next, current.pos, h_cost};
-                    //io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                    AStarStep next_step = {next, current.pos, new_cost, h_cost};
+                    if (DEBUG_PATHFINDING) if (DEBUG_PATHFINDING) io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
                     //frontier.push(next_step);
                     came_from.set(next, next_step);
                     current = next_step;
@@ -709,7 +716,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             }
             if (!cell.isPassable() && next != to)
             {
-                //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
+                if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's impassable", ...next);
                 current = save_current;
                 continue;
             }
@@ -717,14 +724,14 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             double new_cost = current.cost + 1;
             double h_cost = new_cost + (diagonal_moves ? get_diag_heuristic(next, to) : get_heuristic(next, to));
             AStarStep! existing = came_from.get(next);
-            if (try existing && existing.cost <= h_cost)
+            if (try existing && existing.cost <= new_cost)
             {
-                //io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f", ...next, existing.cost);
+                if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f (new_cost was %.1f)", ...next, existing.cost, new_cost);
                 current = save_current;
                 continue;
             }
-            AStarStep next_step = {next, current.pos, h_cost};
-            //io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+            AStarStep next_step = {next, current.pos, new_cost, h_cost};
+            if (DEBUG_PATHFINDING) io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
             frontier.push(next_step);
             came_from.set(next, next_step);
             current = save_current;
@@ -735,7 +742,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             {
                 AStarStep save_current = current;
                 IVec2 next = current.pos + n;
-                //io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
+                if (DEBUG_PATHFINDING) io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
                 ZoneCell* cell = self.get_cell(...next);
                 if (is_door_terrain(cell.terrain) && next != to)
@@ -743,12 +750,16 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                     double new_cost = current.cost + 1.414;
                     double h_cost = new_cost + get_diag_heuristic(next, to);
                     AStarStep! existing = came_from.get(next);
-                    if (try existing && existing.cost <= h_cost)
-                    {}
+                    if (try existing && existing.cost <= new_cost)
+                    {
+                        if (DEBUG_PATHFINDING) io::printfn("    Skipped door [%d %d] because it's already pathed with cost %.1f (new_cost was %.1f)", ...next, existing.cost, new_cost);
+                        current = save_current;
+                        continue;
+                    }
                     else
                     {
-                        AStarStep next_step = {next, current.pos, h_cost};
-                        //io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                        AStarStep next_step = {next, current.pos, new_cost, h_cost};
+                        io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
                         //frontier.push(next_step);
                         came_from.set(next, next_step);
                         current = next_step;
@@ -760,7 +771,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 }
                 if (!cell.isPassable() && next != to)
                 {
-                    //io::printfn("    Skipped [%d %d] because it's impassable", ...next);
+                    if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's impassable", ...next);
                     current = save_current;
                     continue;
                 }
@@ -768,14 +779,14 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 double new_cost = current.cost + 1.414;
                 double h_cost = new_cost + get_diag_heuristic(next, to);
                 AStarStep! existing = came_from.get(next);
-                if (try existing && existing.cost <= h_cost)
+                if (try existing && existing.cost <= new_cost)
                 {
-                    //io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f", ...next, existing.cost);
+                    if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's already pathed with cost %.1f (new_cost was %.1f)", ...next, existing.cost, new_cost);
                     current = save_current;
                     continue;
                 }
-                AStarStep next_step = {next, current.pos, h_cost};
-                //io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                AStarStep next_step = {next, current.pos, new_cost, h_cost};
+                if (DEBUG_PATHFINDING) io::printfn("    Adding [%d %d] to frontier pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
                 frontier.push(next_step);
                 came_from.set(next, next_step);
                 current = save_current;
@@ -786,19 +797,20 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
     if (!came_from.has_key(to)) return false;
 
     IVec2 step_back = to;
-
+    if (DEBUG_PATHFINDING) io::printfn("Final path from [%d %d] to [%d %d]", ...from, ...to);
     results.clear();
     while (step_back != from)
     {
         results.push(step_back);
         AStarStep! step = came_from.get(step_back);
         if (catch step) unreachable("Pathfinding error");
+        if (DEBUG_PATHFINDING) io::printfn("    [%d %d] from [%d %d]", ...step_back, ...step.last);
         step_back = step.last;
     }
     if (!reverse) results.reverse();
 
-    //io::printfn("Done pathfinding, found %d steps", results.len());
-    //io::printn(results);
+    if (DEBUG_PATHFINDING) io::printfn("Done pathfinding, found %d steps", results.len());
+    if (DEBUG_PATHFINDING) io::printn(results);
     return true;
 }
 

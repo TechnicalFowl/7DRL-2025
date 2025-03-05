@@ -287,9 +287,9 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             {
                 if (is_key_down(PATH_TO_BOSS))
                 {
-                    for (int y= 0; y < 8 && self.nav.is_idle(); ++y)
+                    for (int y= 0; y < FLOOR_SIZE && self.nav.is_idle(); ++y)
                     {
-                        for (int x = 0; x < 8 && self.nav.is_idle(); ++x)
+                        for (int x = 0; x < FLOOR_SIZE && self.nav.is_idle(); ++x)
                         {
                             Room* r = current_floor.rooms.get({x, y})!!;
                             if (r.type == BOSS)
@@ -477,7 +477,11 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 IVec2 next_pos = self.nav.next_point();
                 IVec2 next_move = next_pos - self.entity.position;
                 ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
-                if (next_cell.isPassable())
+                if (next_move == {0, 0})
+                {
+                    return null;
+                }
+                else if (next_cell.isPassable())
                 {
                     return do_move(next_move);
                 }
@@ -626,7 +630,6 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             Room* r = find_room(new_pos)!!;
             Direction dir = get_door_direction(new_pos);
             Door* d = &r.doors[dir.ordinal - 1];
-            assert(d.type == UNLOCKED);
             switch (dir)
             {
             case NORTH:

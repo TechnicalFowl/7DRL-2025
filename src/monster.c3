@@ -195,7 +195,7 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
         {
             List(<IVec2>) path;
             path.temp_init();
-            self.get_zone().path(self.get_position(), player_pos, &path, diagonal_moves: true, reverse: true);
+            //self.get_zone().path(self.get_position(), player_pos, &path, diagonal_moves: true, reverse: true);
             if (path.is_empty())
             {
                 break;

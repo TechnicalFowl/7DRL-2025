@@ -61,6 +61,8 @@ fn void load_default_settings()
 {
     g_settings.hover_tooltip_delay = 1.0;
     g_settings.scroll_to_wait = true;
+
+    if (devmode) devmode_immortal = true;
 }
 
 fn void log(String message, rl::Color color = colors::WHITE)
@@ -500,7 +502,14 @@ fn int main(String[] args)
                     Player* player = (Player*) g_zone.player;
                     if (player.health <= 0)
                     {
-                        game_state = GAME_OVER;
+                        if (devmode_immortal)
+                        {
+                            player.health = player.level[Skill.HITPOINTS];
+                        }
+                        else
+                        {
+                            game_state = GAME_OVER;
+                        }
                     }
                 }
                 ZoneRenderSettings settings = { { 15 / map_zoom, 0 } };
