@@ -30,6 +30,7 @@ struct Door
 {
     DoorType type;
     Direction direction;
+    bool is_original_connection;
 }
 
 enum RoomType
@@ -640,6 +641,82 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     default:
         break;
     }
+}
+
+fn bool lock_door(Zone* zone, IVec2 p)
+{
+    ZoneCell* cell = zone.get_cell(...p);
+    switch (cell.terrain)
+    {
+    case TERR_DOOR_NORTH_L:
+        cell.terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y).terrain = TERR_LDOOR_NORTH_R;
+        zone.get_cell(p.x, p.y - 2).terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y - 2).terrain = TERR_LDOOR_SOUTH_R;
+    case TERR_DOOR_NORTH_R:
+        cell.terrain = TERR_LDOOR_NORTH_R;
+        zone.get_cell(p.x - 1, p.y).terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x - 1, p.y - 2).terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x, p.y - 2).terrain = TERR_LDOOR_SOUTH_R;
+    case TERR_DOOR_EAST_U:
+        cell.terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x, p.y + 1).terrain = TERR_LDOOR_EAST_L;
+        zone.get_cell(p.x + 2, p.y).terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y + 1).terrain = TERR_LDOOR_WEST_L;
+    case TERR_DOOR_EAST_L:
+        cell.terrain = TERR_LDOOR_EAST_L;
+        zone.get_cell(p.x, p.y - 1).terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x + 2, p.y - 1).terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y).terrain = TERR_LDOOR_WEST_L;
+    case TERR_DOOR_SOUTH_L:
+        cell.terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y).terrain = TERR_LDOOR_SOUTH_R;
+        zone.get_cell(p.x, p.y + 2).terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y + 2).terrain = TERR_LDOOR_NORTH_R;
+    case TERR_DOOR_SOUTH_R:
+        cell.terrain = TERR_LDOOR_SOUTH_R;
+        zone.get_cell(p.x - 1, p.y).terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x - 1, p.y + 2).terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x, p.y + 2).terrain = TERR_LDOOR_NORTH_R;
+    case TERR_DOOR_WEST_U:
+        cell.terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x, p.y + 1).terrain = TERR_LDOOR_WEST_L;
+        zone.get_cell(p.x - 2, p.y).terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y + 1).terrain = TERR_LDOOR_EAST_L;
+    case TERR_DOOR_WEST_L:
+        cell.terrain = TERR_LDOOR_WEST_L;
+        zone.get_cell(p.x, p.y - 1).terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x - 2, p.y - 1).terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y).terrain = TERR_LDOOR_EAST_L;
+    case TERR_LDOOR_NORTH_L:
+    case TERR_BDOOR_NORTH_L:
+    case TERR_LDOOR_NORTH_R:
+    case TERR_BDOOR_NORTH_R:
+    case TERR_LDOOR_EAST_U:
+    case TERR_BDOOR_EAST_U:
+    case TERR_LDOOR_EAST_L:
+    case TERR_BDOOR_EAST_L:
+    case TERR_LDOOR_SOUTH_L:
+    case TERR_BDOOR_SOUTH_L:
+    case TERR_LDOOR_SOUTH_R:
+    case TERR_BDOOR_SOUTH_R:
+    case TERR_LDOOR_WEST_U:
+    case TERR_BDOOR_WEST_U:
+    case TERR_LDOOR_WEST_L:
+    case TERR_BDOOR_WEST_L:
+    case TERR_ODOOR_NORTH_L:
+    case TERR_ODOOR_NORTH_R:
+    case TERR_ODOOR_EAST_U:
+    case TERR_ODOOR_EAST_L:
+    case TERR_ODOOR_SOUTH_L:
+    case TERR_ODOOR_SOUTH_R:
+    case TERR_ODOOR_WEST_U:
+    case TERR_ODOOR_WEST_L:
+        return false;
+    default:
+        unreachable();
+    }
+    return true;
 }
 
 fn void Room.spawn_exit_hole(&self, Zone* zone)

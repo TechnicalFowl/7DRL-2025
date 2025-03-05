@@ -106,8 +106,13 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
     HashMap(<IVec2, bool>) placed;
     HashMap(<IVec2, bool>) adjacent;
+    List(<IVec2>) creation_order;
+    List(<IVec2>) farthest;
     placed.temp_init();
     adjacent.temp_init();
+    creation_order.temp_init();
+    farthest.temp_init();
+    int farthest_distance = 0;
 
     IVec2 start = {random::next_in_range(&rng, 0, FLOOR_SIZE - 1), random::next_in_range(&rng, 0, FLOOR_SIZE - 1)};
     placed.set(start, true);
@@ -132,6 +137,19 @@ fn void GeneratorData.generate(&self, Zone* zone)
         
         Room* next_room = current_floor.rooms.get(next)!!;
         Room* neighbor_room = current_floor.rooms.get(next + neighbor.dir)!!;
+        next_room.distance_from_start = neighbor_room.distance_from_start + 1;
+        creation_order.push(next);
+        
+        if (next_room.distance_from_start > farthest_distance)
+        {
+            farthest_distance = next_room.distance_from_start;
+            farthest.clear();
+            farthest.push(next);
+        }
+        else if (next_room.distance_from_start == farthest_distance)
+        {
+            farthest.push(next);
+        }
 
         Door* door = &next_room.doors[neighbor.ordinal - 1];
         door.direction = neighbor;
@@ -152,97 +170,35 @@ fn void GeneratorData.generate(&self, Zone* zone)
 
     Room* start_room = current_floor.rooms.get(start)!!;
     start_room.type = STARTING;
-    start_room.distance_from_start = 0;
-
-    List(<IVec3>) frontier;
-    HashMap(<IVec2, int>) seen;
-    frontier.temp_init();
-    seen.temp_init();
-    frontier.push({...start, 0});
-    seen.set(start, 0);
-
-    while (!frontier.is_empty())
-    {
-        IVec3 next = frontier.pop()!!;
-        IVec2 pos = {next.x, next.y};
-        Room* room = current_floor.rooms.get(pos)!!;
-        room.distance_from_start = next.z;
-        if (room.doors[Direction.WEST.ordinal - 1].type != WALL && next.x > 0 && (seen.get({next.x - 1, next.y}) ?? 99) > next.z + 1)
-        {
-            frontier.push({next.x - 1, next.y, next.z + 1});
-            seen.set({next.x - 1, next.y}, next.z + 1);
-        }
-        if (room.doors[Direction.EAST.ordinal - 1].type != WALL && next.x < FLOOR_SIZE - 1 && (seen.get({next.x + 1, next.y}) ?? 99) > next.z + 1)
-        {
-            frontier.push({next.x + 1, next.y, next.z + 1});
-            seen.set({next.x + 1, next.y}, next.z + 1);
-        }
-        if (room.doors[Direction.NORTH.ordinal - 1].type != WALL && next.y > 0 && (seen.get({next.x, next.y - 1}) ?? 99) > next.z + 1)
-        {
-            frontier.push({next.x, next.y - 1, next.z + 1});
-            seen.set({next.x, next.y - 1}, next.z + 1);
-        }
-        if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL && next.y < FLOOR_SIZE - 1 && (seen.get({next.x, next.y + 1}) ?? 99) > next.z + 1)
-        {
-            frontier.push({next.x, next.y + 1, next.z + 1});
-            seen.set({next.x, next.y + 1}, next.z + 1);
-        }
-    }
-
-    List(<IVec2>) farthest;
-    farthest.temp_init();
-    int max_distance = 0;
-    seen.@each(; IVec2 p, int d)
-    {
-        if (d > max_distance)
-        {
-            max_distance = d;
-            farthest.clear();
-            farthest.push(p);
-        }
-        else if (d == max_distance)
-        {
-            farthest.push(p);
-        }
-    };
 
     assert(farthest.len() > 0, "No farthest room found");
     IVec2 boss_pos = farthest[random::next_in_range(&rng, 0, (int) farthest.len() - 1)];
     Room* boss_room = current_floor.rooms.get(boss_pos)!!;
     boss_room.type = BOSS;
     
-    for (int y = 0; y < FLOOR_SIZE; ++y)
     {
-        for (int x = 0; x < FLOOR_SIZE; ++x)
+        if (boss_room.doors[Direction.WEST.ordinal - 1].type != WALL)
         {
-            if (!(placed.get({x, y}) ?? false)) continue;
-            Room* room = current_floor.rooms.get({x, y})!!;
-            if (room.type == BOSS)
-            {
-                if (room.doors[Direction.WEST.ordinal - 1].type != WALL)
-                {
-                    room.doors[Direction.WEST.ordinal - 1].type = BOSS;
-                    current_floor.rooms.get({x - 1, y})!!.doors[Direction.EAST.ordinal - 1].type = BOSS;
-                }
-                if (room.doors[Direction.EAST.ordinal - 1].type != WALL)
-                {
-                    room.doors[Direction.EAST.ordinal - 1].type = BOSS;
-                    current_floor.rooms.get({x + 1, y})!!.doors[Direction.WEST.ordinal - 1].type = BOSS;
-                }
-                if (room.doors[Direction.NORTH.ordinal - 1].type != WALL)
-                {
-                    room.doors[Direction.NORTH.ordinal - 1].type = BOSS;
-                    current_floor.rooms.get({x, y - 1})!!.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
-                }
-                if (room.doors[Direction.SOUTH.ordinal - 1].type != WALL)
-                {
-                    room.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
-                    current_floor.rooms.get({x, y + 1})!!.doors[Direction.NORTH.ordinal - 1].type = BOSS;
-                }
-            }
+            boss_room.doors[Direction.WEST.ordinal - 1].type = BOSS;
+            current_floor.rooms.get({boss_pos.x - 1, boss_pos.y})!!.doors[Direction.EAST.ordinal - 1].type = BOSS;
+        }
+        if (boss_room.doors[Direction.EAST.ordinal - 1].type != WALL)
+        {
+            boss_room.doors[Direction.EAST.ordinal - 1].type = BOSS;
+            current_floor.rooms.get({boss_pos.x + 1, boss_pos.y})!!.doors[Direction.WEST.ordinal - 1].type = BOSS;
+        }
+        if (boss_room.doors[Direction.NORTH.ordinal - 1].type != WALL)
+        {
+            boss_room.doors[Direction.NORTH.ordinal - 1].type = BOSS;
+            current_floor.rooms.get({boss_pos.x, boss_pos.y - 1})!!.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
+        }
+        if (boss_room.doors[Direction.SOUTH.ordinal - 1].type != WALL)
+        {
+            boss_room.doors[Direction.SOUTH.ordinal - 1].type = BOSS;
+            current_floor.rooms.get({boss_pos.x, boss_pos.y + 1})!!.doors[Direction.NORTH.ordinal - 1].type = BOSS;
         }
     }
-
+    
     OSN_Context* ctx;
     open_simplex_noise((long) rng.next_long(), &ctx);
 
@@ -324,6 +280,59 @@ fn void GeneratorData.generate(&self, Zone* zone)
             room.generate(current_floor, zone, &rng);
         }
     }
+
+    int boss_depth = boss_room.distance_from_start;
+    int locked_doors = random::next_in_range(&rng, 1, 3);
+    int attempts = 0;
+    while (locked_doors > 0 && attempts < 100)
+    {
+        IVec2 rpos = {random::next_in_range(&rng, 0, FLOOR_SIZE - 1), random::next_in_range(&rng, 0, FLOOR_SIZE - 1)};
+        Room* room = current_floor.rooms.get(rpos)!!;
+        if (room.type == BOSS || room.type == STARTING) continue;
+
+        int idx = (int) creation_order.index_of(rpos) ?? 0;
+        if (idx <= 0) continue;
+
+        List(<Direction>) neighbors;
+        neighbors.temp_init();
+
+        for (int i = 1; i <= 4; ++i)
+        {
+            if (room.doors[i - 1].type == UNLOCKED)
+            {
+                neighbors.push(Direction.from_ordinal(i));
+            }
+        }
+
+        assert(!neighbors.is_empty());
+
+        Direction to_lock = neighbors[random::next_in_range(&rng, 0, (int) neighbors.len() - 1)];
+        room.doors[to_lock.ordinal - 1].type = LOCKED;
+        IVec2 pos = room.position;
+        
+        switch (to_lock)
+        {
+        case NORTH:
+            lock_door(zone, {pos.x + 7, pos.y});
+        case EAST:
+            lock_door(zone, {pos.x + 15, pos.y + 7});
+        case SOUTH:
+            lock_door(zone, {pos.x + 7, pos.y + 15});
+        case WEST:
+            lock_door(zone, {pos.x, pos.y + 7});
+        default:
+            unreachable();
+        }
+
+        IVec2 key_room = creation_order[random::next_in_range(&rng, 0, idx - 1)];
+        Room* key = current_floor.rooms.get(key_room)!!;
+        IVec2 p = get_random_pos(&rng, key.position + {6, 6}, {4, 4});
+        p = zone.find_nearest_empty(p);
+        zone.drop_item(...p, {KEY, 1, 0});
+
+        locked_doors--;
+    }
+    assert(locked_doors == 0, "Could not place all locked doors");
 
     Player* pl = mem::new(Player);
     pl.new_init(zone, "Player", {start.x * 17 + 7, start.y * 17 + 8});

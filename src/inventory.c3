@@ -351,6 +351,7 @@ fn void init_drop_tables()
         { { LOGS, 1, 0}, 5 },
         { { INGOT1, 1, 0}, 5 },
         { { POTION1, 1, 0}, 5 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[1].new_init({ &starting_room_supplies },
         { { COINS, 50, 20}, 5 },
@@ -361,6 +362,7 @@ fn void init_drop_tables()
         { { INGOT2, 1, 0}, 1 },
         { { POTION1, 1, 0}, 5 },
         { { POTION2, 1, 0}, 1 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[2].new_init({ &starting_room_supplies },
         { { COINS, 50, 20}, 5 },
@@ -374,6 +376,7 @@ fn void init_drop_tables()
         { { POTION3, 1, 0}, 3 },
         { { RING1, 1, 0}, 1 },
         { { AMULET1, 1, 0}, 1 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[3].new_init({ &starting_room_supplies },
         { { COINS, 70, 20}, 5 },
@@ -385,6 +388,7 @@ fn void init_drop_tables()
         { { POTION3, 1, 0}, 3 },
         { { RING1, 1, 0}, 1 },
         { { AMULET1, 1, 0}, 1 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[4].new_init({ &starting_room_supplies },
         { { COINS, 90, 20}, 5 },
@@ -400,6 +404,7 @@ fn void init_drop_tables()
         { { RING2, 1, 0}, 1 },
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 1 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[5].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -415,6 +420,7 @@ fn void init_drop_tables()
         { { RING2, 1, 0}, 2 },
         { { AMULET1, 1, 0}, 4 },
         { { AMULET2, 1, 0}, 2 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[5].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -432,6 +438,7 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 3 },
         { { AMULET2, 1, 0}, 3 },
         { { AMULET3, 1, 0}, 1 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[6].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -447,6 +454,7 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[7].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -462,6 +470,7 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[8].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -477,6 +486,7 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
+        { { KEY, 1, 0}, 1 },
     );
     crate_loot[9].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -492,5 +502,6 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
+        { { KEY, 1, 0}, 1 },
     );
 }

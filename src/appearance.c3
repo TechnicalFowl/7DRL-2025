@@ -172,7 +172,7 @@ const Appearance ITEM_NEEDLE = {'`', colors::SILVER, 6 * 16 + 8 };
 const Appearance ITEM_GATESTONE = { 14 * 16 + 8, colors::PURPLE, 7 * 16 + 7 };
 const Appearance ITEM_FOOD = { '%', colors::GREEN, 8 * 16 + 7 };
 const Appearance ITEM_COINS = { '$', colors::GOLD, 9 * 16 + 8 };
-const Appearance ITEM_KEY = { '?', colors::GOLD, 9 * 16 + 9 };
+const Appearance ITEM_KEY = { '?', colors::GOLD, 10 * 16 + 8 };
 const Appearance ITEM_LOGS = { '=', colors::BROWN, 7 * 16 + 8 };
 
 const Appearance ITEM_AIR_RUNE = { '0', colors::SILVER, 5 * 16 + 6 };

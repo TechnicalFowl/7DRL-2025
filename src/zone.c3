@@ -335,6 +335,16 @@ fn double Zone.update(&self)
             Entity e = self.all_entities[i];
             if (e.is_dead())
             {
+
+                int count = random::next_in_range(&g_rng, 1, 4);
+                DropTable* table = &crate_loot[current_floor.depth];
+
+                for (int j = 0; j < count; ++j)
+                {
+                    ItemStack item = table.roll(&g_rng);
+                    self.drop_item(...e.get_position(), item);
+                }
+
                 ZoneCell* cell = self.get_cell(...e.get_position());
                 cell.entities.remove_item(e);
                 self.all_entities.remove_at(i);
@@ -759,7 +769,7 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                     else
                     {
                         AStarStep next_step = {next, current.pos, new_cost, h_cost};
-                        io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
+                        if (DEBUG_PATHFINDING) io::printfn("    Adding [%d %d] to door pathed from [%d %d] with cost %.1f", ...next, ...current.pos, next_step.cost);
                         //frontier.push(next_step);
                         came_from.set(next, next_step);
                         current = next_step;

@@ -487,6 +487,20 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 }
                 else if (is_door_terrain(next_cell.terrain))
                 {
+                    if (is_locked_door_terrain(next_cell.terrain))
+                    {
+                        if (self.remove_item({KEY, 1, 0}))
+                        {
+                            log("You unlock the door.");
+                            open_door(self.get_zone(), next_pos);
+                        }
+                        else
+                        {
+                            log("The door is locked.");
+                            self.nav.abort();
+                            return null;
+                        }
+                    }
                     return do_interact(next_move);
                 }
                 else
@@ -712,7 +726,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         cell.object = OBJ_OPEN_CRATE;
         log("You search the crate.");
 
-        int count = random::next_in_range(&g_rng, 3, 5);
+        int count = random::next_in_range(&g_rng, 1, 4);
         DropTable* table = &crate_loot[current_floor.depth];
         
         for (int i = 0; i < count; ++i)
