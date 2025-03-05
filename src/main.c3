@@ -286,6 +286,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     int attempts = 0;
     while (locked_doors > 0 && attempts < 100)
     {
+        attempts++;
         IVec2 rpos = {random::next_in_range(&rng, 0, FLOOR_SIZE - 1), random::next_in_range(&rng, 0, FLOOR_SIZE - 1)};
         Room* room = current_floor.rooms.get(rpos)!!;
         if (room.type == BOSS || room.type == STARTING) continue;
@@ -304,7 +305,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
             }
         }
 
-        assert(!neighbors.is_empty());
+        if (neighbors.is_empty()) continue;
 
         Direction to_lock = neighbors[random::next_in_range(&rng, 0, (int) neighbors.len() - 1)];
         room.doors[to_lock.ordinal - 1].type = LOCKED;

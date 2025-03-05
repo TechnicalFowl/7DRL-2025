@@ -6,6 +6,18 @@ import raylib5::rl;
 
 const INVENTORY_SIZE = 26;
 
+enum Attunement : (rl::Color color)
+{
+    NONE = colors::WHITE,
+    AIR = colors::SILVER,
+    WATER = colors::SKY_BLUE,
+    EARTH = colors::BROWN,
+    FIRE = colors::RED,
+    CHAOS = colors::YELLOW,
+    NATURE = colors::DARK_GREEN,
+    BLOOD = colors::DARK_RED,
+}
+
 struct Player (Entity)
 {
     inline EntityCommon entity;
@@ -21,8 +33,11 @@ struct Player (Entity)
     ItemStack[INVENTORY_SIZE] inventory;
     ItemStack[EquipmentSlot.elements] equipment;
 
+    int[Skill.elements] boosted_level;
     int[Skill.elements] level;
     int[Skill.elements] experience;
+
+    Attunement attunement;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -62,7 +77,11 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 
     self.vis.new_init(z);
 
-    for (int i = 0; i < Skill.elements; ++i) self.level[i] = 1;
+    for (int i = 0; i < Skill.elements; ++i)
+    {
+        self.level[i] = 1;
+        self.boosted_level[i] = 1;
+    }
     self.give_exp(HITPOINTS, EXPERIENCE_TABLE[10], supress_message: true);
     self.health = self.level[Skill.HITPOINTS];
 }
@@ -115,6 +134,16 @@ fn bool Player.remove_item(&self, ItemStack item)
             slot.item = NO_ITEM;
         }
     }
+
+    if (item.item >= AIR_RUNE && item.item <= BLOOD_RUNE)
+    {
+        if (!self.has_item(item.item, 1) && self.attunement == Attunement.from_ordinal(item.item - BLANK_RUNE))
+        {
+            log(string::new_format("You ran out of %s and lose your attunement!", g_items.items[item.item].name));
+            self.attunement = NONE;
+        }
+    }
+
     assert(done);
     return true;
 }
@@ -203,9 +232,17 @@ fn void Player.quaff(&self, ItemStack stack)
         log("You eat the food.");
     case POTION1:
         self.health = math::min(self.health + 10, self.level[Skill.HITPOINTS]);
-        log("You drink the potion.");
+        log("You drink the potion, it heals some health.");
+    case POTION2:
+        self.boosted_level[Skill.MELEE] = self.level[Skill.MELEE] + 10;
+        self.boosted_level[Skill.RANGED] = self.level[Skill.RANGED] + 10;
+        self.boosted_level[Skill.MAGIC] = self.level[Skill.MAGIC] + 10;
+        log("You drink the potion, you feel stronger.");
+    case POTION3:
+        self.boosted_level[Skill.DEFENCE] = self.level[Skill.DEFENCE] + 10;
+        log("You drink the potion, you feel safer.");
     default:
-        log(string::new_format("You consume the %s, it tastes awful.", g_items.items[stack.item].name));
+        log(string::new_format("You quaff the %s, it tastes awful.", g_items.items[stack.item].name));
     }
 }
 
@@ -220,6 +257,25 @@ fn void Player.give_exp(&self, Skill skill, int exp, bool supress_message=false)
         if (skill == HITPOINTS)
         {
             self.health += (self.level[skill] - prev_level);
+        }
+        if (self.boosted_level[skill] == prev_level)
+        {
+            self.boosted_level[skill] = self.level[skill];
+        }
+    }
+}
+
+fn void Player.updateBoostedStats(&self)
+{
+    for (int i = 0; i < Skill.elements; ++i)
+    {
+        if (self.boosted_level[i] < self.level[i])
+        {
+            self.boosted_level[i]++;
+        }
+        else if (self.boosted_level[i] > self.level[i])
+        {
+            self.boosted_level[i]--;
         }
     }
 }
@@ -786,25 +842,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         Entity target = cell.entities[0];
         if (target.type == Monster.typeid)
         {
-            Monster* monster = (Monster*) target;
-            int damage = player.calculate_damage(monster, MELEE);
-            String success = damage > 0 ? "hit" : "miss";
-            monster.take_damage(damage);
-            String killed = "";
-            if (monster.is_dead())
-            {
-                killed = " and killed";
-            }
-            DString ending;
-            ending.temp_init();
-            if (damage < 5) ending.append_char('.');
-            for (int i = 0; i < damage/5; ++i)
-            {
-                ending.append_char('!');
-            }
-            log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), colors::GREEN);
-            player.give_exp(MELEE, damage * 30);
-            player.give_exp(HITPOINTS, damage * 10);
+            player.attack((Monster*) target, true);
         }
         else
         {
@@ -919,12 +957,12 @@ fn int[3] Player.get_style_stats(&self, CombatStyle style)
 fn int Player.calculate_damage(&self, Monster* target, CombatStyle style)
 {
     MonsterInfo* target_info = target.info;
-    int str = self.level[Skill.MELEE.ordinal + style.ordinal] + 9;
+    int str = self.boosted_level[Skill.MELEE.ordinal + style.ordinal] + 9;
     int[3] stats = self.get_style_stats(style);
     int max_hit = (str * (stats[1] + 64) + 320) / 640;
-    int atk = self.level[Skill.MELEE.ordinal + style.ordinal] + 9;
+    int atk = self.boosted_level[Skill.MELEE.ordinal + style.ordinal] + 9;
     int attack_roll = atk * (stats[0] + 64);
-    int defence_roll = (target_info.defence + 9) * (target_info.defence_bonus[style] + 16);
+    int defence_roll = (target.boosted_level[MonsterLevel.DEFENCE] + 9) * (target_info.defence_bonus[style] + 16);
     float hit_chance;
     if (attack_roll > defence_roll)
     {
@@ -943,6 +981,69 @@ fn int Player.calculate_damage(&self, Monster* target, CombatStyle style)
     if (!hit) return 0;
     int damage = random::next_in_range(&g_rng, 1, max_hit);
     return damage;
+}
+
+fn void Player.attack(&self, Monster* target, bool apply_attunement)
+{
+    CombatStyle style = getStyle(self.equipment[EquipmentSlot.WEAPON].item);
+    int damage = self.calculate_damage(target, style);
+    String success = damage > 0 ? "hit" : "miss";
+    target.take_damage(damage);
+    self.applyAttunement(target, damage);
+    String killed = "";
+    if (target.is_dead())
+    {
+        killed = " and killed";
+    }
+    DString ending;
+    ending.temp_init();
+    if (damage < 5) ending.append_char('.');
+    for (int i = 0; i < damage/5; ++i)
+    {
+        ending.append_char('!');
+    }
+    log(string::new_format("You %s%s the %s%s", success, killed, target.get_name(), ending), damage > 0 ? colors::GREEN : colors::ORANGE);
+    self.give_exp(Skill.from_ordinal(Skill.MELEE.ordinal + style.ordinal), damage * 20);
+    self.give_exp(HITPOINTS, damage * 2);
+}
+
+fn void Player.applyAttunement(&self, Monster* target, int damage)
+{
+    if (self.attunement == NONE) return;
+    Item rune = Item.BLANK_RUNE + self.attunement.ordinal;
+    Attunement attunement = self.attunement;
+    if (!self.remove_item({rune, 1, 0}))
+    {
+        log(string::new_format("You lose your attunement to %s as you ran out of runes.", Attunement.names[self.attunement.ordinal]));
+        self.attunement = NONE;
+        return;
+    }
+    switch (attunement)
+    {
+    case AIR:
+        // Apply extra damage
+        break;
+    case WATER:
+        // Apply stat drain
+        break;
+    case EARTH:
+        // Apply knockback
+        break;
+    case FIRE:
+        // Apply burning
+        break;
+    case CHAOS:
+        // Apply AoE
+        break;
+    case NATURE:
+        // Apply life steal
+        break;
+    case BLOOD:
+        // Apply bleed
+        break;
+    case NONE:
+        unreachable();
+    }
 }
 
 fn PlayerRangedAction* do_ranged_attack(double time, IVec2 target)
@@ -994,27 +1095,7 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
     Entity target = target_cell.entities[0];
     if (target.type == Monster.typeid)
     {
-        CombatStyle style = getStyle(player.equipment[EquipmentSlot.WEAPON].item);
-        assert(style != MELEE);
-        Monster* monster = (Monster*) target;
-        int damage = player.calculate_damage(monster, style);
-        String success = damage > 0 ? "hit" : "miss";
-        monster.take_damage(damage);
-        String killed = "";
-        if (monster.is_dead())
-        {
-            killed = " and killed";
-        }
-        DString ending;
-        ending.temp_init();
-        if (damage < 5) ending.append_char('.');
-        for (int i = 0; i < damage/5; ++i)
-        {
-            ending.append_char('!');
-        }
-        log(string::new_format("You %s%s the %s%s", success, killed, monster.get_name(), ending), damage > 0 ? colors::GREEN : colors::ORANGE);
-        player.give_exp(Skill.from_ordinal(Skill.MELEE.ordinal + style.ordinal), damage * 20);
-        player.give_exp(HITPOINTS, damage * 2);
+        player.attack((Monster*) target, true);
     }
     else
     {

@@ -330,6 +330,12 @@ fn double Zone.update(&self)
             return max_time;
         }
 
+        bool stat_tick = ((int) elapsed_time / 10) != ((int) (elapsed_time + max_time) / 10);
+        if (stat_tick)
+        {
+            ((Player*) self.player).updateBoostedStats();
+        }
+
         for (int i = (int) self.all_entities.len() - 1; i >= 0; --i)
         {
             Entity e = self.all_entities[i];
@@ -349,6 +355,11 @@ fn double Zone.update(&self)
                 cell.entities.remove_item(e);
                 self.all_entities.remove_at(i);
                 e.free();
+                mem::free(e);
+            }
+            else if (stat_tick && e.type == Monster.typeid)
+            {
+                ((Monster*) e).updateBoostedStats();
             }
         }
 

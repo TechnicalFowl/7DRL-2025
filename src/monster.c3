@@ -24,6 +24,13 @@ const MonsterType[3] WARRIOR_TYPES = { GOBLIN, BANDIT, DARK_KNIGHT };
 const MonsterType[3] ARCHER_TYPES = { GOBLIN_ARCHER, BANDIT_RANGER, ASSASSIN };
 const MonsterType[3] MAGE_TYPES = { GOBLIN_MAGE, BANDIT_MAGE, DARK_MAGE };
 
+enum MonsterLevel : inline int
+{
+    ACCURACY,
+    STRENGTH,
+    DEFENCE,
+}
+
 struct MonsterInfo
 {
     MonsterType type;
@@ -35,10 +42,8 @@ struct MonsterInfo
 
     CombatStyle style;
     double attack_time;
-    int attack;
-    int strength;
-    int defence;
-    int[3] defence_bonus;
+    int[MonsterLevel.elements] level;
+    int[CombatStyle.elements] defence_bonus;
 }
 
 struct MonsterCache
@@ -51,15 +56,15 @@ MonsterCache g_mobs;
 fn void MonsterCache.new_init(&self)
 {
     self.mob_names.new_init();
-    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, 1, 1, 1, {0, -10, 10} };
-    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, 1, 1, 1, {-10, 0, 10} };
-    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, 1, 1, 1, {10, 0, -10} };
-    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, 30, 30, 30, {20, -40, 140} };
-    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, 30, 30, 30, {-40, 20, 140} };
-    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, 30, 30, 30, {140, 20, -40} };
-    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, 50, 50, 50, {250, 50, -50} };
-    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, 50, 50, 50, {50, -50, 250} };
-    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, 50, 50, 50, {-50, 50, 250} };
+    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, {1, 1, 1}, {0, -10, 10} };
+    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, {1, 1, 1}, {-10, 0, 10} };
+    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, {1, 1, 1}, {10, 0, -10} };
+    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, {30, 30, 30}, {20, -40, 140} };
+    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, {30, 30, 30}, {-40, 20, 140} };
+    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, {30, 30, 30}, {140, 20, -40} };
+    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50} };
+    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250} };
+    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250} };
     
     for (int i = 0; i < MONSTER_COUNT; ++i)
     {
@@ -85,6 +90,9 @@ struct Monster (Entity)
     MonsterInfo* info;
 
     int health;
+    int[MonsterLevel.elements] boosted_level;
+
+    Attunement attunement;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -113,6 +121,21 @@ fn void Monster.free(&self) @dynamic
 fn void Monster.take_damage(&self, int dmg)
 {
     self.health -= dmg;
+}
+
+fn void Monster.updateBoostedStats(&self)
+{
+    for (int i = 0; i < MonsterLevel.elements; ++i)
+    {
+        if (self.boosted_level[i] < self.info.level[i])
+        {
+            self.boosted_level[i]++;
+        }
+        else if (self.boosted_level[i] > self.info.level[i])
+        {
+            self.boosted_level[i]--;
+        }
+    }
 }
 
 enum Behavior
@@ -277,18 +300,19 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
             {
                 log(string::new_format("The %s misses you.", mob.get_name()), colors::LIGHT_RED);
             }
+            mob.applyAttunement(player, damage);
         }
     }
 }
 
 fn int Monster.calculate_damage(&self, Player* target, CombatStyle style)
 {
-    int str = self.info.strength + 9;
+    int str = self.boosted_level[MonsterLevel.STRENGTH] + 9;
     int max_hit = (str * 64 + 320) / 640;
-    int atk = self.info.attack + 9;
+    int atk = self.boosted_level[MonsterLevel.ACCURACY] + 9;
     int attack_roll = atk * 64;
     int[3] target_stats = target.get_style_stats(style);
-    int defence_roll = (target.level[Skill.DEFENCE] + 9) * (target_stats[2] + 64);
+    int defence_roll = (target.boosted_level[Skill.DEFENCE] + 9) * (target_stats[2] + 64);
     float hit_chance;
     if (attack_roll > defence_roll)
     {
@@ -299,6 +323,7 @@ fn int Monster.calculate_damage(&self, Player* target, CombatStyle style)
         hit_chance = attack_roll / (2.0f * (defence_roll + 1.0f));
     }
 
+    // Attack range accuracy falloff
     float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.info.range);
     hit_chance *= math::clamp(1.0f - range / 2, 0.1f, 1.0f);
 
@@ -307,4 +332,34 @@ fn int Monster.calculate_damage(&self, Player* target, CombatStyle style)
     if (!hit) return 0;
     int damage = random::next_in_range(&g_rng, 1, max_hit);
     return damage;
+}
+
+fn void Monster.applyAttunement(&self, Player* target, int damage)
+{
+    switch (self.attunement)
+    {
+    case AIR:
+        // Apply extra damage
+        break;
+    case WATER:
+        // Apply stat drain
+        break;
+    case EARTH:
+        // Apply knockback
+        break;
+    case FIRE:
+        // Apply burning
+        break;
+    case CHAOS:
+        // Apply AoE
+        break;
+    case NATURE:
+        // Apply life steal
+        break;
+    case BLOOD:
+        // Apply bleed
+        break;
+    case NONE:
+        break;
+    }
 }

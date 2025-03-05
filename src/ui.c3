@@ -29,6 +29,7 @@ enum InvAction
     ACT_EXAMINE,
     ACT_USE_ON,
     ACT_AIM,
+    ACT_ATTUNE,
 }
 InvAction inv_action;
 int inv_action_source;
@@ -83,6 +84,8 @@ fn void draw_ui()
             gui::push_bottombar(string::tformat("Examine which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
         case ACT_AIM:
             gui::push_bottombar(string::tformat("Choose ranged target (%s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+        case ACT_ATTUNE:
+            gui::push_bottombar(string::tformat("Choose your attunement (Select in spellbook %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
         case NO_ACTION:
             unreachable();
         }
@@ -108,6 +111,8 @@ fn void draw_ui()
     ui_term.write(map_width, 0, string::tformat("Health: %2d/%2d [", pl.health, pl.level[Skill.HITPOINTS]), { 220, 220, 220, 255 }, 10);
     ui_term.write(map_width+15, 0, string::tformat("%s", healthbar), colors::RED, 10);
     ui_term.write(map_width+15+20, 0, "]", { 220, 220, 220, 255 }, 10);
+
+    ui_term.write(map_width - 20, 0, string::tformat("Attunement: %6s", Attunement.names[pl.attunement.ordinal]), pl.attunement.color, 10);
 
     int inv_height = 34;
     int log_height = term_height - inv_height - 1;
@@ -294,6 +299,7 @@ fn void draw_ui()
                         case ACT_USE_ON:
                         case ACT_AIM:
                         case NO_ACTION:
+                        case ACT_ATTUNE:
                             unreachable();
                         }
                         inv_action = NO_ACTION;
@@ -426,11 +432,7 @@ fn void draw_ui()
                         {
                         case ACT_QUAFF:
                             pl.quaff(stack);
-                            pl.inventory[i].count--;
-                            if (pl.inventory[i].count == 0)
-                            {
-                                pl.inventory[i] = { NO_ITEM, 0, 0 };
-                            }
+                            pl.remove_item({stack.item, 1, stack.metadata});
                         case ACT_EQUIP:
                             ItemStack replaced = pl.equip(stack);
                             pl.inventory[i] = { NO_ITEM, 0, 0 };
@@ -440,7 +442,7 @@ fn void draw_ui()
                             }
                         case ACT_DROP:
                             g_zone.drop_item(...pl.get_position(), stack);
-                            pl.inventory[i] = { NO_ITEM, 0, 0 };
+                            pl.remove_item(stack);
                         case ACT_USE:
                             inv_action_source = i;
                             inv_action = ACT_USE_ON;
@@ -450,6 +452,7 @@ fn void draw_ui()
                         case ACT_EXAMINE:
                             break;
                         case ACT_AIM:
+                        case ACT_ATTUNE:
                         case NO_ACTION:
                             unreachable();
                         }
@@ -529,16 +532,55 @@ fn void draw_ui()
     ui_term.fill_tile(spos.x + 29, spos.y, 9, 1, ' ', colors::WHITE, prio);
     ui_term.set_tile(spos.x + 28, spos.y, 180, colors::GREY, prio);
     ui_term.set_tile(spos.x + 38, spos.y, 195, colors::GREY, prio);
-    ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Spell", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK ? { 220, 220, 220, 255 } : colors::GREY, prio);
+    ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Attune", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
     if (can_get_input && is_key_pressed(SPELLBOOK_TAB, false))
     {
         sidebar_tab = SPELLBOOK;
+        if (inv_action != NO_ACTION)
+        {
+            inv_action = NO_ACTION;
+        }
     }
 
     if (sidebar_tab == SPELLBOOK)
     {
+        if (can_get_input && inv_action == NO_ACTION)
+        {
+            if (is_key_pressed(ATTUNE, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_ATTUNE;
+            }
+            else if (is_key_pressed(EXAMINE, allow_repeat: false, consume_press: true))
+            {
+                inv_action = ACT_EXAMINE;
+            }
+            inv_action_changed = gui::gui_data.frame_index;
+        }
 
+        gui::vertical_separator(2);
+        bool valid_inv_action = inv_action != NO_ACTION && gui::gui_data.frame_index - 1 > inv_action_changed;
+        for (int i = 0; i < Attunement.elements; ++i)
+        {
+            Attunement a = Attunement.from_ordinal(i);
+            if (gui::button(Attunement.names[i], (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: i != 0 && !pl.has_item(Item.BLANK_RUNE + i, 1)))
+            {
+                InvAction this_action = inv_action;
+                inv_action = NO_ACTION;
+                switch (this_action)
+                {
+                case NO_ACTION:
+                case ACT_ATTUNE:
+                    pl.attunement = a;
+                case ACT_EXAMINE:
+                    break;
+                default:
+                    unreachable();
+                }
+            }
+        }
+        gui::vertical_separator(18);
+        gui::text(string::tformat("%5s: Attune Spell          %5s: Examine", getKeyName(get_bind(ATTUNE)[0]), getKeyName(get_bind(EXAMINE)[0])));
     }
 
     ui_term.fill_tile(spos.x + 41, spos.y, 9, 1, ' ', colors::WHITE, prio);
@@ -556,7 +598,7 @@ fn void draw_ui()
         gui::vertical_separator(2);
         for (int i = 0; i < Skill.elements; ++i)
         {
-            gui::text(string::tformat("%-12s %d", Skill.names[i], pl.level[i]));
+            gui::text(string::tformat("%-12s %d/%d", Skill.names[i], pl.boosted_level[i], pl.level[i]));
         }
     }
 

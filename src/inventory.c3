@@ -63,10 +63,15 @@ enum Item : inline int
     KEY,
     COINS,
     GATESTONE,
+
+    BLANK_RUNE,
     AIR_RUNE,
     WATER_RUNE,
     EARTH_RUNE,
     FIRE_RUNE,
+    CHAOS_RUNE,
+    NATURE_RUNE,
+    BLOOD_RUNE,
 }
 
 const int ITEM_COUNT = (int) Item.elements;
@@ -220,10 +225,14 @@ fn void ItemCache.new_init(&self)
     self.items[Item.KEY] =      { KEY,          "Key",              1,   null, ITEM_KEY };
     self.items[Item.COINS] =    { COINS,        "Coins",            999, null, ITEM_COINS };
     self.items[Item.GATESTONE] ={ GATESTONE,    "Gatestone",        1,   null, ITEM_GATESTONE };
+    self.items[Item.BLANK_RUNE]={ BLANK_RUNE,   "Blank Rune",       999, null, ITEM_BLANK_RUNE };
     self.items[Item.AIR_RUNE] = { AIR_RUNE,     "Air Rune",         999, null, ITEM_AIR_RUNE };
     self.items[Item.WATER_RUNE]={ WATER_RUNE,   "Water Rune",       999, null, ITEM_WATER_RUNE };
     self.items[Item.EARTH_RUNE]={ EARTH_RUNE,   "Earth Rune",       999, null, ITEM_EARTH_RUNE };
     self.items[Item.FIRE_RUNE] ={ FIRE_RUNE,    "Fire Rune",        999, null, ITEM_FIRE_RUNE };
+    self.items[Item.CHAOS_RUNE]={ CHAOS_RUNE,   "Chaos Rune",       999, null, ITEM_CHAOS_RUNE };
+    self.items[Item.NATURE_RUNE]={ NATURE_RUNE, "Nature Rune",      999, null, ITEM_NATURE_RUNE };
+    self.items[Item.BLOOD_RUNE]={ BLOOD_RUNE,   "Blood Rune",       999, null, ITEM_BLOOD_RUNE };
 
     for (int i = 0; i < ITEM_COUNT; ++i)
     {
@@ -339,10 +348,10 @@ fn void init_drop_tables()
         { { AXE, 1, 0}, 5 },
         { { COINS, 10, 5}, 5 },
         { { COINS, 50, 20}, 5 },
-        { { AIR_RUNE, 20, 5}, 5 },
-        { { WATER_RUNE, 20, 5}, 5 },
-        { { EARTH_RUNE, 20, 5}, 5 },
-        { { FIRE_RUNE, 20, 5}, 5 },
+        { { AIR_RUNE, 10, 5}, 5 },
+        { { WATER_RUNE, 10, 5}, 5 },
+        { { EARTH_RUNE, 10, 5}, 5 },
+        { { FIRE_RUNE, 10, 5}, 5 },
     );
 
     crate_loot[0].new_init({ &starting_room_supplies },
@@ -363,6 +372,9 @@ fn void init_drop_tables()
         { { POTION1, 1, 0}, 5 },
         { { POTION2, 1, 0}, 1 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[2].new_init({ &starting_room_supplies },
         { { COINS, 50, 20}, 5 },
@@ -377,6 +389,9 @@ fn void init_drop_tables()
         { { RING1, 1, 0}, 1 },
         { { AMULET1, 1, 0}, 1 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[3].new_init({ &starting_room_supplies },
         { { COINS, 70, 20}, 5 },
@@ -389,6 +404,9 @@ fn void init_drop_tables()
         { { RING1, 1, 0}, 1 },
         { { AMULET1, 1, 0}, 1 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[4].new_init({ &starting_room_supplies },
         { { COINS, 90, 20}, 5 },
@@ -405,6 +423,9 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 2 },
         { { AMULET2, 1, 0}, 1 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[5].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -421,6 +442,9 @@ fn void init_drop_tables()
         { { AMULET1, 1, 0}, 4 },
         { { AMULET2, 1, 0}, 2 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[5].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -439,6 +463,9 @@ fn void init_drop_tables()
         { { AMULET2, 1, 0}, 3 },
         { { AMULET3, 1, 0}, 1 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[6].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -455,6 +482,9 @@ fn void init_drop_tables()
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[7].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -471,6 +501,9 @@ fn void init_drop_tables()
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[8].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -487,6 +520,9 @@ fn void init_drop_tables()
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
     crate_loot[9].new_init({ &starting_room_supplies },
         { { COINS, 100, 20}, 5 },
@@ -503,5 +539,8 @@ fn void init_drop_tables()
         { { AMULET2, 1, 0}, 2 },
         { { AMULET3, 1, 0}, 2 },
         { { KEY, 1, 0}, 1 },
+        { { NATURE_RUNE, 10, 5}, 5 },
+        { { BLOOD_RUNE, 10, 5}, 5 },
+        { { CHAOS_RUNE, 10, 5}, 5 },
     );
 }

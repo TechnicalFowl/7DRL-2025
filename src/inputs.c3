@@ -28,6 +28,7 @@ enum Input : inline int
     EXAMINE,
     EQUIP,
     ZAP,
+    ATTUNE,
 
     EQUIPMENT_TAB,
     INVENTORY_TAB,
@@ -101,6 +102,7 @@ fn void init_inputs()
     createBind(EXAMINE, rl::KEY_X);
     createBind(EQUIP, rl::KEY_E);
     createBind(ZAP, rl::KEY_Z);
+    createBind(ATTUNE, rl::KEY_A);
 
     createBind(EQUIPMENT_TAB, rl::KEY_U);
     createBind(INVENTORY_TAB, rl::KEY_I);

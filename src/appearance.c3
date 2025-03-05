@@ -179,6 +179,10 @@ const Appearance ITEM_AIR_RUNE = { '0', colors::SILVER, 5 * 16 + 6 };
 const Appearance ITEM_WATER_RUNE = { '0', colors::BLUE, 6 * 16 + 6 };
 const Appearance ITEM_EARTH_RUNE = { '0', colors::BROWN, 7 * 16 + 6 };
 const Appearance ITEM_FIRE_RUNE = { '0', colors::RED, 8 * 16 + 6 };
+const Appearance ITEM_BLOOD_RUNE = { '0', colors::DARK_RED, 13 * 16 + 8 };
+const Appearance ITEM_NATURE_RUNE = { '0', colors::DARK_GREEN, 13 * 16 + 9 };
+const Appearance ITEM_CHAOS_RUNE = { '0', colors::YELLOW, 12 * 16 + 9 };
+const Appearance ITEM_BLANK_RUNE = { '0', colors::WHITE, 12 * 16 + 8 };
 
 const Appearance ITEM_AMULET1 = { '9', colors::GREEN, 5 * 16 + 9 };
 const Appearance ITEM_AMULET2 = { '9', colors::RED, 5 * 16 + 10 };
