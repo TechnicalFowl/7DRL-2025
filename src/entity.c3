@@ -79,6 +79,8 @@ interface Entity
     fn bool is_dead();
 
     fn Action next_action(double max_time);
+
+    fn void onUpdate(double delta_time);
 }
 
 struct EntityCommon (Entity)
@@ -138,6 +140,10 @@ fn Action EntityCommon.next_action(&self, double max_time) @dynamic
     WaitAction* wait = mem::temp_alloc(WaitAction);
     wait.time = max_time - self.idle_time;
     return wait;
+}
+
+fn void EntityCommon.onUpdate(&self, double duration) @dynamic
+{
 }
 
 struct Navigator

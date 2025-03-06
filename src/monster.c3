@@ -115,6 +115,8 @@ struct Monster (Entity)
     int[MonsterLevel.elements] boosted_level;
 
     Attunement attunement;
+    
+    List(<StatusEffectApplication>) status_effects;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -133,16 +135,30 @@ fn void Monster.new_init(&self, Zone* z, MonsterType t, IVec2 p)
     self.info = &g_mobs.mobs[t.ordinal];
     self.entity.new_init(z, self.info.name, p, ...self.info.looks);
     self.health = self.info.max_health;
+    self.status_effects.new_init();
 }
 
 fn void Monster.free(&self) @dynamic
 {
     self.entity.free();
+    self.status_effects.free();
 }
 
 fn void Monster.take_damage(&self, int dmg)
 {
     self.health -= dmg;
+}
+
+fn void Monster.onUpdate(&self, double duration) @dynamic
+{
+    for (int i = (int) self.status_effects.len() - 1; i >= 0; --i)
+    {
+        self.status_effects[i].duration -= duration;
+        if (self.status_effects[i].duration <= 0)
+        {
+            self.status_effects.remove_at(i);
+        }
+    }
 }
 
 fn void Monster.updateBoostedStats(&self)
@@ -159,6 +175,29 @@ fn void Monster.updateBoostedStats(&self)
         }
     }
 }
+
+fn void Monster.apply_effect(&self, StatusEffect effect, double duration)
+{
+    foreach (&e: self.status_effects)
+    {
+        if (e.effect == effect)
+        {
+            e.duration = math::max(e.duration, duration);
+            return;
+        }
+    }
+    self.status_effects.push({effect, duration});
+}
+
+fn bool Monster.has_effect(&self, StatusEffect effect)
+{
+    foreach (&e: self.status_effects)
+    {
+        if (e.effect == effect) return true;
+    }
+    return false;
+}
+
 
 enum Behavior
 {
@@ -229,6 +268,11 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
         {
             behave = IDLE;
         }
+    }
+
+    if ((behave == CHASE || behave == WANDER) && self.has_effect(ROOTED))
+    {
+        behave = IDLE;
     }
 
     switch (behave)
@@ -304,6 +348,7 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
         if (dist <= mob.info.range)
         {
             int damage = mob.calculate_damage(player, mob.info.style);
+            mob.applyAttunement(player, &damage);
             if (damage > 0)
             {
                 DString ending;
@@ -322,7 +367,6 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
             {
                 log(string::new_format("The %s misses you.", mob.get_name()), colors::LIGHT_RED);
             }
-            mob.applyAttunement(player, damage);
         }
     }
 }
@@ -356,31 +400,61 @@ fn int Monster.calculate_damage(&self, Player* target, CombatStyle style)
     return damage;
 }
 
-fn void Monster.applyAttunement(&self, Player* target, int damage)
+fn void Monster.applyAttunement(&self, Player* target, int* damage)
 {
     switch (self.attunement)
     {
     case AIR:
         // Apply bonus accuracy
-        break;
+        if (*damage == 0)
+        {
+            // reroll damage
+            *damage = self.calculate_damage(target, self.info.style);
+        }
     case WATER:
         // Apply stat drain
-        break;
+        if (*damage > 0)
+        {
+            Skill skill = Skill.from_ordinal(random::next_in_range(&g_rng, 0, 3));
+            target.boosted_level[skill] = math::max(1, target.boosted_level[skill] - *damage);
+        }
     case EARTH:
         // Apply knockback
-        break;
+        if (*damage > 0)
+        {
+            IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
+            ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
+            if (cell.isPassable())
+            {
+                target.set_position(target.get_position() + knockback);
+            }
+        }
     case FIRE:
         // Apply extra damage
-        break;
+        if (*damage > 0)
+        {
+            *damage += math::max(1, *damage / 2);
+        }
     case CHAOS:
-        // Apply AoE
-        break;
+        // Apply a random attunement...
+        if (*damage > 0)
+        {
+            self.attunement = Attunement.from_ordinal(random::next_in_range(&g_rng, 1, Attunement.elements));
+            self.applyAttunement(target, damage);
+            self.attunement = CHAOS;
+        }
     case NATURE:
         // Apply rooted
-        break;
+        if (*damage > 0)
+        {
+            target.apply_effect(ROOTED, 10);
+        }
     case BLOOD:
         // Apply life steal
-        break;
+        if (*damage > 0)
+        {
+            self.health = math::max(self.health + math::max(1, *damage / 4), self.info.max_health);
+        }
     case NONE:
         break;
     }

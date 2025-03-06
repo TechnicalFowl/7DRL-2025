@@ -1,5 +1,6 @@
 module dg;
 
+import std::collections::list;
 import std::io;
 import std::math;
 import raylib5::rl;
@@ -16,6 +17,17 @@ enum Attunement : (rl::Color color)
     CHAOS = colors::YELLOW,
     NATURE = colors::DARK_GREEN,
     BLOOD = colors::DARK_RED,
+}
+
+enum StatusEffect
+{
+    ROOTED,
+}
+
+struct StatusEffectApplication
+{
+    StatusEffect effect;
+    double duration;
 }
 
 struct Player (Entity)
@@ -38,6 +50,8 @@ struct Player (Entity)
     int[Skill.elements] experience;
 
     Attunement attunement;
+
+    List(<StatusEffectApplication>) status_effects;
 }
 
 // @Todo: There should be an easy way to avoid this boilerplate?...
@@ -84,6 +98,8 @@ fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
     }
     self.give_exp(HITPOINTS, EXPERIENCE_TABLE[10], supress_message: true);
     self.health = self.level[Skill.HITPOINTS];
+
+    self.status_effects.new_init();
 }
 
 fn void Player.free(&self) @dynamic
@@ -91,6 +107,29 @@ fn void Player.free(&self) @dynamic
     self.entity.free();
     self.nav.free();
     self.vis.free();
+    self.status_effects.free();
+}
+
+fn void Player.apply_effect(&self, StatusEffect effect, double duration)
+{
+    foreach (&e: self.status_effects)
+    {
+        if (e.effect == effect)
+        {
+            e.duration = math::max(e.duration, duration);
+            return;
+        }
+    }
+    self.status_effects.push({effect, duration});
+}
+
+fn bool Player.has_effect(&self, StatusEffect effect)
+{
+    foreach (&e: self.status_effects)
+    {
+        if (e.effect == effect) return true;
+    }
+    return false;
 }
 
 fn bool Player.is_inventory_full(&self, ItemStack item)
@@ -280,6 +319,18 @@ fn void Player.give_exp(&self, Skill skill, int exp, bool supress_message=false)
     }
 }
 
+fn void Player.onUpdate(&self, double duration) @dynamic
+{
+    for (int i = (int) self.status_effects.len() - 1; i >= 0; --i)
+    {
+        self.status_effects[i].duration -= duration;
+        if (self.status_effects[i].duration <= 0)
+        {
+            self.status_effects.remove_at(i);
+        }
+    }
+}
+
 fn void Player.updateBoostedStats(&self)
 {
     for (int i = 0; i < Skill.elements; ++i)
@@ -300,6 +351,11 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
     ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
     if (cell.isPassable())
     {
+        if (self.has_effect(ROOTED))
+        {
+            log("You are rooted in spot.");
+            return null;
+        }
         return do_move(dir);
     }
     else
@@ -554,6 +610,12 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 }
                 else if (next_cell.isPassable())
                 {
+                    if (self.has_effect(ROOTED))
+                    {
+                        log("You are rooted in spot.");
+                        self.nav.abort();
+                        return null;
+                    }
                     return do_move(next_move);
                 }
                 else if (is_door_terrain(next_cell.terrain))
@@ -1051,36 +1113,48 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
             target.boosted_level[skill] = math::max(0, target.boosted_level[skill] - *damage);
         }
     case EARTH:
-        IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
-        ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
-        if (cell.isPassable())
+        if (*damage > 0)
         {
-            target.set_position(target.get_position() + knockback);
+            IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
+            ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
+            if (cell.isPassable())
+            {
+                target.set_position(target.get_position() + knockback);
+            }
         }
     case FIRE:
         // Apply extra damage
-        *damage += math::max(1, *damage / 2);
-    case CHAOS:
-        for (int x = -1; x <= 1; ++x)
+        if (*damage > 0)
         {
-            for (int y = -1; y <= 1; ++y)
+            *damage += math::max(1, *damage / 2);
+        }
+    case CHAOS:
+        if (*damage > 0)
+        {
+            for (int x = -1; x <= 1; ++x)
             {
-                ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
-                if (cell.entities.is_empty())
+                for (int y = -1; y <= 1; ++y)
                 {
-                    continue;
-                }
-                Entity entity = cell.entities[0];
-                if (entity.type == Monster.typeid)
-                {
-                    Monster* monster = (Monster*) entity;
-                    self.attack(monster, false);
+                    ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
+                    if (cell.entities.is_empty())
+                    {
+                        continue;
+                    }
+                    Entity entity = cell.entities[0];
+                    if (entity.type == Monster.typeid)
+                    {
+                        Monster* monster = (Monster*) entity;
+                        self.attack(monster, false);
+                    }
                 }
             }
         }
     case NATURE:
         // Apply rooted
-        break;
+        if (*damage > 0)
+        {
+            target.apply_effect(ROOTED, 10);
+        }
     case BLOOD:
         if (*damage > 0)
         {

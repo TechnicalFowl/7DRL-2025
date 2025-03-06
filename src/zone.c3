@@ -335,6 +335,7 @@ fn double Zone.update(&self)
         {
             ((Player*) self.player).updateBoostedStats();
         }
+        self.player.onUpdate(max_time);
 
         for (int i = (int) self.all_entities.len() - 1; i >= 0; --i)
         {
@@ -357,9 +358,13 @@ fn double Zone.update(&self)
                 e.free();
                 mem::free(e);
             }
-            else if (stat_tick && e.type == Monster.typeid)
+            else
             {
-                ((Monster*) e).updateBoostedStats();
+                if (stat_tick && e.type == Monster.typeid)
+                {
+                    ((Monster*) e).updateBoostedStats();
+                }
+                e.onUpdate(max_time);
             }
         }
 
