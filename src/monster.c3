@@ -44,6 +44,8 @@ struct MonsterInfo
     double attack_time;
     int[MonsterLevel.elements] level;
     int[CombatStyle.elements] defence_bonus;
+
+    int[Attunement.elements] attunement_weights;
 }
 
 struct MonsterCache
@@ -56,15 +58,15 @@ MonsterCache g_mobs;
 fn void MonsterCache.new_init(&self)
 {
     self.mob_names.new_init();
-    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, {1, 1, 1}, {0, -10, 10} };
-    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, {1, 1, 1}, {-10, 0, 10} };
-    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, {1, 1, 1}, {10, 0, -10} };
-    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, {30, 30, 30}, {20, -40, 140} };
-    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, {30, 30, 30}, {-40, 20, 140} };
-    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, {30, 30, 30}, {140, 20, -40} };
-    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50} };
-    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250} };
-    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250} };
+    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, {1, 1, 1}, {0, -10, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, {1, 1, 1}, {-10, 0, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, {1, 1, 1}, {10, 0, -10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, {30, 30, 30}, {20, -40, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, {30, 30, 30}, {-40, 20, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, {30, 30, 30}, {140, 20, -40}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50}, { 5, 3, 3, 3, 3, 3, 3, 3} };
+    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
+    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
     
     for (int i = 0; i < MONSTER_COUNT; ++i)
     {
@@ -74,11 +76,31 @@ fn void MonsterCache.new_init(&self)
     }
 }
 
+fn Attunement get_attunement(int[Attunement.elements] weights)
+{
+    int total_weight = 0;
+    for (int i = 0; i < Attunement.elements; ++i)
+    {
+        total_weight += weights[i];
+    }
+    int roll = random::next_in_range(&g_rng, 0, total_weight - 1);
+    for (int i = 0; i < Attunement.elements; ++i)
+    {
+        roll -= weights[i];
+        if (roll <= 0)
+        {
+            return Attunement.from_ordinal(i);
+        }
+    }
+    return NONE;
+}
+
 fn Monster* spawn_monster(Zone* zone, IVec2 pos, MonsterType type)
 {
     Monster* mob = mem::new(Monster);
     mob.new_init(zone, type, pos);
     zone.add_entity(mob);
+    mob.attunement = get_attunement(mob.info.attunement_weights);
     return mob;
 }
 
@@ -218,7 +240,7 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
         {
             List(<IVec2>) path;
             path.temp_init();
-            //self.get_zone().path(self.get_position(), player_pos, &path, diagonal_moves: true, reverse: true);
+            self.get_zone().path(self.get_position(), player_pos, &path, diagonal_moves: true, reverse: true);
             if (path.is_empty())
             {
                 break;

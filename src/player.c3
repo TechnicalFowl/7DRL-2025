@@ -71,7 +71,7 @@ fn void Player.explore(&self, IVec2 pos, IVec2 size)
 
 fn void Player.new_init(&self, Zone* z, String n, IVec2 p)
 {
-    self.entity.new_init(z, n, p, WARRIOR_IDLE1, WARRIOR_IDLE2, WARRIOR_POINT);
+    self.entity.new_init(z, n, p, NAKED_IDLE1, NAKED_IDLE2, NAKED_POINT);
     self.nav.new_init();
     self.nav_delay = 0.1f;
 
@@ -187,6 +187,21 @@ fn ItemStack Player.equip(&self, ItemStack item)
     assert(info.stats, "Item is not equippable");
     ItemStack old_item = self.equipment[info.stats.slot];
     self.equipment[info.stats.slot] = item;
+    if (info.stats.slot == HEAD)
+    {
+        if (item.item == HELMET1 || item.item == HELMET2 || item.item == HELMET3)
+        {
+            self.entity.look = { WARRIOR_IDLE1, WARRIOR_IDLE2, WARRIOR_POINT };
+        }
+        else if (item.item == HOOD1 || item.item == HOOD2 || item.item == HOOD3)
+        {
+            self.entity.look = { RANGER_IDLE1, RANGER_IDLE2, RANGER_POINT };
+        }
+        else if (item.item == WIZARD_HAT1 || item.item == WIZARD_HAT2 || item.item == WIZARD_HAT3)
+        {
+            self.entity.look = { MAGE_IDLE1, MAGE_IDLE2, MAGE_POINT };
+        }
+    }
     return old_item;
 }
 
@@ -989,7 +1004,7 @@ fn void Player.attack(&self, Monster* target, bool apply_attunement)
     int damage = self.calculate_damage(target, style);
     String success = damage > 0 ? "hit" : "miss";
     target.take_damage(damage);
-    self.applyAttunement(target, damage);
+    if (apply_attunement) self.applyAttunement(target, damage);
     String killed = "";
     if (target.is_dead())
     {
@@ -1002,7 +1017,7 @@ fn void Player.attack(&self, Monster* target, bool apply_attunement)
     {
         ending.append_char('!');
     }
-    log(string::new_format("You %s%s the %s%s", success, killed, target.get_name(), ending), damage > 0 ? colors::GREEN : colors::ORANGE);
+    if (apply_attunement) log(string::new_format("You %s%s the %s%s", success, killed, target.get_name(), ending), damage > 0 ? colors::GREEN : colors::ORANGE);
     self.give_exp(Skill.from_ordinal(Skill.MELEE.ordinal + style.ordinal), damage * 20);
     self.give_exp(HITPOINTS, damage * 2);
 }
@@ -1022,22 +1037,41 @@ fn void Player.applyAttunement(&self, Monster* target, int damage)
     {
     case AIR:
         // Apply extra damage
-        break;
+        target.take_damage(damage / 2);
     case WATER:
         // Apply stat drain
-        break;
+        int skill = random::next_in_range(&g_rng, 0, (int) MonsterLevel.elements - 1);
+        target.boosted_level[skill] = math::max(0, target.boosted_level[skill] - damage);
     case EARTH:
-        // Apply knockback
-        break;
+        IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
+        ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
+        if (cell.isPassable())
+        {
+            target.set_position(target.get_position() + knockback);
+        }
     case FIRE:
         // Apply burning
         break;
     case CHAOS:
-        // Apply AoE
-        break;
+        for (int x = -1; x <= 1; ++x)
+        {
+            for (int y = -1; y <= 1; ++y)
+            {
+                ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
+                if (cell.entities.is_empty())
+                {
+                    continue;
+                }
+                Entity entity = cell.entities[0];
+                if (entity.type == Monster.typeid)
+                {
+                    Monster* monster = (Monster*) entity;
+                    self.attack(monster, false);
+                }
+            }
+        }
     case NATURE:
-        // Apply life steal
-        break;
+        self.health = math::max(self.health + damage / 4, self.level[Skill.HITPOINTS]);
     case BLOOD:
         // Apply bleed
         break;

@@ -548,7 +548,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 {
                     color = color.grayscale().darken(0.4f);
                 }
-                terminal.set_tile(term_x, term_y, gl, color, 0, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                terminal.set_tile(term_x, term_y, gl, color, 0, is_textmode ? textmode_font : null);
             }
             if (cell.object != OBJ_EMPTY)
             {
@@ -561,7 +561,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 {
                     color = color.grayscale().darken(0.4f);
                 }
-                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, is_textmode ? textmode_font : null);
             }
             else if (is_visible && !cell.entities.is_empty())
             {
@@ -572,7 +572,22 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                     bool is_textmode = textmode || look.sprite_index < 0;
                     char gl = is_textmode ? look.glyph : (char) look.sprite_index;
                     rl::Color color = is_textmode ? look.color : colors::WHITE;
-                    terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                    terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, is_textmode ? textmode_font : null);
+                    
+                    if (first.type == Monster.typeid)
+                    {
+                        Attunement a = ((Monster*) first).attunement;
+                        if (a != NONE)
+                        {
+                            Item rune = (Item) (a.ordinal + Item.BLANK_RUNE);
+                            Appearance alook = g_items.items[rune].look;
+                            bool ais_textmode = textmode || alook.sprite_index < 0;
+                            IVec2 ui_pos = IVec2 { term_x * 2 * map_zoom + map_zoom * 2 - 1, term_y * map_zoom + 1};
+                            char agl = is_textmode ? alook.glyph : (char) alook.sprite_index;
+                            rl::Color acolor = is_textmode ? alook.color : colors::WHITE;
+                            ui.set_tile(...ui_pos, agl, acolor, 0, is_textmode ? textmode_font : sprite_font);
+                        }
+                    }
                 }
             }
             else if (is_visible && !cell.dropped_items.is_empty())
@@ -583,7 +598,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
                 rl::Color color = is_textmode ? look.color : colors::WHITE;
-                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, !textmode && look.sprite_index < 0 ? textmode_font : null);
+                terminal.set_tile(term_x, term_y, gl, color, textmode ? 0 : 1, is_textmode ? textmode_font : null);
                 
                 if (cell.dropped_items.len() > 1)
                 {

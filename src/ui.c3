@@ -1,6 +1,7 @@
 module dg;
 
 import std::collections::list;
+import std::io;
 import std::math;
 import raylib5::rl;
 
@@ -138,7 +139,8 @@ fn void draw_ui()
     ui_term.fill_tile(spos.x + 5, spos.y, 9, 1, ' ', colors::WHITE, prio);
     ui_term.set_tile(spos.x + 4, spos.y, 180, colors::GREY, prio);
     ui_term.set_tile(spos.x + 14, spos.y, 195, colors::GREY, prio);
-    ui_term.write(spos.x + 6, spos.y, string::tformat("%c:Equip", getKeyIcon(get_bind(EQUIPMENT_TAB)[0])), sidebar_tab == EQUIPMENT ? { 220, 220, 220, 255 } : colors::GREY, prio);
+    bool[2] equip_btn = gui::buttonBehavior({spos.x + 6, spos.y}, 7, get_bind(EQUIPMENT_TAB)[0]);
+    ui_term.write(spos.x + 6, spos.y, string::tformat("%c:Equip", getKeyIcon(get_bind(EQUIPMENT_TAB)[0])), sidebar_tab == EQUIPMENT || equip_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
     bool can_get_input = gui::gui_data.can_receive_input(sidebar_window);
 
@@ -232,7 +234,7 @@ fn void draw_ui()
         }
     }
 
-    if (can_get_input && is_key_pressed(EQUIPMENT_TAB, false))
+    if (can_get_input && equip_btn[1])
     {
         sidebar_tab = EQUIPMENT;
         if (inv_action != ACT_AIM)
@@ -288,6 +290,10 @@ fn void draw_ui()
                             else
                             {
                                 pl.add_item(stack);
+                            }
+                            if (EquipmentSlot.from_ordinal(i) == HEAD)
+                            {
+                                pl.entity.look = { NAKED_IDLE1, NAKED_IDLE2, NAKED_POINT };
                             }
                         case ACT_DROP:
                             g_zone.drop_item(...pl.get_position(), stack);
@@ -352,6 +358,10 @@ fn void draw_ui()
             {
                 pl.add_item(stack);
             }
+            if (EquipmentSlot.from_ordinal(inv_minimenu_target) == HEAD)
+            {
+                pl.entity.look = { NAKED_IDLE1, NAKED_IDLE2, NAKED_POINT };
+            }
             gui::close_current_popup();
         }
         if (gui::button("Drop", get_bind(DROP)[0]))
@@ -374,9 +384,10 @@ fn void draw_ui()
     ui_term.fill_tile(spos.x + 17, spos.y, 9, 1, ' ', colors::WHITE, prio);
     ui_term.set_tile(spos.x + 16, spos.y, 180, colors::GREY, prio);
     ui_term.set_tile(spos.x + 26, spos.y, 195, colors::GREY, prio);
-    ui_term.write(spos.x + 18, spos.y, string::tformat("%c:Inven", getKeyIcon(get_bind(INVENTORY_TAB)[0])), sidebar_tab == INVENTORY ? { 220, 220, 220, 255 } : colors::GREY, prio);
+    bool[2] invent_btn = gui::buttonBehavior({spos.x + 18, spos.y}, 7, get_bind(INVENTORY_TAB)[0]);
+    ui_term.write(spos.x + 18, spos.y, string::tformat("%c:Inven", getKeyIcon(get_bind(INVENTORY_TAB)[0])), sidebar_tab == INVENTORY || invent_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && is_key_pressed(INVENTORY_TAB, false))
+    if (can_get_input && invent_btn[1])
     {
         sidebar_tab = INVENTORY;
         if (inv_action != ACT_AIM)
@@ -532,9 +543,10 @@ fn void draw_ui()
     ui_term.fill_tile(spos.x + 29, spos.y, 9, 1, ' ', colors::WHITE, prio);
     ui_term.set_tile(spos.x + 28, spos.y, 180, colors::GREY, prio);
     ui_term.set_tile(spos.x + 38, spos.y, 195, colors::GREY, prio);
-    ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Attune", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK ? { 220, 220, 220, 255 } : colors::GREY, prio);
+    bool[2] attune_btn = gui::buttonBehavior({spos.x + 30, spos.y}, 8, get_bind(SPELLBOOK_TAB)[0]);
+    ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Attune", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK || attune_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && is_key_pressed(SPELLBOOK_TAB, false))
+    if (can_get_input && attune_btn[1])
     {
         sidebar_tab = SPELLBOOK;
         if (inv_action != NO_ACTION)
@@ -586,9 +598,10 @@ fn void draw_ui()
     ui_term.fill_tile(spos.x + 41, spos.y, 9, 1, ' ', colors::WHITE, prio);
     ui_term.set_tile(spos.x + 40, spos.y, 180, colors::GREY, prio);
     ui_term.set_tile(spos.x + 50, spos.y, 195, colors::GREY, prio);
-    ui_term.write(spos.x + 42, spos.y, string::tformat("%c:Skill", getKeyIcon(get_bind(SKILLS_TAB)[0])), sidebar_tab == SKILLS ? { 220, 220, 220, 255 } : colors::GREY, prio);
+    bool[2] skill_btn = gui::buttonBehavior({spos.x + 42, spos.y}, 7, get_bind(SKILLS_TAB)[0]);
+    ui_term.write(spos.x + 42, spos.y, string::tformat("%c:Skill", getKeyIcon(get_bind(SKILLS_TAB)[0])), sidebar_tab == SKILLS || skill_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && is_key_pressed(SKILLS_TAB, false))
+    if (can_get_input && skill_btn[1])
     {
         sidebar_tab = SKILLS;
     }
@@ -677,6 +690,7 @@ fn void draw_ui()
             {
                 gui::close_current_popup();
             }
+            int grabbed = -1;
             for (int i = (int)cell.dropped_items.len() -1; i >= 0; --i)
             {
                 ItemStack stack = cell.dropped_items[i];
@@ -692,10 +706,11 @@ fn void draw_ui()
                     else
                     {
                         pl.add_item(stack);
-                        cell.dropped_items.remove_at(i);
+                        grabbed = i;
                     }
                 }
             }
+            if (grabbed != -1) cell.dropped_items.remove_at(grabbed);
             if (cell.dropped_items.is_empty())
             {
                 gui::close_current_popup();

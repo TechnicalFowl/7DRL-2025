@@ -42,6 +42,13 @@ fn IVec2 ivec2_clamp(IVec2 v, IVec2 min, IVec2 max)
     return ivec2_min(ivec2_max(v, min), max);
 }
 
+fn float ivec2_angle(IVec2 a, IVec2 b)
+{
+    float dx = (float) b.x - a.x;
+    float dy = (float) b.y - a.y;
+    return math::atan2(dy, dx);
+}
+
 struct BitBoard
 {
     usz width;

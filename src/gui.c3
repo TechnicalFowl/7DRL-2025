@@ -191,6 +191,19 @@ fn void text(String text, rl::Color color=colors::BLANK)
     window.cursor = { window.newline_start, window.cursor[1] + 1 };
 }
 
+fn bool[2] buttonBehavior(IVec2 pos, int length, rl::KeyboardKey shortcut=0, bool disabled=false)
+{
+    if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
+    GuiWindow* window = gui_data.window_stack.last()!!;
+    int x = rl::getMouseX() / (dg::font_size / 2);
+    int y = rl::getMouseY() / dg::font_size;
+    bool hovered = x >= pos.x && x < pos.x + length && y == pos.y && !disabled;
+    bool can_receive_input = !disabled && gui_data.can_receive_input(window) && window.open_frame < gui_data.frame_index - 1;
+    bool pressed = hovered && can_receive_input && rl::isMouseButtonPressed(rl::MouseButton.LEFT);
+    if (can_receive_input && shortcut != 0 && rl::isKeyPressed(shortcut)) pressed = true;
+    return {hovered, pressed};
+}
+
 fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::BLANK, bool disabled=false)
 {
     if (color == colors::BLANK) color = get_color(GuiColor.WINDOW_TEXT);
