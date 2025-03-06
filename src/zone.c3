@@ -96,7 +96,7 @@ TerrainInfo[*] g_terrain_info = {
     { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK, "some dirt" },
     { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK, "some stones" },
     { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK, "a stone floor" },
-    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK, "sme dirty style" },
+    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK, "some dirty stone" },
     { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK, "some bare stone" },
 
     { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK, "a sturdy door" },
@@ -492,12 +492,7 @@ struct ZoneVisCB
 fn bool ZoneVisCB.line_cb(&self, IVec2 pos) @private
 {
     ZoneCell*! cell = self.zone.get_cell(...pos);
-    if (catch cell)
-    {
-        self.visible = false;
-        return false;
-    }
-    if (!cell.isPassable())
+    if (!cell.isPassable() ?? true)
     {
         self.visible = false;
         return false;

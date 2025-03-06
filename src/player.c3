@@ -371,12 +371,7 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
 fn Action Player.tryInteract(&self, IVec2 dir)
 {
     ZoneCell*! cell = self.get_zone().get_cell(...(self.get_position() + dir));
-    if (catch cell)
-    {
-        inv_action = NO_ACTION;
-        return null;
-    }
-    if (cell.isPassable())
+    if (cell.isPassable() ?? true)
     {
         inv_action = NO_ACTION;
         return null;
@@ -1173,15 +1168,11 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
                 for (int y = -1; y <= 1; ++y)
                 {
                     ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
-                    if (catch cell)
+                    if (cell.entities.is_empty() ?? true)
                     {
                         continue;
                     }
-                    if (cell.entities.is_empty())
-                    {
-                        continue;
-                    }
-                    Entity entity = cell.entities[0];
+                    Entity entity = cell!!.entities[0];
                     if (entity.type == Monster.typeid)
                     {
                         Monster* monster = (Monster*) entity;
@@ -1225,11 +1216,7 @@ fn double PlayerRangedAction.duration(&self) @dynamic => self.time;
 fn bool PlayerRangedAction.lineCB(&self, IVec2 next)
 {
     ZoneCell*! cell = g_zone.get_cell(...next);
-    if (catch cell)
-    {
-        return true;
-    }
-    if (cell.isTerrainPassable())
+    if (cell.isTerrainPassable() ?? true)
     {
         return true;
     }
@@ -1244,12 +1231,7 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
 {
     Player* player = (Player*) entity;
     ZoneCell*! target_cell = player.get_zone().get_cell(...self.target);
-    if (catch target_cell)
-    {
-        log("Your attack doesn't hit anything.");
-        return;
-    }
-    if (target_cell.entities.is_empty())
+    if (target_cell.entities.is_empty() ?? true)
     {
         log("Your attack doesn't hit anything.");
         return;
@@ -1261,7 +1243,7 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
         log("You can't see your target.");
         return;
     }
-    Entity target = target_cell.entities[0];
+    Entity target = target_cell!!.entities[0];
     if (target.type == Monster.typeid)
     {
         player.attack((Monster*) target, true);

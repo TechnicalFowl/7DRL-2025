@@ -218,11 +218,7 @@ struct MonsterLosChecker
 fn bool MonsterLosChecker.lineCB(&self, IVec2 next)
 {
     ZoneCell*! cell = g_zone.get_cell(...next);
-    if (catch cell)
-    {
-        return true;
-    }
-    if (cell.isTerrainPassable())
+    if (cell.isTerrainPassable() ?? true)
     {
         return true;
     }
@@ -445,7 +441,7 @@ fn void Monster.applyAttunement(&self, Player* target, int* damage)
         // Apply a random attunement...
         if (*damage > 0)
         {
-            self.attunement = Attunement.from_ordinal(random::next_in_range(&g_rng, 1, Attunement.elements));
+            self.attunement = Attunement.from_ordinal(random::next_in_range(&g_rng, 1, Attunement.elements - 1));
             self.applyAttunement(target, damage);
             self.attunement = CHAOS;
         }

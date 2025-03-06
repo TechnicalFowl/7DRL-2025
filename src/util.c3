@@ -178,7 +178,7 @@ fn int exceptionHandler(ExceptionRecord* exception_info)
         case 0xC00000FD: code = "Stack overflow";
         default: code = "Unhandled exception";
     }
-    io::printfn("Unhandled exception: %s (%u)", code, exception_info.code);
+    io::printfn("Unhandled exception: %s (%X)", code, exception_info.code);
     builtin::print_backtrace(code, 0);
     return 1;
 }

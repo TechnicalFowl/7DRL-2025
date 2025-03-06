@@ -111,7 +111,7 @@ fn void push_bottombar(String text)
     }
 }
 
-fn GuiWindow* begin_window(String title, IVec2 pos, IVec2 size, bool border=true)
+fn GuiWindow* begin_window(String title, IVec2 pos, IVec2 size, bool border=true, int priority=0)
 {
     GuiWindow* window;
     if (try GuiWindow* w = gui_data.windows.get(title))
@@ -133,7 +133,7 @@ fn GuiWindow* begin_window(String title, IVec2 pos, IVec2 size, bool border=true
     window.cursor = {pos[0], pos[1] };
     window.last_end = window.cursor;
     window.newline_start = window.cursor[0];
-    window.priority = 0;
+    window.priority = priority;
 
     int prio = get_setting(GuiSetting.PRIORITY) + window.priority;
     dg::ui_term.fill_background(...pos, ...size, get_color(GuiColor.WINDOW_BG), prio);
@@ -170,7 +170,7 @@ fn void icon(Appearance look)
 {
     if (gui_data.window_stack.is_empty()) unreachable("No window to write to");
     GuiWindow* window = gui_data.window_stack.last()!!;
-    int prio = get_setting(GuiSetting.PRIORITY);
+    int prio = get_setting(GuiSetting.PRIORITY) + window.priority;
     bool is_textmode = dg::textmode || look.sprite_index < 0;
     char gl = is_textmode ? look.glyph : (char) look.sprite_index;
     rl::Color color = is_textmode ? look.color : colors::WHITE;
@@ -185,7 +185,7 @@ fn void text(String text, rl::Color color=colors::BLANK)
     GuiWindow* window = gui_data.window_stack.last()!!;
     IVec2 clip_size = window.get_text_clip_size();
     if (clip_size[0] <= 0 || clip_size[1] <= 0) return;
-    int prio = get_setting(GuiSetting.PRIORITY);
+    int prio = get_setting(GuiSetting.PRIORITY) + window.priority;
     String clip_text = text.len > clip_size[0] ? text[..clip_size[0]] : text;
     dg::ui_term.write(...window.cursor, clip_text, color, prio);
     window.last_start = window.cursor;
@@ -289,7 +289,8 @@ fn bool begin_popup(String title, IVec2 pos, IVec2 size, bool border=true)
     {
         return false;
     }
-    GuiWindow* w = begin_window(title, pos, size, border);
+    int prio = (int) (gui_data.popup_stack.index_of(title) ?? 0) * 2 + 1;
+    GuiWindow* w = begin_window(title, pos, size, border, prio);
     w.flags |= WINDOW_FLAG_POPUP;
     return true;
 }

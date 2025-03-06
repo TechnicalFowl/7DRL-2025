@@ -603,6 +603,8 @@ fn void draw_ui()
         for (int i = 0; i < Attunement.elements; ++i)
         {
             Attunement a = Attunement.from_ordinal(i);
+            Item rune = (Item) (a.ordinal + Item.BLANK_RUNE);
+            gui::icon(g_items.items[rune].look);
             if (gui::button(Attunement.names[i], (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0), disabled: i != 0 && !pl.has_item(Item.BLANK_RUNE + i, 1)))
             {
                 InvAction this_action = inv_action;
@@ -901,16 +903,16 @@ fn void draw_ui()
                     ItemStack stack = cell.dropped_items[i];
                     ItemInfo* info = &g_items.items[stack.item];
                     gui::icon(info.look);
-                    String prefix = "a";
+                    String prefix = "is a";
                     if (stack.count > 1)
                     {
-                        prefix = "some";
+                        prefix = "are some";
                     }
                     else if (info.name[0] == 'A' || info.name[0] == 'E' || info.name[0] == 'I' || info.name[0] == 'O' || info.name[0] == 'U')
                     {
-                        prefix = "an";
+                        prefix = "is an";
                     }
-                    gui::text(string::tformat("There is %s %s%s (x%d)", prefix, info.name, stack.count > 1 ? "s" : "", stack.count));
+                    gui::text(string::tformat("There %s %s%s (x%d)", prefix, info.name, stack.count > 1 ? "s" : "", stack.count));
                 }
             }
             foreach (e: cell.entities)
@@ -922,7 +924,7 @@ fn void draw_ui()
                 case Monster:
                     MonsterInfo* info = ((Monster*) e).info;
                     gui::text(string::tformat("  There is %s", info.description));
-                    gui::text(string::tformat("  %s", info.ext_description));
+                    gui::text(string::tformat("    %s", info.ext_description));
                 default:
                     gui::text(string::tformat("  There is an unknown entity (%s).", e));
                 }
@@ -932,13 +934,20 @@ fn void draw_ui()
             gui::text("imbuing an element will consume runes of that element for each attack. Enemies may also");
             gui::text("be attuned to an element so watch out!");
             gui::text("");
-            gui::text("  AIR: Air imbued attacks have increased accuracy.");
-            gui::text("  WATER: Water imbued attacks drain combat stats.");
-            gui::text("  EARTH: Earth imbued attacks knockback enemies.");
-            gui::text("  FIRE: Fire imbued attacks deal extra damage.");
-            gui::text("  CHAOS: Chaos imbued attacks deal damage in an area.");
-            gui::text("  NATURE: Nature imbued attacks root a target in place.");
-            gui::text("  BLOOD: Blood imbued attacks leech life, healing you for a portion of damage dealt.");
+            gui::icon(g_items.items[Item.AIR_RUNE].look);
+            gui::text(" AIR: Air imbued attacks have increased accuracy.");
+            gui::icon(g_items.items[Item.WATER_RUNE].look);
+            gui::text(" WATER: Water imbued attacks drain combat stats.");
+            gui::icon(g_items.items[Item.EARTH_RUNE].look);
+            gui::text(" EARTH: Earth imbued attacks knockback enemies.");
+            gui::icon(g_items.items[Item.FIRE_RUNE].look);
+            gui::text(" FIRE: Fire imbued attacks deal extra damage.");
+            gui::icon(g_items.items[Item.CHAOS_RUNE].look);
+            gui::text(" CHAOS: Chaos imbued attacks deal damage in an area.");
+            gui::icon(g_items.items[Item.NATURE_RUNE].look);
+            gui::text(" NATURE: Nature imbued attacks root a target in place.");
+            gui::icon(g_items.items[Item.BLOOD_RUNE].look);
+            gui::text(" BLOOD: Blood imbued attacks leech life, healing you for a portion of damage dealt.");
         default:
             gui::text(string::tformat("Unknown type %s", examine_target));
         }
