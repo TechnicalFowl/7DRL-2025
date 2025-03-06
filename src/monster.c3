@@ -361,7 +361,7 @@ fn void Monster.applyAttunement(&self, Player* target, int damage)
     switch (self.attunement)
     {
     case AIR:
-        // Apply extra damage
+        // Apply bonus accuracy
         break;
     case WATER:
         // Apply stat drain
@@ -370,16 +370,16 @@ fn void Monster.applyAttunement(&self, Player* target, int damage)
         // Apply knockback
         break;
     case FIRE:
-        // Apply burning
+        // Apply extra damage
         break;
     case CHAOS:
         // Apply AoE
         break;
     case NATURE:
-        // Apply life steal
+        // Apply rooted
         break;
     case BLOOD:
-        // Apply bleed
+        // Apply life steal
         break;
     case NONE:
         break;

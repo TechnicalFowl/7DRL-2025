@@ -1002,9 +1002,9 @@ fn void Player.attack(&self, Monster* target, bool apply_attunement)
 {
     CombatStyle style = getStyle(self.equipment[EquipmentSlot.WEAPON].item);
     int damage = self.calculate_damage(target, style);
-    String success = damage > 0 ? "hit" : "miss";
     target.take_damage(damage);
-    if (apply_attunement) self.applyAttunement(target, damage);
+    if (apply_attunement) self.applyAttunement(target, &damage);
+    String success = damage > 0 ? "hit" : "miss";
     String killed = "";
     if (target.is_dead())
     {
@@ -1022,7 +1022,7 @@ fn void Player.attack(&self, Monster* target, bool apply_attunement)
     self.give_exp(HITPOINTS, damage * 2);
 }
 
-fn void Player.applyAttunement(&self, Monster* target, int damage)
+fn void Player.applyAttunement(&self, Monster* target, int* damage)
 {
     if (self.attunement == NONE) return;
     Item rune = Item.BLANK_RUNE + self.attunement.ordinal;
@@ -1036,12 +1036,20 @@ fn void Player.applyAttunement(&self, Monster* target, int damage)
     switch (attunement)
     {
     case AIR:
-        // Apply extra damage
-        target.take_damage(damage / 2);
+        // Apply bonus accuracy
+        if (*damage == 0)
+        {
+            // reroll damage
+            CombatStyle style = getStyle(self.equipment[EquipmentSlot.WEAPON].item);
+            *damage = self.calculate_damage(target, style);
+        }
     case WATER:
         // Apply stat drain
-        int skill = random::next_in_range(&g_rng, 0, (int) MonsterLevel.elements - 1);
-        target.boosted_level[skill] = math::max(0, target.boosted_level[skill] - damage);
+        if (*damage > 0)
+        {
+            int skill = random::next_in_range(&g_rng, 0, (int) MonsterLevel.elements - 1);
+            target.boosted_level[skill] = math::max(0, target.boosted_level[skill] - *damage);
+        }
     case EARTH:
         IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
         ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
@@ -1050,8 +1058,8 @@ fn void Player.applyAttunement(&self, Monster* target, int damage)
             target.set_position(target.get_position() + knockback);
         }
     case FIRE:
-        // Apply burning
-        break;
+        // Apply extra damage
+        *damage += math::max(1, *damage / 2);
     case CHAOS:
         for (int x = -1; x <= 1; ++x)
         {
@@ -1071,10 +1079,13 @@ fn void Player.applyAttunement(&self, Monster* target, int damage)
             }
         }
     case NATURE:
-        self.health = math::max(self.health + damage / 4, self.level[Skill.HITPOINTS]);
-    case BLOOD:
-        // Apply bleed
+        // Apply rooted
         break;
+    case BLOOD:
+        if (*damage > 0)
+        {
+            self.health = math::max(self.health + math::max(1, *damage / 4), self.level[Skill.HITPOINTS]);
+        }
     case NONE:
         unreachable();
     }

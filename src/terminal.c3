@@ -144,6 +144,7 @@ fn void VirtualTerminal.box_background(&self, int x0, int y0, int w, int h, rl::
 *>
 fn void VirtualTerminal.set_tile(&self, int x, int y, char glyph, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
+    if (x < 0 || x >= self.width || y < 0 || y >= self.height) return;
     VCell* cell = &self.buffer[self.width * y + x];
     if (priority >= cell.bg_priority)
     {
