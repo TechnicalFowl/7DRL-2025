@@ -35,6 +35,8 @@ struct MonsterInfo
 {
     MonsterType type;
     String name;
+    String description;
+    String ext_description;
     Appearance[3] looks;
 
     double range;
@@ -58,15 +60,15 @@ MonsterCache g_mobs;
 fn void MonsterCache.new_init(&self)
 {
     self.mob_names.new_init();
-    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, {1, 1, 1}, {0, -10, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
-    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, {1, 1, 1}, {-10, 0, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
-    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Goblin Mage", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, {1, 1, 1}, {10, 0, -10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
-    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, {30, 30, 30}, {20, -40, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
-    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, {30, 30, 30}, {-40, 20, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
-    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, {30, 30, 30}, {140, 20, -40}, { 10, 4, 4, 4, 4, 1, 1, 1} };
-    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50}, { 5, 3, 3, 3, 3, 3, 3, 3} };
-    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
-    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
+    self.mobs[MonsterType.GOBLIN] = { GOBLIN, "Goblin", "a goblin", "  it is armed with a rough looking spear.", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 4, MELEE, 1.0, {1, 1, 1}, {0, -10, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.GOBLIN_ARCHER] = { GOBLIN_ARCHER, "Goblin Archer", "a goblin archer", "  it is armed with a shortbow.", { GOBLIN_ARCHER_IDLE1, GOBLIN_ARCHER_IDLE2, GOBLIN_ARCHER_POINT }, 4, 4, RANGED, 1.0, {1, 1, 1}, {-10, 0, 10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.GOBLIN_MAGE] = { GOBLIN_MAGE, "Hobgoblin Mage", "a hobgoblin mage", "", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 5, 3, MAGIC, 1.0, {1, 1, 1}, {10, 0, -10}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.BANDIT] = { BANDIT, "Bandit", "a bandit", "", { BANDIT_IDLE1, BANDIT_IDLE2, BANDIT_POINT }, 1.5, 15, MELEE, 1.0, {30, 30, 30}, {20, -40, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.BANDIT_RANGER] = { BANDIT_RANGER, "Bandit Ranger", "a bandit crossbowman", "", { BANDIT_RANGER_IDLE1, BANDIT_RANGER_IDLE2, BANDIT_RANGER_POINT }, 7, 13, RANGED, 1.0, {30, 30, 30}, {-40, 20, 140}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.BANDIT_MAGE] = { BANDIT_MAGE, "Bandit Mage", "a bandit mage", "", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 6, 11, MAGIC, 1.0, {30, 30, 30}, {140, 20, -40}, { 10, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", "a dark mage", "", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50}, { 5, 3, 3, 3, 3, 3, 3, 3} };
+    self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", "a dark knight", "", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
+    self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", "an assassin", "", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
     
     for (int i = 0; i < MONSTER_COUNT; ++i)
     {
@@ -215,7 +217,11 @@ struct MonsterLosChecker
 }
 fn bool MonsterLosChecker.lineCB(&self, IVec2 next)
 {
-    ZoneCell* cell = g_zone.get_cell(...next);
+    ZoneCell*! cell = g_zone.get_cell(...next);
+    if (catch cell)
+    {
+        return true;
+    }
     if (cell.isTerrainPassable())
     {
         return true;
@@ -291,8 +297,8 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
             }
             IVec2 next_pos = path.pop()!!;
             IVec2 next_move = next_pos - self.entity.position;
-            ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
-            if (next_cell.isPassable())
+            ZoneCell*! next_cell = self.get_zone().get_cell(...next_pos);
+            if (try next_cell && next_cell.isPassable())
             {
                 return do_move(next_move);
             }
@@ -301,8 +307,8 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
         if (max_time > 1)
         {
             IVec2 move = { random::next_in_range(&g_rng, -1, 1), random::next_in_range(&g_rng, -1, 1) };
-            ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + move));
-            if (cell.isPassable())
+            ZoneCell*! cell = self.get_zone().get_cell(...(self.get_position() + move));
+            if (try cell && cell.isPassable())
             {
                 return do_move(move);
             }
@@ -423,8 +429,8 @@ fn void Monster.applyAttunement(&self, Player* target, int* damage)
         if (*damage > 0)
         {
             IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
-            ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
-            if (cell.isPassable())
+            ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + knockback));
+            if (try cell && cell.isPassable())
             {
                 target.set_position(target.get_position() + knockback);
             }

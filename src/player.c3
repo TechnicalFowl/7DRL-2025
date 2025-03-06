@@ -348,7 +348,11 @@ fn void Player.updateBoostedStats(&self)
 
 fn Action Player.moveOrInteract(&self, IVec2 dir)
 {
-    ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    ZoneCell*! cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    if (catch cell)
+    {
+        return null;
+    }
     if (cell.isPassable())
     {
         if (self.has_effect(ROOTED))
@@ -366,7 +370,12 @@ fn Action Player.moveOrInteract(&self, IVec2 dir)
 
 fn Action Player.tryInteract(&self, IVec2 dir)
 {
-    ZoneCell* cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    ZoneCell*! cell = self.get_zone().get_cell(...(self.get_position() + dir));
+    if (catch cell)
+    {
+        inv_action = NO_ACTION;
+        return null;
+    }
     if (cell.isPassable())
     {
         inv_action = NO_ACTION;
@@ -436,12 +445,16 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             
             if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
             {
-                IVec2 pos = math::clamp(self.get_zone().get_mouse_position(), IVec2 {0, 0}, IVec2 {self.get_zone().width - 1, self.get_zone().height - 1});
+                IVec2 pos = self.get_zone().get_mouse_position();
                 if (pos == self.get_position())
                 {
                     return do_grab();
                 }
-                ZoneCell* cell = self.get_zone().get_cell(...pos);
+                ZoneCell*! cell = self.get_zone().get_cell(...pos);
+                if (catch cell)
+                {
+                    return null;
+                }
                 if (!cell.entities.is_empty()
                         && self.get_room() == pos / 17
                         && self.getAttackStyle() != MELEE
@@ -453,6 +466,16 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 {
                     self.nav.path_to(self.get_zone(), self.get_position(), pos);
                 }
+            }
+            if (rl::isMouseButtonPressed(rl::MouseButton.RIGHT) && !gui::want_mouse_input())
+            {
+                ZoneCell*! cell = self.get_zone().get_cell(...self.get_zone().get_mouse_position());
+                if (try cell)
+                {
+                    examine_target = cell;
+                    gui::open_popup("Examine");
+                }
+                return null;
             }
 
             bool is_shift = is_key_down(DIAGONAL_UP);
@@ -588,6 +611,20 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 return do_ranged_attack(1.0, inv_action_target);
             }
         }
+        else if (inv_action == ACT_EXAMINE)
+        {
+            if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
+            {
+                inv_action = NO_ACTION;
+                ZoneCell*! cell = self.get_zone().get_cell(...self.get_zone().get_mouse_position());
+                if (try cell)
+                {
+                    examine_target = cell;
+                    gui::open_popup("Examine");
+                }
+                return null;
+            }
+        }
     }
     else
     {
@@ -603,7 +640,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 self.nav_delay = 0.1f;
                 IVec2 next_pos = self.nav.next_point();
                 IVec2 next_move = next_pos - self.entity.position;
-                ZoneCell* next_cell = self.get_zone().get_cell(...next_pos);
+                ZoneCell* next_cell = self.get_zone().get_cell(...next_pos)!!;
                 if (next_move == {0, 0})
                 {
                     return null;
@@ -658,7 +695,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     IVec2 new_pos = entity.get_position() + self.dir;
     Player* player = (Player*) entity;
     Zone* zone = entity.get_zone();
-    ZoneCell* cell = zone.get_cell(...new_pos);
+    ZoneCell* cell = zone.get_cell(...new_pos)!!;
     if (inv_action == ACT_USE_ON)
     {
         inv_action = NO_ACTION;
@@ -934,65 +971,65 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
 
 fn void open_door(Zone* zone, IVec2 p)
 {
-    ZoneCell* cell = zone.get_cell(...p);
+    ZoneCell* cell = zone.get_cell(...p)!!;
     switch (cell.terrain)
     {
     case TERR_DOOR_NORTH_L:
     case TERR_LDOOR_NORTH_L:
     case TERR_BDOOR_NORTH_L:
         cell.terrain = TERR_ODOOR_NORTH_L;
-        zone.get_cell(p.x + 1, p.y).terrain = TERR_ODOOR_NORTH_R;
-        zone.get_cell(p.x, p.y - 2).terrain = TERR_ODOOR_SOUTH_L;
-        zone.get_cell(p.x + 1, p.y - 2).terrain = TERR_ODOOR_SOUTH_R;
+        zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_ODOOR_NORTH_R;
+        zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_R;
     case TERR_DOOR_NORTH_R:
     case TERR_LDOOR_NORTH_R:
     case TERR_BDOOR_NORTH_R:
         cell.terrain = TERR_ODOOR_NORTH_R;
-        zone.get_cell(p.x - 1, p.y).terrain = TERR_ODOOR_NORTH_L;
-        zone.get_cell(p.x - 1, p.y - 2).terrain = TERR_ODOOR_SOUTH_L;
-        zone.get_cell(p.x, p.y - 2).terrain = TERR_ODOOR_SOUTH_R;
+        zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x - 1, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_R;
     case TERR_DOOR_EAST_U:
     case TERR_LDOOR_EAST_U:
     case TERR_BDOOR_EAST_U:
         cell.terrain = TERR_ODOOR_EAST_U;
-        zone.get_cell(p.x, p.y + 1).terrain = TERR_ODOOR_EAST_L;
-        zone.get_cell(p.x + 2, p.y).terrain = TERR_ODOOR_WEST_U;
-        zone.get_cell(p.x + 2, p.y + 1).terrain = TERR_ODOOR_WEST_L;
+        zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_ODOOR_EAST_L;
+        zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y + 1)!!.terrain = TERR_ODOOR_WEST_L;
     case TERR_DOOR_EAST_L:
     case TERR_LDOOR_EAST_L:
     case TERR_BDOOR_EAST_L:
         cell.terrain = TERR_ODOOR_EAST_L;
-        zone.get_cell(p.x, p.y - 1).terrain = TERR_ODOOR_EAST_U;
-        zone.get_cell(p.x + 2, p.y - 1).terrain = TERR_ODOOR_WEST_U;
-        zone.get_cell(p.x + 2, p.y).terrain = TERR_ODOOR_WEST_L;
+        zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x + 2, p.y - 1)!!.terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_ODOOR_WEST_L;
     case TERR_DOOR_SOUTH_L:
     case TERR_LDOOR_SOUTH_L:
     case TERR_BDOOR_SOUTH_L:
         cell.terrain = TERR_ODOOR_SOUTH_L;
-        zone.get_cell(p.x + 1, p.y).terrain = TERR_ODOOR_SOUTH_R;
-        zone.get_cell(p.x, p.y + 2).terrain = TERR_ODOOR_NORTH_L;
-        zone.get_cell(p.x + 1, p.y + 2).terrain = TERR_ODOOR_NORTH_R;
+        zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_ODOOR_SOUTH_R;
+        zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_R;
     case TERR_DOOR_SOUTH_R:
     case TERR_LDOOR_SOUTH_R:
     case TERR_BDOOR_SOUTH_R:
         cell.terrain = TERR_ODOOR_SOUTH_R;
-        zone.get_cell(p.x - 1, p.y).terrain = TERR_ODOOR_SOUTH_L;
-        zone.get_cell(p.x - 1, p.y + 2).terrain = TERR_ODOOR_NORTH_L;
-        zone.get_cell(p.x, p.y + 2).terrain = TERR_ODOOR_NORTH_R;
+        zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_ODOOR_SOUTH_L;
+        zone.get_cell(p.x - 1, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_L;
+        zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_R;
     case TERR_DOOR_WEST_U:
     case TERR_LDOOR_WEST_U:
     case TERR_BDOOR_WEST_U:
         cell.terrain = TERR_ODOOR_WEST_U;
-        zone.get_cell(p.x, p.y + 1).terrain = TERR_ODOOR_WEST_L;
-        zone.get_cell(p.x - 2, p.y).terrain = TERR_ODOOR_EAST_U;
-        zone.get_cell(p.x - 2, p.y + 1).terrain = TERR_ODOOR_EAST_L;
+        zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_ODOOR_WEST_L;
+        zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y + 1)!!.terrain = TERR_ODOOR_EAST_L;
     case TERR_DOOR_WEST_L:
     case TERR_LDOOR_WEST_L:
     case TERR_BDOOR_WEST_L:
         cell.terrain = TERR_ODOOR_WEST_L;
-        zone.get_cell(p.x, p.y - 1).terrain = TERR_ODOOR_WEST_U;
-        zone.get_cell(p.x - 2, p.y - 1).terrain = TERR_ODOOR_EAST_U;
-        zone.get_cell(p.x - 2, p.y).terrain = TERR_ODOOR_EAST_L;
+        zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_ODOOR_WEST_U;
+        zone.get_cell(p.x - 2, p.y - 1)!!.terrain = TERR_ODOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_ODOOR_EAST_L;
     case TERR_ODOOR_NORTH_L:
     case TERR_ODOOR_NORTH_R:
     case TERR_ODOOR_EAST_U:
@@ -1116,8 +1153,8 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
         if (*damage > 0)
         {
             IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
-            ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + knockback));
-            if (cell.isPassable())
+            ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + knockback));
+            if (try cell && cell.isPassable())
             {
                 target.set_position(target.get_position() + knockback);
             }
@@ -1135,7 +1172,11 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
             {
                 for (int y = -1; y <= 1; ++y)
                 {
-                    ZoneCell* cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
+                    ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + IVec2{x, y}));
+                    if (catch cell)
+                    {
+                        continue;
+                    }
                     if (cell.entities.is_empty())
                     {
                         continue;
@@ -1183,7 +1224,11 @@ fn double PlayerRangedAction.duration(&self) @dynamic => self.time;
 
 fn bool PlayerRangedAction.lineCB(&self, IVec2 next)
 {
-    ZoneCell* cell = g_zone.get_cell(...next);
+    ZoneCell*! cell = g_zone.get_cell(...next);
+    if (catch cell)
+    {
+        return true;
+    }
     if (cell.isTerrainPassable())
     {
         return true;
@@ -1198,7 +1243,12 @@ fn bool PlayerRangedAction.lineCB(&self, IVec2 next)
 fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
 {
     Player* player = (Player*) entity;
-    ZoneCell* target_cell = player.get_zone().get_cell(...self.target);
+    ZoneCell*! target_cell = player.get_zone().get_cell(...self.target);
+    if (catch target_cell)
+    {
+        log("Your attack doesn't hit anything.");
+        return;
+    }
     if (target_cell.entities.is_empty())
     {
         log("Your attack doesn't hit anything.");
@@ -1239,7 +1289,7 @@ fn double GrabAction.duration(&self) @dynamic => self.time;
 fn void GrabAction.apply(&self, Entity entity) @dynamic
 {
     Player* player = (Player*) entity;
-    ZoneCell* cell = player.get_zone().get_cell(...player.get_position());
+    ZoneCell* cell = player.get_zone().get_cell(...player.get_position())!!;
     if (cell.dropped_items.is_empty())
     {
         log("There is nothing to grab here.");

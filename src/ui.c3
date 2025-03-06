@@ -19,7 +19,6 @@ int sidebar_width;
 int inv_minimenu_target;
 int minimenu_height;
 
-
 enum InvAction
 {
     NO_ACTION,
@@ -38,6 +37,14 @@ IVec2 inv_action_target;
 ulong inv_action_changed;
 
 List(<ItemStack>) storage_contents;
+
+enum ExamineType
+{
+    TILE,
+    ITEM,
+    ATTUNEMENT,
+}
+any examine_target;
 
 fn bool ui_wants_keys()
 {
@@ -82,7 +89,7 @@ fn void draw_ui()
             ItemInfo* info = &g_items.items[stack.item];
             gui::push_bottombar(string::tformat("Use %s on? (Select in inventory or bump into target, %s to cancel)", info.name, getKeyName(get_bind(CANCEL)[0])));
         case ACT_EXAMINE:
-            gui::push_bottombar(string::tformat("Examine which item? (Select in inventory, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
+            gui::push_bottombar(string::tformat("Examine what? (Select in inventory or world, %s to cancel)", getKeyName(get_bind(CANCEL)[0])));
         case ACT_AIM:
             gui::push_bottombar(string::tformat("Choose ranged target (%s to cancel)", getKeyName(get_bind(CANCEL)[0])));
         case ACT_ATTUNE:
@@ -95,6 +102,15 @@ fn void draw_ui()
     {
         gui::push_bottombar(string::tformat("%-16s", g_zone.name));
         gui::push_bottombar(string::tformat("T:%.0f", elapsed_time));
+        ZoneCell*! cell = g_zone.get_cell(...g_zone.get_mouse_position());
+        if (try cell)
+        {
+            String terrain_name = cell.terrain != EMPTY_VOID ? g_terrain_info[cell.terrain].name : "";
+            String object_name = cell.object != OBJ_EMPTY ? g_object_info[cell.object].name : "";
+            String items = cell.dropped_items.is_empty() ? "" : (cell.dropped_items.len() > 1 ? "Some items" : g_items.items[cell.dropped_items[0].item].name);
+            String entity = cell.entities.is_empty() ? "" : cell.entities[0].get_name();
+            gui::push_bottombar(string::tformat("       %16s    %16s    %10s    %10s", terrain_name, object_name, items, entity));
+        }
     }
     
     DString healthbar;
@@ -299,7 +315,8 @@ fn void draw_ui()
                             g_zone.drop_item(...pl.get_position(), stack);
                             pl.inventory[i] = { NO_ITEM, 0, 0 };
                         case ACT_EXAMINE:
-                            break;
+                            examine_target = &pl.equipment[i];
+                            gui::open_popup("Examine");
                         case ACT_QUAFF:
                         case ACT_USE:
                         case ACT_USE_ON:
@@ -316,6 +333,11 @@ fn void draw_ui()
                         minimenu_height = sidebar_window.cursor.y;
                         gui::open_popup("Equipped Menu");
                     }
+                }
+                if (gui::is_last_item_hovered() && rl::isMouseButtonPressed(rl::MouseButton.RIGHT))
+                {
+                    examine_target = &pl.equipment[i];
+                    gui::open_popup("Examine");
                 }
             }
         }
@@ -461,7 +483,8 @@ fn void draw_ui()
                             pl.use_item_pair(inv_action_source, i);
                             inv_action_source = -1;
                         case ACT_EXAMINE:
-                            break;
+                            examine_target = &pl.inventory[i];
+                            gui::open_popup("Examine");
                         case ACT_AIM:
                         case ACT_ATTUNE:
                         case NO_ACTION:
@@ -474,6 +497,11 @@ fn void draw_ui()
                         minimenu_height = sidebar_window.cursor.y;
                         gui::open_popup("Item Menu");
                     }
+                }
+                if (gui::is_last_item_hovered() && rl::isMouseButtonPressed(rl::MouseButton.RIGHT))
+                {
+                    examine_target = &pl.inventory[i];
+                    gui::open_popup("Examine");
                 }
             }
             else
@@ -590,6 +618,11 @@ fn void draw_ui()
                     unreachable();
                 }
             }
+            if (gui::is_last_item_hovered() && rl::isMouseButtonPressed(rl::MouseButton.RIGHT))
+            {
+                examine_target = &Attunement.values[i];
+                gui::open_popup("Examine");
+            }
         }
         gui::vertical_separator(18);
         gui::text(string::tformat("%5s: Attune Spell          %5s: Examine", getKeyName(get_bind(ATTUNE)[0]), getKeyName(get_bind(EXAMINE)[0])));
@@ -676,8 +709,8 @@ fn void draw_ui()
 
     if (inv_action_target.x >= 0 && inv_action_target.x < g_zone.width && inv_action_target.y >= 0 && inv_action_target.y < g_zone.height)
     {
-        ZoneCell* cell = g_zone.get_cell(...inv_action_target);
-        popup_size = {60, 5 + (int) cell.dropped_items.len()};
+        ZoneCell* cell = g_zone.get_cell(...inv_action_target)!!;
+        popup_size = {60, 15};
         if (gui::begin_popup("Grab Item", {term_width / 3 - popup_size.x / 2, term_height / 2 - popup_size.y / 2}, popup_size))
         {
             gui::same_line(20);
@@ -697,7 +730,7 @@ fn void draw_ui()
                 ItemInfo* info = &g_items.items[stack.item];
                 gui::icon(info.look);
                 int last_len = info.name.len + 2;
-                if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + (cell.dropped_items.len() - i - 1))))
+                if (gui::button(string::tformat("%s%s (x%d)", info.name, stack.count > 1 ? "s" : "", stack.count), (KeyboardKey) ((int) rl::KEY_A + (cell.dropped_items.len() - i - 1))))
                 {
                     if (pl.is_inventory_full(stack))
                     {
@@ -799,7 +832,8 @@ fn void draw_ui()
         {
             ItemInfo* info = &g_items.items[stack.item];
             int last_len = info.name.len + 2;
-            if (gui::button(info.name, (KeyboardKey) ((int) rl::KEY_A + i)))
+            gui::icon(info.look);
+            if (gui::button(string::tformat("%s%s (x%d)", info.name, stack.count > 1 ? "s" : "", stack.count), (KeyboardKey) ((int) rl::KEY_A + i)))
             {
                 if (pl.is_inventory_full(stack))
                 {
@@ -813,6 +847,100 @@ fn void draw_ui()
                 }
             }
             i++;
+        }
+        gui::end_popup();
+    }
+    
+    popup_size = {100, 25};
+    if (gui::begin_popup("Examine", {term_width / 3 - popup_size.x / 2, term_height / 3 - popup_size.y / 2}, popup_size))
+    {
+        gui::same_line(20);
+        if (gui::button("Close", get_bind(CANCEL)[0]))
+        {
+            examine_target = null;
+            gui::close_current_popup();
+        }
+        gui::vertical_separator(1);
+        switch (examine_target.type)
+        {
+        case ItemStack:
+            ItemStack* stack = (ItemStack*) examine_target;
+            ItemInfo* info = &g_items.items[stack.item];
+            gui::icon(info.look);
+            gui::text(string::tformat("    %s x%d", info.name, stack.count));
+            gui::text("");
+            foreach (s: info.description)
+            {   
+                gui::text(s);
+            }
+            if (info.stats)
+            {
+                gui::text("");
+                gui::text(string::tformat("  Style: %-10s Slot: %-10s", getStyle(stack.item), info.stats.slot));
+                if (info.stats.slot == EquipmentSlot.WEAPON)
+                {
+                    gui::text(string::tformat("Range: %d", (int) info.stats.range));
+                }
+                gui::text("");
+                gui::text("           Accuracy     Damage      Defence");
+                int[3] melee_stats = { info.stats.accuracy[CombatStyle.MELEE], info.stats.strength[CombatStyle.MELEE], info.stats.defence[CombatStyle.MELEE] };
+                gui::text(string::tformat("  Melee        %4d       %4d         %4d", ...melee_stats));
+                int[3] ranged_stats = { info.stats.accuracy[CombatStyle.RANGED], info.stats.strength[CombatStyle.RANGED], info.stats.defence[CombatStyle.RANGED] };
+                gui::text(string::tformat("  Ranged       %4d       %4d         %4d", ...ranged_stats));
+                int[3] magic_stats = { info.stats.accuracy[CombatStyle.MAGIC], info.stats.strength[CombatStyle.MAGIC], info.stats.defence[CombatStyle.MAGIC] };
+                gui::text(string::tformat("  Magic        %4d       %4d         %4d", ...magic_stats));
+            }
+        case ZoneCell:
+            ZoneCell* cell = (ZoneCell*) examine_target;
+            if (cell.terrain != EMPTY_VOID) gui::text(string::tformat("  There is %s.", g_terrain_info[cell.terrain].description));
+            if (cell.object != OBJ_EMPTY) gui::text(string::tformat("  There is %s.", g_object_info[cell.object].description));
+            if (!cell.dropped_items.is_empty())
+            {
+                for (int i = 0; i < cell.dropped_items.len(); ++i)
+                {
+                    ItemStack stack = cell.dropped_items[i];
+                    ItemInfo* info = &g_items.items[stack.item];
+                    gui::icon(info.look);
+                    String prefix = "a";
+                    if (stack.count > 1)
+                    {
+                        prefix = "some";
+                    }
+                    else if (info.name[0] == 'A' || info.name[0] == 'E' || info.name[0] == 'I' || info.name[0] == 'O' || info.name[0] == 'U')
+                    {
+                        prefix = "an";
+                    }
+                    gui::text(string::tformat("There is %s %s%s (x%d)", prefix, info.name, stack.count > 1 ? "s" : "", stack.count));
+                }
+            }
+            foreach (e: cell.entities)
+            {
+                switch (e.type)
+                {
+                case Player:
+                    gui::text("  There is you!");
+                case Monster:
+                    MonsterInfo* info = ((Monster*) e).info;
+                    gui::text(string::tformat("  There is %s", info.description));
+                    gui::text(string::tformat("  %s", info.ext_description));
+                default:
+                    gui::text(string::tformat("  There is an unknown entity (%s).", e));
+                }
+            }
+        case Attunement:
+            gui::text("Attuning yourself to an element will imbue your attacks with extra power. Attacking while");
+            gui::text("imbuing an element will consume runes of that element for each attack. Enemies may also");
+            gui::text("be attuned to an element so watch out!");
+            gui::text("");
+            gui::text("  AIR: Air imbued attacks have increased accuracy.");
+            gui::text("  WATER: Water imbued attacks drain combat stats.");
+            gui::text("  EARTH: Earth imbued attacks knockback enemies.");
+            gui::text("  FIRE: Fire imbued attacks deal extra damage.");
+            gui::text("  CHAOS: Chaos imbued attacks deal damage in an area.");
+            gui::text("  NATURE: Nature imbued attacks root a target in place.");
+            gui::text("  BLOOD: Blood imbued attacks leech life, healing you for a portion of damage dealt.");
+        default:
+            gui::text(string::tformat("Unknown type %s", examine_target));
         }
         gui::end_popup();
     }

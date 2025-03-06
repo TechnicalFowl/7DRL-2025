@@ -77,67 +77,68 @@ struct TerrainInfo
     bool passable;
     Appearance look;
     rl::Color bg;
+    String description;
 }
 
 TerrainInfo[*] g_terrain_info = {
-    { EMPTY_VOID, "Empty", false, EMPTY_LOOK, colors::BLACK },
-    { TERR_WALL_NORTH, "Wall", false, WALL_NORTH, colors::BLACK },
-    { TERR_WALL_EAST, "Wall", false, WALL_EAST, colors::BLACK },
-    { TERR_WALL_SOUTH, "Wall", false, WALL_SOUTH, colors::BLACK },
-    { TERR_WALL_WEST, "Wall", false, WALL_WEST, colors::BLACK },
-    { TERR_WALL_NE, "Wall", false, WALL_NE, colors::BLACK },
-    { TERR_WALL_NW, "Wall", false, WALL_NW, colors::BLACK },
-    { TERR_WALL_SE, "Wall", false, WALL_SE, colors::BLACK },
-    { TERR_WALL_SW, "Wall", false, WALL_SW, colors::BLACK },
-    { TERR_PILLAR, "Pillar", false, PILLAR, colors::BLACK },
+    { EMPTY_VOID, "Empty", false, EMPTY_LOOK, colors::BLACK, "an empty void" },
+    { TERR_WALL_NORTH, "Wall", false, WALL_NORTH, colors::BLACK, "a solid wall" },
+    { TERR_WALL_EAST, "Wall", false, WALL_EAST, colors::BLACK, "a solid wall" },
+    { TERR_WALL_SOUTH, "Wall", false, WALL_SOUTH, colors::BLACK, "a solid wall" },
+    { TERR_WALL_WEST, "Wall", false, WALL_WEST, colors::BLACK, "a solid wall" },
+    { TERR_WALL_NE, "Wall", false, WALL_NE, colors::BLACK, "a solid wall" },
+    { TERR_WALL_NW, "Wall", false, WALL_NW, colors::BLACK, "a solid wall" },
+    { TERR_WALL_SE, "Wall", false, WALL_SE, colors::BLACK, "a solid wall" },
+    { TERR_WALL_SW, "Wall", false, WALL_SW, colors::BLACK, "a solid wall" },
+    { TERR_PILLAR, "Pillar", false, PILLAR, colors::BLACK, "a solid wall" },
 
-    { TERR_GRASS, "Grass", true, FLOOR_GRASS, colors::BLACK },
-    { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK },
-    { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK },
-    { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK },
-    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK },
-    { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK },
+    { TERR_GRASS, "Grass", true, FLOOR_GRASS, colors::BLACK, "some tufts of grass" },
+    { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK, "some dirt" },
+    { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK, "some stones" },
+    { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK, "a stone floor" },
+    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK, "sme dirty style" },
+    { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK, "some bare stone" },
 
-    { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK },
-    { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK },
-    { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK },
-    { TERR_DOOR_EAST_L, "Door", false, DOOR_EAST_L, colors::BLACK },
-    { TERR_DOOR_SOUTH_L, "Door", false, DOOR_SOUTH_L, colors::BLACK },
-    { TERR_DOOR_SOUTH_R, "Door", false, DOOR_SOUTH_R, colors::BLACK },
-    { TERR_DOOR_WEST_U, "Door", false, DOOR_WEST_U, colors::BLACK },
-    { TERR_DOOR_WEST_L, "Door", false, DOOR_WEST_L, colors::BLACK },
+    { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_EAST_L, "Door", false, DOOR_EAST_L, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_SOUTH_L, "Door", false, DOOR_SOUTH_L, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_SOUTH_R, "Door", false, DOOR_SOUTH_R, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_WEST_U, "Door", false, DOOR_WEST_U, colors::BLACK, "a sturdy door" },
+    { TERR_DOOR_WEST_L, "Door", false, DOOR_WEST_L, colors::BLACK, "a sturdy door" },
 
-    { TERR_ODOOR_NORTH_L, "Open Door", false, DOOR_OPEN_NORTH_L, colors::BLACK },
-    { TERR_ODOOR_NORTH_R, "Open Door", false, DOOR_OPEN_NORTH_R, colors::BLACK },
-    { TERR_ODOOR_EAST_U, "Open Door", false, DOOR_OPEN_EAST_U, colors::BLACK },
-    { TERR_ODOOR_EAST_L, "Open Door", false, DOOR_OPEN_EAST_L, colors::BLACK },
-    { TERR_ODOOR_SOUTH_L, "Open Door", false, DOOR_OPEN_SOUTH_L, colors::BLACK },
-    { TERR_ODOOR_SOUTH_R, "Open Door", false, DOOR_OPEN_SOUTH_R, colors::BLACK },
-    { TERR_ODOOR_WEST_U, "Open Door", false, DOOR_OPEN_WEST_U, colors::BLACK },
-    { TERR_ODOOR_WEST_L, "Open Door", false, DOOR_OPEN_WEST_L, colors::BLACK },
+    { TERR_ODOOR_NORTH_L, "Open Door", false, DOOR_OPEN_NORTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_NORTH_R, "Open Door", false, DOOR_OPEN_NORTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_EAST_U, "Open Door", false, DOOR_OPEN_EAST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_EAST_L, "Open Door", false, DOOR_OPEN_EAST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_SOUTH_L, "Open Door", false, DOOR_OPEN_SOUTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_SOUTH_R, "Open Door", false, DOOR_OPEN_SOUTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_WEST_U, "Open Door", false, DOOR_OPEN_WEST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
+    { TERR_ODOOR_WEST_L, "Open Door", false, DOOR_OPEN_WEST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
 
-    { TERR_LDOOR_NORTH_L, "Locked Door", false, DOOR_LOCKED_NORTH_L, colors::BLACK },
-    { TERR_LDOOR_NORTH_R, "Locked Door", false, DOOR_LOCKED_NORTH_R, colors::BLACK },
-    { TERR_LDOOR_EAST_U, "Locked Door", false, DOOR_LOCKED_EAST_U, colors::BLACK },
-    { TERR_LDOOR_EAST_L, "Locked Door", false, DOOR_LOCKED_EAST_L, colors::BLACK },
-    { TERR_LDOOR_SOUTH_L, "Locked Door", false, DOOR_LOCKED_SOUTH_L, colors::BLACK },
-    { TERR_LDOOR_SOUTH_R, "Locked Door", false, DOOR_LOCKED_SOUTH_R, colors::BLACK },
-    { TERR_LDOOR_WEST_U, "Locked Door", false, DOOR_LOCKED_WEST_U, colors::BLACK },
-    { TERR_LDOOR_WEST_L, "Locked Door", false, DOOR_LOCKED_WEST_L, colors::BLACK },
+    { TERR_LDOOR_NORTH_L, "Locked Door", false, DOOR_LOCKED_NORTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_NORTH_R, "Locked Door", false, DOOR_LOCKED_NORTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_EAST_U, "Locked Door", false, DOOR_LOCKED_EAST_U, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_EAST_L, "Locked Door", false, DOOR_LOCKED_EAST_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_SOUTH_L, "Locked Door", false, DOOR_LOCKED_SOUTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_SOUTH_R, "Locked Door", false, DOOR_LOCKED_SOUTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_WEST_U, "Locked Door", false, DOOR_LOCKED_WEST_U, colors::BLACK, "a sturdy door with a big lock on it" },
+    { TERR_LDOOR_WEST_L, "Locked Door", false, DOOR_LOCKED_WEST_L, colors::BLACK, "a sturdy door with a big lock on it" },
 
-    { TERR_BDOOR_NORTH_L, "Boss Door", false, DOOR_BOSS_NORTH_L, colors::BLACK },
-    { TERR_BDOOR_NORTH_R, "Boss Door", false, DOOR_BOSS_NORTH_R, colors::BLACK },
-    { TERR_BDOOR_EAST_U, "Boss Door", false, DOOR_BOSS_EAST_U, colors::BLACK },
-    { TERR_BDOOR_EAST_L, "Boss Door", false, DOOR_BOSS_EAST_L, colors::BLACK },
-    { TERR_BDOOR_SOUTH_L, "Boss Door", false, DOOR_BOSS_SOUTH_L, colors::BLACK },
-    { TERR_BDOOR_SOUTH_R, "Boss Door", false, DOOR_BOSS_SOUTH_R, colors::BLACK },
-    { TERR_BDOOR_WEST_U, "Boss Door", false, DOOR_BOSS_WEST_U, colors::BLACK },
-    { TERR_BDOOR_WEST_L, "Boss Door", false, DOOR_BOSS_WEST_L, colors::BLACK },
+    { TERR_BDOOR_NORTH_L, "Boss Door", false, DOOR_BOSS_NORTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_NORTH_R, "Boss Door", false, DOOR_BOSS_NORTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_EAST_U, "Boss Door", false, DOOR_BOSS_EAST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_EAST_L, "Boss Door", false, DOOR_BOSS_EAST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_SOUTH_L, "Boss Door", false, DOOR_BOSS_SOUTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_SOUTH_R, "Boss Door", false, DOOR_BOSS_SOUTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_WEST_U, "Boss Door", false, DOOR_BOSS_WEST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    { TERR_BDOOR_WEST_L, "Boss Door", false, DOOR_BOSS_WEST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
 
-    { TERR_EXIT_WALL_L, "Wall", false, EXIT_WALL_L, colors::BLACK },
-    { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK },
-    { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK },
-    { TERR_EXIT_HOLE_R, "Exit", false, EXIT_HOLE_R, colors::BLACK },
+    { TERR_EXIT_WALL_L, "Wall", false, EXIT_WALL_L, colors::BLACK, "a wall marked with a downward arrow" },
+    { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK, "a wall marked with a downward arrow" },
+    { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK, "a dark pit leading deeper into the dungeon" },
+    { TERR_EXIT_HOLE_R, "Exit", false, EXIT_HOLE_R, colors::BLACK, "a dark pit leading deeper into the dungeon" },
 };
 
 fn bool is_wall_terrain(TerrainType t) => t >= TERR_WALL_NORTH && t <= TERR_PILLAR;
@@ -174,29 +175,35 @@ struct ObjectInfo
     String name;
     bool passable;
     Appearance look;
+    String description;
 }
 
 ObjectInfo[*] g_object_info = {
-    { OBJ_EMPTY, "Empty", true, EMPTY_LOOK },
-    { OBJ_SMALL_ROCKS, "Small Rocks", false, SMALL_ROCKS },
-    { OBJ_ROCKS, "Rocks", false, ROCKS },
-    { OBJ_TREE, "Tree", false, TREE },
-    { OBJ_STUMP, "Stump", false, STUMP },
-    { OBJ_CRATE, "Crate", false, CRATE },
-    { OBJ_OPEN_CRATE, "Open Crate", false, OPEN_CRATE },
-    { OBJ_SMALL_BOXES, "Small Boxes", false, SMALL_BOXES },
-    { OBJ_ANVIL, "Anvil", false, ANVIL },
-    { OBJ_FURNACE, "Furnace", false, FURNACE },
-    { OBJ_CAMPFIRE, "Campfire", false, CAMPFIRE },
-    { OBJ_FIRE_PIT, "Fire Pit", false, FIRE_PIT },
-    { OBJ_TORCH, "Torch", false, TORCH },
-    { OBJ_GRAVE, "Grave", false, GRAVE },
-    { OBJ_GRAVE2, "Grave 2", false, GRAVE2 },
-    { OBJ_ORE_ROCK1, "Ore Rock 1", false, ORE_ROCK1 },
-    { OBJ_ORE_ROCK2, "Ore Rock 2", false, ORE_ROCK2 },
-    { OBJ_ORE_ROCK3, "Ore Rock 3", false, ORE_ROCK3 },
-    { OBJ_TRADER, "Trader", false, TRADER },
+    { OBJ_EMPTY, "Empty", true, EMPTY_LOOK, "" },
+    { OBJ_SMALL_ROCKS, "Small Rocks", false, SMALL_ROCKS, "a small scattering of rocks" },
+    { OBJ_ROCKS, "Rocks", false, ROCKS, "a large boulder" },
+    { OBJ_TREE, "Tree", false, TREE, "a short tree" },
+    { OBJ_STUMP, "Stump", false, STUMP, "an old stump" },
+    { OBJ_CRATE, "Crate", false, CRATE, "a supply crate" },
+    { OBJ_OPEN_CRATE, "Open Crate", false, OPEN_CRATE, "an empty supply crate" },
+    { OBJ_SMALL_BOXES, "Small Boxes", false, SMALL_BOXES, "some small empty boxes" },
+    { OBJ_ANVIL, "Anvil", false, ANVIL, "an anvil" },
+    { OBJ_FURNACE, "Furnace", false, FURNACE, "a hot furnace" },
+    { OBJ_CAMPFIRE, "Campfire", false, CAMPFIRE, "a small campfire" },
+    { OBJ_FIRE_PIT, "Fire Pit", false, FIRE_PIT, "the remnants of a fire" },
+    { OBJ_TORCH, "Torch", false, TORCH, "a lit torch" },
+    { OBJ_GRAVE, "Grave", false, GRAVE, "a gravestone" },
+    { OBJ_GRAVE2, "Grave", false, GRAVE2, "a gravestone" },
+    { OBJ_ORE_ROCK1, "Ore Rock", false, ORE_ROCK1, "a small boulder containing some novite ore" },
+    { OBJ_ORE_ROCK2, "Ore Rock", false, ORE_ROCK2, "a small boulder containing some fractite ore" },
+    { OBJ_ORE_ROCK3, "Ore Rock", false, ORE_ROCK3, "a small boulder containing some promethium ore"},
+    { OBJ_TRADER, "Trader", false, TRADER, "a trader with some wares available" },
 };
+
+fault ZoneFault
+{
+    OUT_OF_BOUNDS,
+}
 
 struct ZoneCell
 {
@@ -352,7 +359,7 @@ fn double Zone.update(&self)
                     self.drop_item(...e.get_position(), item);
                 }
 
-                ZoneCell* cell = self.get_cell(...e.get_position());
+                ZoneCell* cell = self.get_cell(...e.get_position())!!;
                 cell.entities.remove_item(e);
                 self.all_entities.remove_at(i);
                 e.free();
@@ -372,14 +379,15 @@ fn double Zone.update(&self)
     };
 }
 
-fn ZoneCell* Zone.get_cell(&self, int x, int y)
+fn ZoneCell*! Zone.get_cell(&self, int x, int y)
 {
+    if (x < 0 || x >= self.width || y < 0 || y >= self.height) return ZoneFault.OUT_OF_BOUNDS?;
     return &self.cells[y * self.width + x];
 }
 
 fn void Zone.set_terrain(&self, int x, int y, TerrainType terr)
 {
-    ZoneCell* cell = self.get_cell(x, y);
+    ZoneCell* cell = self.get_cell(x, y)!!;
     cell.terrain = terr;
 }
 
@@ -396,14 +404,14 @@ fn void Zone.fill_terrain(&self, IVec2 pos, IVec2 size, TerrainType terr)
 
 fn void Zone.set_object(&self, int x, int y, ObjectType obj)
 {
-    ZoneCell* cell = self.get_cell(x, y);
+    ZoneCell* cell = self.get_cell(x, y)!!;
     cell.object = obj;
 }
 
 fn void Zone.drop_item(&self, int x, int y, ItemStack item)
 {
     assert(item.item != NO_ITEM);
-    ZoneCell* cell = self.get_cell(x, y);
+    ZoneCell* cell = self.get_cell(x, y)!!;
     ItemInfo* info = &g_items.items[item.item];
     foreach (&i: cell.dropped_items)
     {
@@ -428,14 +436,14 @@ fn void Zone.drop_item(&self, int x, int y, ItemStack item)
 fn void Zone.add_player(&self, Entity e)
 {
     self.player = e;
-    ZoneCell* cell = self.get_cell(...e.get_position());
+    ZoneCell* cell = self.get_cell(...e.get_position())!!;
     cell.entities.push(e);
 }
 
 fn void Zone.add_entity(&self, Entity e)
 {
     self.all_entities.push(e);
-    ZoneCell* cell = self.get_cell(...e.get_position());
+    ZoneCell* cell = self.get_cell(...e.get_position())!!;
     cell.entities.push(e);
 }
 
@@ -461,7 +469,8 @@ fn IVec2 Zone.find_nearest_empty(&self, IVec2 pos)
     const int RANGE = 10;
     for (int i = 0; i < RANGE * RANGE * 4; ++i)
     {
-        if (self.get_cell(pos[0] + x, pos[1] + y).isPassable()) return pos;
+        ZoneCell*! cell = self.get_cell(pos[0] + x, pos[1] + y);
+        if (try cell && cell.isPassable()) return pos;
         if  (x == y || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1 - y)))
         {
             int t = dx;
@@ -482,7 +491,13 @@ struct ZoneVisCB
 
 fn bool ZoneVisCB.line_cb(&self, IVec2 pos) @private
 {
-    if (!self.zone.get_cell(...pos).isPassable())
+    ZoneCell*! cell = self.zone.get_cell(...pos);
+    if (catch cell)
+    {
+        self.visible = false;
+        return false;
+    }
+    if (!cell.isPassable())
     {
         self.visible = false;
         return false;
@@ -624,24 +639,27 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
 
                 if (g_settings.hover_tooltip_delay > 0 && self.mouse_hover_time > g_settings.hover_tooltip_delay)
                 {
-                    ZoneCell* cell = self.get_cell(...mpos);
-                    int height = cell.object == OBJ_EMPTY ? 1 : 2;
-                    height += (int) cell.entities.len();
-                    if (height < 2) height = 2;
-                    double time_in_hover = self.mouse_hover_time - g_settings.hover_tooltip_delay;
-                    int animation_step = (int) (time_in_hover / 0.02);
-                    bool left_justify = rl::getMouseX() < (ui.width - sidebar_width - 16) * 8;
-                    if (left_justify)
+                    ZoneCell*! cell = self.get_cell(...mpos);
+                    if (try cell)
                     {
-                        IVec2 tt_pos = (mpos - min) * map_zoom;
-                        tt_pos += {map_zoom + 1, 1};
-                        tt_pos.x *= 2;
-                        if (tt_pos.y + height > ui.height) tt_pos.y -= height;
-                        // @Todo: maybe tooltips later lol
-                    }
-                    else
-                    {
+                        int height = cell.object == OBJ_EMPTY ? 1 : 2;
+                        height += (int) cell.entities.len();
+                        if (height < 2) height = 2;
+                        double time_in_hover = self.mouse_hover_time - g_settings.hover_tooltip_delay;
+                        int animation_step = (int) (time_in_hover / 0.02);
+                        bool left_justify = rl::getMouseX() < (ui.width - sidebar_width - 16) * 8;
+                        if (left_justify)
+                        {
+                            IVec2 tt_pos = (mpos - min) * map_zoom;
+                            tt_pos += {map_zoom + 1, 1};
+                            tt_pos.x *= 2;
+                            if (tt_pos.y + height > ui.height) tt_pos.y -= height;
+                            // @Todo: maybe tooltips later lol
+                        }
+                        else
+                        {
 
+                        }
                     }
                 }
             }
@@ -729,7 +747,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
             IVec2 next = current.pos + n;
             if (DEBUG_PATHFINDING) io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
             if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
-            ZoneCell* cell = self.get_cell(...next);
+            ZoneCell*! cell = self.get_cell(...next);
+            if (catch cell)
+            {
+                if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's out of bounds", ...next);
+                current = save_current;
+                continue;
+            }
             if (is_door_terrain(cell.terrain) && next != to)
             {
                 double new_cost = current.cost + 1;
@@ -752,7 +776,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
 
                 Direction dir = get_door_direction(next);
                 next = next + dir.dir * 3;
-                cell = self.get_cell(...next);
+                ZoneCell*! tcell = self.get_cell(...next);
+                if (catch tcell)
+                {
+                    current = save_current;
+                    continue;
+                }
+                cell = tcell;
 
             }
             if (!cell.isPassable() && next != to)
@@ -785,7 +815,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
                 IVec2 next = current.pos + n;
                 if (DEBUG_PATHFINDING) io::printfn("  Checking [%d %d] -> [%d %d]", ...current.pos, ...next);
                 if (next[0] < 0 || next[0] >= self.width || next[1] < 0 || next[1] >= self.height) continue;
-                ZoneCell* cell = self.get_cell(...next);
+                ZoneCell*! cell = self.get_cell(...next);
+                if (catch cell)
+                {
+                    if (DEBUG_PATHFINDING) io::printfn("    Skipped [%d %d] because it's out of bounds", ...next);
+                    current = save_current;
+                    continue;
+                }
                 if (is_door_terrain(cell.terrain) && next != to)
                 {
                     double new_cost = current.cost + 1.414;
@@ -808,7 +844,13 @@ fn bool Zone.path(&self, IVec2 from, IVec2 to, List(<IVec2>)* results, bool diag
 
                     Direction dir = get_door_direction(next);
                     next = next + dir.dir * 3;
-                    cell = self.get_cell(...next);
+                    ZoneCell*! tcell = self.get_cell(...next);
+                    if (catch tcell)
+                    {
+                        current = save_current;
+                        continue;
+                    }
+                    cell = tcell;
                 }
                 if (!cell.isPassable() && next != to)
                 {

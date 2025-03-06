@@ -51,8 +51,8 @@ fn void MoveAction.apply(&self, Entity entity) @dynamic
 {
     IVec2 new_pos = entity.get_position() + self.move;
 
-    ZoneCell* cell = entity.get_zone().get_cell(...new_pos);
-    if (cell.isPassable())
+    ZoneCell*! cell = entity.get_zone().get_cell(...new_pos);
+    if (try cell && cell.isPassable())
     {
         entity.set_position(new_pos);
     }
@@ -98,7 +98,7 @@ fn String EntityCommon.get_name(&self) @dynamic => self.name;
 fn IVec2 EntityCommon.get_position(&self) @dynamic => self.position;
 fn void EntityCommon.set_position(&self, IVec2 pos) @dynamic
 {
-    ZoneCell* cell = self.zone.get_cell(...self.position);
+    ZoneCell* cell = self.zone.get_cell(...self.position)!!;
     Entity this_ent;
     foreach (ent: cell.entities)
     {
@@ -110,7 +110,7 @@ fn void EntityCommon.set_position(&self, IVec2 pos) @dynamic
     }
     cell.entities.remove_first_item(this_ent);
     self.position = pos;
-    ZoneCell* new_cell = self.zone.get_cell(...self.position);
+    ZoneCell* new_cell = self.zone.get_cell(...self.position)!!;
     new_cell.entities.push(this_ent);
 }
 
@@ -217,7 +217,14 @@ fn bool VisibilityTrackerCB.line_cb(&self, IVec2 pos) @private
     self.vis.set_visible(pos, true);
     self.vis.set_explored(pos, true);
     if (self.step++ >= self.range) return false;
-    if (!self.vis.zone.get_cell(...pos).isPassable())
+    ZoneCell*! cell = self.vis.zone.get_cell(...pos);
+    if (catch cell)
+    {
+        self.pen_depth++;
+        if (self.pen_depth > 1) return false;
+        return true;
+    }
+    if (!cell.isPassable())
     {
         self.pen_depth++;
         if (self.pen_depth > 1) return false;

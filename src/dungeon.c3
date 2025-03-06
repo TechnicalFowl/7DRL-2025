@@ -39,7 +39,6 @@ enum RoomType
     STARTING,
     BOSS,
     STANDARD,
-    SPECIAL,
 }
 
 struct Room
@@ -63,21 +62,6 @@ fn void Room.free(&self)
 {
 }
 
-enum SpecialRoomType
-{
-    EMPTY_STOREROOM,
-    BATTLE_SITE,
-    GOBLIN_CAMP,
-    BANDIT_CAMP,
-    ABANDONED_CAMP,
-    BATTLE_SITE_CAMP,
-    FORGE,
-    DESTROYED_FORGE,
-    RICH_MINE,
-    EMPTIED_MINE,
-    LOGGING_CAMP,
-}
-
 enum HotspotType : (int weight, uint exclusive_mask)
 {
     EMPTY_SPOT = {40, 0},
@@ -92,7 +76,8 @@ enum HotspotType : (int weight, uint exclusive_mask)
     SMALL_MAGE = {4, 0xc00},
     MOB_GROUP = {2, 0xc00},
     BIG_GROUP = {1, 0xc00},
-    GRAVESITE = {5, 0x60},
+    GRAVESITE = {5, 0x2060},
+    CAMPSITE = {5, 0x1000},
 }
 
 int hotspot_total_weight;
@@ -209,7 +194,7 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
     }
     if (self.type == EMPTY)
     {
-        self.type = random::next_in_range(rng, 0, 5) == 0 ? SPECIAL : STANDARD;
+        self.type = STANDARD;
     }
 
     switch (self.type)
@@ -536,14 +521,48 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                     case EMPTY_SPOT:
                         break;
                     case TREE:
+                        for (int yy = min.y; yy < min.y + size.y; ++yy)
+                        {
+                            for (int xx = min.x; xx < min.x + size.x; ++xx)
+                            {
+                                if (random::next_in_range(rng, 0, 3) == 0) continue;
+                                zone.set_terrain(xx, yy, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                            }
+                        }
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, OBJ_TREE);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_TREE);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
+                        zone.set_terrain(...p0, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                        IVec2 p1;
+                        if (random::next_in_range(rng, 0, 1) == 0)
+                        {
+                            p1 = get_random_pos(rng, min, size, p0);
+                            zone.set_object(...p1, OBJ_TREE);
+                            zone.set_terrain(...p1, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                        }
+                        if (random::next_in_range(rng, 0, 1) == 0)
+                        {
+                            IVec2 p2 = get_random_pos(rng, min, size, p0, p1);
+                            zone.set_object(...p2, OBJ_STUMP);
+                            zone.set_terrain(...p2, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                        }
                     case STUMP:
+                        for (int yy = min.y; yy < min.y + size.y; ++yy)
+                        {
+                            for (int xx = min.x; xx < min.x + size.x; ++xx)
+                            {
+                                if (random::next_in_range(rng, 0, 2) == 0) continue;
+                                zone.set_terrain(xx, yy, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                            }
+                        }
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, OBJ_STUMP);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
+                        zone.set_terrain(...p0, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                        if (random::next_in_range(rng, 0, 1) == 0)
+                        {
+                            IVec2 p1 = get_random_pos(rng, min, size, p0);
+                            zone.set_object(...p1, OBJ_STUMP);
+                            zone.set_terrain(...p1, random::next_in_range(rng, 0, 2) == 0 ? TERR_DIRT : TERR_GRASS);
+                        }
                     case ROCK:
                         IVec2 p0 = get_random_pos(rng, min, size);
                         zone.set_object(...p0, OBJ_ROCKS);
@@ -626,17 +645,13 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_GRAVE2);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_SMALL_ROCKS);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
+                    case CAMPSITE:
+                        IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_FIRE_PIT);
+                        IVec2 p1 = get_random_pos(rng, min, size, p0); zone.set_object(...p1, OBJ_SMALL_BOXES);
+                        IVec2 p2 = get_random_pos(rng, min, size, p0, p1); zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
                     }
                 }
             }
-        }
-
-    case SPECIAL:
-        SpecialRoomType srt = SpecialRoomType.from_ordinal(random::next_in_range(rng, 0, (int) SpecialRoomType.elements - 1));
-        switch (srt)
-        {
-        default:
-            break;
         }
     default:
         break;
@@ -645,49 +660,49 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
 
 fn bool lock_door(Zone* zone, IVec2 p)
 {
-    ZoneCell* cell = zone.get_cell(...p);
+    ZoneCell* cell = zone.get_cell(...p)!!;
     switch (cell.terrain)
     {
     case TERR_DOOR_NORTH_L:
         cell.terrain = TERR_LDOOR_NORTH_L;
-        zone.get_cell(p.x + 1, p.y).terrain = TERR_LDOOR_NORTH_R;
-        zone.get_cell(p.x, p.y - 2).terrain = TERR_LDOOR_SOUTH_L;
-        zone.get_cell(p.x + 1, p.y - 2).terrain = TERR_LDOOR_SOUTH_R;
+        zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_LDOOR_NORTH_R;
+        zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x + 1, p.y - 2)!!.terrain = TERR_LDOOR_SOUTH_R;
     case TERR_DOOR_NORTH_R:
         cell.terrain = TERR_LDOOR_NORTH_R;
-        zone.get_cell(p.x - 1, p.y).terrain = TERR_LDOOR_NORTH_L;
-        zone.get_cell(p.x - 1, p.y - 2).terrain = TERR_LDOOR_SOUTH_L;
-        zone.get_cell(p.x, p.y - 2).terrain = TERR_LDOOR_SOUTH_R;
+        zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x - 1, p.y - 2)!!.terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_LDOOR_SOUTH_R;
     case TERR_DOOR_EAST_U:
         cell.terrain = TERR_LDOOR_EAST_U;
-        zone.get_cell(p.x, p.y + 1).terrain = TERR_LDOOR_EAST_L;
-        zone.get_cell(p.x + 2, p.y).terrain = TERR_LDOOR_WEST_U;
-        zone.get_cell(p.x + 2, p.y + 1).terrain = TERR_LDOOR_WEST_L;
+        zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_LDOOR_EAST_L;
+        zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y + 1)!!.terrain = TERR_LDOOR_WEST_L;
     case TERR_DOOR_EAST_L:
         cell.terrain = TERR_LDOOR_EAST_L;
-        zone.get_cell(p.x, p.y - 1).terrain = TERR_LDOOR_EAST_U;
-        zone.get_cell(p.x + 2, p.y - 1).terrain = TERR_LDOOR_WEST_U;
-        zone.get_cell(p.x + 2, p.y).terrain = TERR_LDOOR_WEST_L;
+        zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x + 2, p.y - 1)!!.terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_LDOOR_WEST_L;
     case TERR_DOOR_SOUTH_L:
         cell.terrain = TERR_LDOOR_SOUTH_L;
-        zone.get_cell(p.x + 1, p.y).terrain = TERR_LDOOR_SOUTH_R;
-        zone.get_cell(p.x, p.y + 2).terrain = TERR_LDOOR_NORTH_L;
-        zone.get_cell(p.x + 1, p.y + 2).terrain = TERR_LDOOR_NORTH_R;
+        zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_LDOOR_SOUTH_R;
+        zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x + 1, p.y + 2)!!.terrain = TERR_LDOOR_NORTH_R;
     case TERR_DOOR_SOUTH_R:
         cell.terrain = TERR_LDOOR_SOUTH_R;
-        zone.get_cell(p.x - 1, p.y).terrain = TERR_LDOOR_SOUTH_L;
-        zone.get_cell(p.x - 1, p.y + 2).terrain = TERR_LDOOR_NORTH_L;
-        zone.get_cell(p.x, p.y + 2).terrain = TERR_LDOOR_NORTH_R;
+        zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_LDOOR_SOUTH_L;
+        zone.get_cell(p.x - 1, p.y + 2)!!.terrain = TERR_LDOOR_NORTH_L;
+        zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_LDOOR_NORTH_R;
     case TERR_DOOR_WEST_U:
         cell.terrain = TERR_LDOOR_WEST_U;
-        zone.get_cell(p.x, p.y + 1).terrain = TERR_LDOOR_WEST_L;
-        zone.get_cell(p.x - 2, p.y).terrain = TERR_LDOOR_EAST_U;
-        zone.get_cell(p.x - 2, p.y + 1).terrain = TERR_LDOOR_EAST_L;
+        zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_LDOOR_WEST_L;
+        zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y + 1)!!.terrain = TERR_LDOOR_EAST_L;
     case TERR_DOOR_WEST_L:
         cell.terrain = TERR_LDOOR_WEST_L;
-        zone.get_cell(p.x, p.y - 1).terrain = TERR_LDOOR_WEST_U;
-        zone.get_cell(p.x - 2, p.y - 1).terrain = TERR_LDOOR_EAST_U;
-        zone.get_cell(p.x - 2, p.y).terrain = TERR_LDOOR_EAST_L;
+        zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_LDOOR_WEST_U;
+        zone.get_cell(p.x - 2, p.y - 1)!!.terrain = TERR_LDOOR_EAST_U;
+        zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_LDOOR_EAST_L;
     case TERR_LDOOR_NORTH_L:
     case TERR_BDOOR_NORTH_L:
     case TERR_LDOOR_NORTH_R:

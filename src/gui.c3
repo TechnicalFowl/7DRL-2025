@@ -133,8 +133,9 @@ fn GuiWindow* begin_window(String title, IVec2 pos, IVec2 size, bool border=true
     window.cursor = {pos[0], pos[1] };
     window.last_end = window.cursor;
     window.newline_start = window.cursor[0];
+    window.priority = 0;
 
-    int prio = get_setting(GuiSetting.PRIORITY);
+    int prio = get_setting(GuiSetting.PRIORITY) + window.priority;
     dg::ui_term.fill_background(...pos, ...size, get_color(GuiColor.WINDOW_BG), prio);
     if (border)
     {
@@ -187,6 +188,7 @@ fn void text(String text, rl::Color color=colors::BLANK)
     int prio = get_setting(GuiSetting.PRIORITY);
     String clip_text = text.len > clip_size[0] ? text[..clip_size[0]] : text;
     dg::ui_term.write(...window.cursor, clip_text, color, prio);
+    window.last_start = window.cursor;
     window.last_end = window.cursor + {clip_text.len, 0};
     window.cursor = { window.newline_start, window.cursor[1] + 1 };
 }
@@ -225,8 +227,9 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
     bool pressed = hovered && can_receive_input && rl::isMouseButtonPressed(rl::MouseButton.LEFT);
     if (can_receive_input && shortcut != 0 && rl::isKeyPressed(shortcut)) pressed = true;
 
-    int prio = get_setting(GuiSetting.PRIORITY);
+    int prio = get_setting(GuiSetting.PRIORITY) + window.priority;
     dg::ui_term.write(...window.cursor, clip_text, color, prio);
+    window.last_start = window.cursor;
     window.last_end = window.cursor + {clip_text.len, 0};
     window.cursor = { window.newline_start, window.cursor[1] + 1 };
 
@@ -236,6 +239,15 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
 fn void end_window()
 {
     if (catch gui_data.window_stack.pop()) unreachable("No window to end");
+}
+
+fn bool is_last_item_hovered()
+{
+    if (gui_data.window_stack.is_empty()) return false;
+    GuiWindow* window = gui_data.window_stack.last()!!;
+    int x = rl::getMouseX() / (dg::font_size / 2);
+    int y = rl::getMouseY() / dg::font_size;
+    return x >= window.last_start.x && x < window.last_end.x && y == window.last_start.y;
 }
 
 fn bool is_popup_open(String title)
@@ -334,8 +346,11 @@ struct GuiWindow
     ulong open_frame;
 
     IVec2 cursor;
+    IVec2 last_start;
     IVec2 last_end;
     int newline_start;
+
+    int priority;
 }
 
 fn bool GuiWindow.border(&self) => (self.flags & WINDOW_FLAG_BORDER) != 0;
