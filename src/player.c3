@@ -326,6 +326,11 @@ fn void Player.onUpdate(&self, double duration) @dynamic
         self.status_effects[i].duration -= duration;
         if (self.status_effects[i].duration <= 0)
         {
+            switch (self.status_effects[i].effect)
+            {
+            case ROOTED:
+                log("You are no longer rooted in spot.");
+            }
             self.status_effects.remove_at(i);
         }
     }
@@ -1082,8 +1087,8 @@ fn int Player.calculate_damage(&self, Monster* target, CombatStyle style)
         hit_chance = attack_roll / (2.0f * (defence_roll + 1.0f));
     }
 
-    float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.getAttackRange());
-    hit_chance *= math::clamp(1.0f - range / 2, 0.1f, 1.0f);
+    //float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.getAttackRange());
+    //hit_chance *= math::clamp(1.0f - (range / 2) * (range / 2), 0.1f, 1.0f);
 
     bool hit = random::next_float(&g_rng) < hit_chance;
     io::printfn("Player attack: max_hit %d, atk %d, attack_roll %d, defence_roll %d, hit_chance %.01f%%, hit %s", max_hit, atk, attack_roll, defence_roll, hit_chance * 100, hit ? "yes" : "no");
@@ -1190,7 +1195,7 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
     case BLOOD:
         if (*damage > 0)
         {
-            self.health = math::max(self.health + math::max(1, *damage / 4), self.level[Skill.HITPOINTS]);
+            self.health = math::min(self.health + math::max(1, *damage / 4), self.level[Skill.HITPOINTS]);
         }
     case NONE:
         unreachable();

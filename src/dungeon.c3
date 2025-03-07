@@ -49,6 +49,8 @@ struct Room
     RoomType type;
     int distance_from_start;
     Door[4] doors;
+
+    bool has_spawned_exit;
 }
 
 fn void Room.new_init(&self, IVec2 pos, IVec2 sz)
@@ -71,13 +73,14 @@ enum HotspotType : (int weight, uint exclusive_mask)
     ORE = {5, 0},
     FURNACE = {4, 0x1020},
     STORE_CACHE = {8, 0x1000},
-    SMALL_WARRIOR = {4, 0xc00},
-    SMALL_ARCHER = {4, 0xc00},
-    SMALL_MAGE = {4, 0xc00},
-    MOB_GROUP = {2, 0xc00},
-    BIG_GROUP = {1, 0xc00},
+    SMALL_WARRIOR = {4, 0x4c00},
+    SMALL_ARCHER = {4, 0x4c00},
+    SMALL_MAGE = {4, 0x4c00},
+    MOB_GROUP = {2, 0x4f80},
+    BIG_GROUP = {1, 0x4f80},
     GRAVESITE = {5, 0x2060},
     CAMPSITE = {5, 0x1000},
+    SMALL_SPECIAL = {4, 0xf80},
 }
 
 int hotspot_total_weight;
@@ -224,11 +227,51 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
             zone.drop_item(pos.x + 1, pos.y + 4, starting_room_supplies.roll(rng));
         }
     case BOSS:
-        self.spawn_exit_hole(zone);
         switch (boss_ordering[floor.depth])
-        {
-        default:
-            break;
+        { 
+        case GOBLIN_MAGE:
+            spawn_monster(zone, pos + {7, 7}, GOBLIN_MAGE_BOSS);
+        case GOBLIN_HORDE:
+            int count = random::next_in_range(rng, 3, 6);
+            for (int i = 0; i < count; ++i)
+            {
+                spawn_monster(zone, pos + {4 + i, 7}, GOBLIN_HORDE);
+            }
+        case BANDIT_LEADER:
+            spawn_monster(zone, pos + {7, 7}, BANDIT_LEADER);
+            spawn_monster(zone, pos + {5, 7}, BANDIT);
+            if (random::next_in_range(rng, 0, 1) == 0) spawn_monster(zone, pos + {6, 7}, BANDIT);
+            if (random::next_in_range(rng, 0, 1) == 0) spawn_monster(zone, pos + {7, 6}, BANDIT_RANGER);
+        case ASSASSINS:
+            spawn_monster(zone, pos + {7, 7}, ASSASSIN);
+            spawn_monster(zone, pos + {6, 7}, ASSASSIN);
+        case SLIMES:
+            int count = random::next_in_range(rng, 4, 10);
+            for (int i = 0; i < count; ++i)
+            {
+                spawn_monster(zone, pos + {2 + i, 7}, SLIME);
+            }
+        case HAUNTED_MAGE:
+            spawn_monster(zone, pos + {5, 5}, BANDIT_MAGE);
+            int count = random::next_in_range(rng, 2, 4);
+            for (int i = 0; i < count; ++i)
+            {
+                spawn_monster(zone, pos + {5 + i, 7}, GHOST);
+            }
+        case DARK_WARRIORS:
+            spawn_monster(zone, pos + {5, 7}, DARK_KNIGHT);
+            spawn_monster(zone, pos + {7, 7}, DARK_KNIGHT);
+            spawn_monster(zone, pos + {9, 7}, DARK_KNIGHT);
+        case NECROMANCER:
+            spawn_monster(zone, pos + {9, 7}, NECROMANCER);
+            spawn_monster(zone, pos + {7, 7}, SKELETON);
+            spawn_monster(zone, pos + {6, 7}, SKELETON);
+        case RITUAL_SITE:
+            for (int i = 0; i < 8; ++i)
+            {
+                spawn_monster(zone, pos + {3 + i, 7}, DARK_MAGE);
+            }
+        case ANCIENT_DAEMON:
         }
     case STANDARD:
         int ne = math::max(random::next_in_range(rng, -2, 6), 0);
@@ -569,9 +612,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ROCKS);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_SMALL_ROCKS);
                     case ORE:
+                        int tier = current_floor.depth / 3;
                         IVec2 p0 = get_random_pos(rng, min, size);
-                        zone.set_object(...p0, OBJ_ORE_ROCK1);
-                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ORE_ROCK1);
+                        zone.set_object(...p0, ObjectType.OBJ_ORE_ROCK1 + tier);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), ObjectType.OBJ_ORE_ROCK1 + tier);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_ROCKS);
                     case FURNACE:
                         zone.fill_terrain(min, size, TERR_BRICKS);
@@ -586,10 +630,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
                     case SMALL_WARRIOR:
                         int tier = current_floor.depth / 3;
-                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (1 + (current_floor.depth % 3)) * 3) == 0) tier--;
                         if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
                         tier = math::clamp(tier, 0, 2);
-                        int count = random::next_in_range(rng, 1, 3);
+                        int count = random::next_in_range(rng, 1, 3) / 2;
                         for (int i = 0; i < count; ++i)
                         {
                             IVec2 p0 = get_random_pos(rng, min, size);
@@ -598,10 +642,10 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         }
                     case SMALL_ARCHER:
                         int tier = current_floor.depth / 3;
-                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (1 + (current_floor.depth % 3)) * 3) == 0) tier--;
                         if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
                         tier = math::clamp(tier, 0, 2);
-                        int count = random::next_in_range(rng, 1, 3);
+                        int count = random::next_in_range(rng, 1, 3) / 2;
                         for (int i = 0; i < count; ++i)
                         {
                             IVec2 p0 = get_random_pos(rng, min, size);
@@ -610,7 +654,7 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         }
                     case SMALL_MAGE:
                         int tier = current_floor.depth / 3;
-                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (1 + (current_floor.depth % 3)) * 3) == 0) tier--;
                         if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
                         tier = math::clamp(tier, 0, 2);
                         int count = random::next_in_range(rng, 1, 3) / 2;
@@ -620,9 +664,18 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                             p0 = zone.find_nearest_empty(p0);
                             spawn_monster(zone, p0, MAGE_TYPES[tier]);
                         }
+                    case SMALL_SPECIAL:
+                        int type = random::next_in_range(rng, 0, 2);
+                        int count = random::next_in_range(rng, 1, 3);
+                        for (int i = 0; i < count; ++i)
+                        {
+                            IVec2 p0 = get_random_pos(rng, min, size);
+                            p0 = zone.find_nearest_empty(p0);
+                            spawn_monster(zone, p0, SPECIAL_TYPES[type]);
+                        }
                     case MOB_GROUP:
                         int tier = current_floor.depth / 3;
-                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (1 + (current_floor.depth % 3)) * 3) == 0) tier--;
                         if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
                         tier = math::clamp(tier, 0, 2);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
@@ -630,7 +683,7 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), WARRIOR_TYPES[tier]);
                     case BIG_GROUP:
                         int tier = current_floor.depth / 3;
-                        if (random::next_in_range(rng, 0, (current_floor.depth % 3) * 3) == 0) tier--;
+                        if (random::next_in_range(rng, 0, (1 + (current_floor.depth % 3)) * 3) == 0) tier--;
                         if (random::next_in_range(rng, 0, (3 - (current_floor.depth % 3)) * 3) == 0) tier++;
                         tier = math::clamp(tier, 0, 2);
                         spawn_monster(zone, zone.find_nearest_empty(get_random_pos(rng, min, size)), MAGE_TYPES[tier]);
@@ -645,6 +698,12 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_GRAVE2);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_SMALL_ROCKS);
                         if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...get_random_pos(rng, min, size, p0), OBJ_STUMP);
+                        if (random::next_in_range(rng, 0, 1) == 0)
+                        {
+                            IVec2 p1 = get_random_pos(rng, min, size);
+                            p1 = zone.find_nearest_empty(p1);
+                            spawn_monster(zone, p1, random::next_in_range(rng, 0, 1) == 0 ? GHOST : SKELETON);
+                        }
                     case CAMPSITE:
                         IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_FIRE_PIT);
                         IVec2 p1 = get_random_pos(rng, min, size, p0); zone.set_object(...p1, OBJ_SMALL_BOXES);

@@ -17,12 +17,20 @@ enum MonsterType : inline int
     DARK_MAGE,
     DARK_KNIGHT,
     ASSASSIN,
+    SLIME,
+    SKELETON,
+    GHOST,
+    GOBLIN_HORDE,
+    GOBLIN_MAGE_BOSS,
+    BANDIT_LEADER,
+    NECROMANCER,
 }
 const int MONSTER_COUNT = (int) MonsterType.elements;
 
 const MonsterType[3] WARRIOR_TYPES = { GOBLIN, BANDIT, DARK_KNIGHT };
 const MonsterType[3] ARCHER_TYPES = { GOBLIN_ARCHER, BANDIT_RANGER, ASSASSIN };
 const MonsterType[3] MAGE_TYPES = { GOBLIN_MAGE, BANDIT_MAGE, DARK_MAGE };
+const MonsterType[3] SPECIAL_TYPES = { SLIME, SKELETON, GHOST };
 
 enum MonsterLevel : inline int
 {
@@ -69,7 +77,14 @@ fn void MonsterCache.new_init(&self)
     self.mobs[MonsterType.DARK_MAGE] = { DARK_MAGE, "Dark Mage", "a dark mage", "", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 27, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50}, { 5, 3, 3, 3, 3, 3, 3, 3} };
     self.mobs[MonsterType.DARK_KNIGHT] = { DARK_KNIGHT, "Dark Knight", "a dark knight", "", { DARK_KNIGHT_IDLE1, DARK_KNIGHT_IDLE2, DARK_KNIGHT_POINT }, 1.5, 35, MELEE, 1.0, {50, 50, 50}, {50, -50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
     self.mobs[MonsterType.ASSASSIN] = { ASSASSIN, "Assassin", "an assassin", "", { ASSASSIN_IDLE1, ASSASSIN_IDLE2, ASSASSIN_POINT }, 4, 32, RANGED, 1.0, {50, 50, 50}, {-50, 50, 250}, { 5, 3, 3, 3, 3, 3, 3, 3} };
-    
+    self.mobs[MonsterType.SLIME] = { SLIME, "Slime", "a slime", "", { SLIME_IDLE1, SLIME_IDLE2, SLIME_POINT }, 1.5, 5, MELEE, 1.0, {1, 1, 1}, {0, 0, 0}, { 10, 0, 2, 2, 0, 0, 0, 5} };
+    self.mobs[MonsterType.SKELETON] = { SKELETON, "Skeleton", "a skeleton", "", { SKELETON_IDLE1, SKELETON_IDLE2, SKELETON_POINT }, 1.5, 10, MELEE, 1.0, {20, 20, 20}, {0, 20, 20}, { 10, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.GHOST] = { GHOST, "Ghost", "a ghost", "", { GHOST_IDLE1, GHOST_IDLE2, GHOST_POINT }, 1.5, 10, MAGIC, 1.0, {20, 20, 20}, {20, 0, 20}, { 10, 5, 5, 0, 0, 0, 10, 0} };
+    self.mobs[MonsterType.GOBLIN_MAGE_BOSS] = { GOBLIN_MAGE_BOSS, "Hobgoblin Mage", "a particularly strong hobgoblin mage", "", { GOBLIN_MAGE_IDLE1, GOBLIN_MAGE_IDLE2, GOBLIN_MAGE_POINT }, 8, 15, MAGIC, 1.0, {40, 40, 40}, {10, 0, -10}, { 0, 0, 0, 0, 0, 1, 0, 0} };
+    self.mobs[MonsterType.GOBLIN_HORDE] = { GOBLIN_HORDE, "Goblin Horde", "a goblin", "", { GOBLIN_IDLE1, GOBLIN_IDLE2, GOBLIN_POINT }, 1.5, 7, MELEE, 1.0, {10, 10, 10}, {0, -10, 10}, { 0, 2, 2, 2, 2, 0, 0, 0} };
+    self.mobs[MonsterType.BANDIT_LEADER] = { BANDIT_LEADER, "Bandit Leader", "a bandit", "", { BANDIT_MAGE_IDLE1, BANDIT_MAGE_IDLE2, BANDIT_MAGE_POINT }, 7, 25, MAGIC, 1.0, {30, 30, 30}, {20, -40, 140}, { 0, 4, 4, 4, 4, 1, 1, 1} };
+    self.mobs[MonsterType.NECROMANCER] = { NECROMANCER, "Necromancer", "a necromancer", "", { DARK_MAGE_IDLE1, DARK_MAGE_IDLE2, DARK_MAGE_POINT }, 7, 40, MAGIC, 1.0, {50, 50, 50}, {250, 50, -50}, { 0, 0, 0, 0, 0, 3, 3, 3} };
+
     for (int i = 0; i < MONSTER_COUNT; ++i)
     {
         MonsterInfo* info = &self.mobs[i];
@@ -392,8 +407,8 @@ fn int Monster.calculate_damage(&self, Player* target, CombatStyle style)
     }
 
     // Attack range accuracy falloff
-    float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.info.range);
-    hit_chance *= math::clamp(1.0f - range / 2, 0.1f, 1.0f);
+    //float range = (float) (ivec2_fdistance(self.get_position(), target.get_position()) / self.info.range);
+    //hit_chance *= math::clamp(1.0f - (range / 2) * (range / 2), 0.1f, 1.0f);
 
     bool hit = random::next_float(&g_rng) < hit_chance;
     io::printfn("Monster attack: max_hit %d, atk %d, attack_roll %d, defence_roll %d, hit_chance %.01f%%, hit %s", max_hit, atk, attack_roll, defence_roll, hit_chance * 100, hit ? "yes" : "no");
@@ -418,7 +433,7 @@ fn void Monster.applyAttunement(&self, Player* target, int* damage)
         if (*damage > 0)
         {
             Skill skill = Skill.from_ordinal(random::next_in_range(&g_rng, 0, 3));
-            target.boosted_level[skill] = math::max(1, target.boosted_level[skill] - *damage);
+            target.boosted_level[skill] = math::max(math::max(1, target.level[skill] - 10), target.boosted_level[skill] - *damage);
         }
     case EARTH:
         // Apply knockback
@@ -455,7 +470,7 @@ fn void Monster.applyAttunement(&self, Player* target, int* damage)
         // Apply life steal
         if (*damage > 0)
         {
-            self.health = math::max(self.health + math::max(1, *damage / 4), self.info.max_health);
+            self.health = math::min(self.health + math::max(1, *damage / 4), self.info.max_health);
         }
     case NONE:
         break;

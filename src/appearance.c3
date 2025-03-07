@@ -142,6 +142,35 @@ const Appearance ASSASSIN_IDLE1 = { 'A', {89, 41, 122, 255}, 10 * 16 + 2 };
 const Appearance ASSASSIN_IDLE2 = { 'A', {89, 41, 122, 255}, 10 * 16 + 1 };
 const Appearance ASSASSIN_POINT = { 'A', {89, 41, 122, 255}, 10 * 16 + 0 };
 
+const Appearance SKELETON_IDLE1 = { 's', {220, 220, 220, 255}, 3 * 16 + 15 };
+const Appearance SKELETON_IDLE2 = { 's', {220, 220, 220, 255}, 3 * 16 + 14 };
+const Appearance SKELETON_POINT = { 's', {220, 220, 220, 255}, 3 * 16 + 13 };
+
+const Appearance SLIME_IDLE1 = { 's', colors::GREEN, 4 * 16 + 15 };
+const Appearance SLIME_IDLE2 = { 's', colors::GREEN, 4 * 16 + 14 };
+const Appearance SLIME_POINT = { 's', colors::GREEN, 4 * 16 + 13 };
+
+const Appearance GHOST_IDLE1 = { 'g', colors::WHITE, 5 * 16 + 15 };
+const Appearance GHOST_IDLE2 = { 'g', colors::WHITE, 5 * 16 + 14 };
+const Appearance GHOST_POINT = { 'g', colors::WHITE, 5 * 16 + 13 };
+
+const Appearance DAEMON_IDLE1_NW = { 'D', colors::RED, 6 * 16 + 13 };
+const Appearance DAEMON_IDLE1_NE = { 'D', colors::RED, 6 * 16 + 14 };
+const Appearance DAEMON_IDLE1_SW = { 'D', colors::RED, 7 * 16 + 13 };
+const Appearance DAEMON_IDLE1_SE = { 'D', colors::RED, 7 * 16 + 14 };
+
+const Appearance DAEMON_IDLE2_NW = { 'D', colors::RED, 8 * 16 + 13 };
+const Appearance DAEMON_IDLE2_NE = { 'D', colors::RED, 8 * 16 + 14 };
+const Appearance DAEMON_IDLE2_SW = { 'D', colors::RED, 9 * 16 + 13 };
+const Appearance DAEMON_IDLE2_SE = { 'D', colors::RED, 9 * 16 + 14 };
+
+const Appearance DAEMON_POINT_NW = { 'D', colors::RED, 10 * 16 + 13 };
+const Appearance DAEMON_POINT_NE = { 'D', colors::RED, 10 * 16 + 14 };
+const Appearance DAEMON_POINT_SW = { 'D', colors::RED, 11 * 16 + 13 };
+const Appearance DAEMON_POINT_SE = { 'D', colors::RED, 11 * 16 + 14 };
+
+const Appearance CROWN = { 10 * 16 + 7, colors::GOLD, 11 * 16 + 12 };
+
 const Appearance ITEM_SWORD0 = { '/', colors::SILVER, 2 * 16 + 8 };
 const Appearance ITEM_SWORD1 = { '/', colors::PINK, 2 * 16 + 10 };
 const Appearance ITEM_SWORD2 = { '/', colors::CYAN, 2 * 16 + 12 };

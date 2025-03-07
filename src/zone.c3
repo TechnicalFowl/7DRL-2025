@@ -591,7 +591,16 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                     
                     if (first.type == Monster.typeid)
                     {
-                        Attunement a = ((Monster*) first).attunement;
+                        Monster* mob = (Monster*) first;
+                        if (mob.type >= MonsterType.GOBLIN_MAGE_BOSS)
+                        {
+                            if (!is_textmode)
+                            {
+                                terminal.set_tile(term_x, term_y - 1, CROWN.sprite_index, colors::WHITE, 2, null);
+                            }
+                        }
+
+                        Attunement a = mob.attunement;
                         if (a != NONE)
                         {
                             Item rune = (Item) (a.ordinal + Item.BLANK_RUNE);

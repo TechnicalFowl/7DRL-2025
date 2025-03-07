@@ -250,13 +250,9 @@ fn void draw_ui()
         }
     }
 
-    if (can_get_input && equip_btn[1])
+    if (can_get_input && equip_btn[1] && (inv_action == NO_ACTION || inv_action == ACT_AIM))
     {
         sidebar_tab = EQUIPMENT;
-        if (inv_action != ACT_AIM)
-        {
-            inv_action = NO_ACTION;
-        }
     }
 
     if (sidebar_tab == EQUIPMENT)
@@ -409,13 +405,9 @@ fn void draw_ui()
     bool[2] invent_btn = gui::buttonBehavior({spos.x + 18, spos.y}, 7, get_bind(INVENTORY_TAB)[0]);
     ui_term.write(spos.x + 18, spos.y, string::tformat("%c:Inven", getKeyIcon(get_bind(INVENTORY_TAB)[0])), sidebar_tab == INVENTORY || invent_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && invent_btn[1])
+    if (can_get_input && invent_btn[1] && (inv_action == NO_ACTION || inv_action == ACT_AIM))
     {
         sidebar_tab = INVENTORY;
-        if (inv_action != ACT_AIM)
-        {
-            inv_action = NO_ACTION;
-        }
     }
 
     if (sidebar_tab == INVENTORY)
@@ -574,13 +566,9 @@ fn void draw_ui()
     bool[2] attune_btn = gui::buttonBehavior({spos.x + 30, spos.y}, 8, get_bind(SPELLBOOK_TAB)[0]);
     ui_term.write(spos.x + 30, spos.y, string::tformat("%c:Attune", getKeyIcon(get_bind(SPELLBOOK_TAB)[0])), sidebar_tab == SPELLBOOK || attune_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && attune_btn[1])
+    if (can_get_input && attune_btn[1] && (inv_action == NO_ACTION || inv_action == ACT_AIM))
     {
         sidebar_tab = SPELLBOOK;
-        if (inv_action != NO_ACTION)
-        {
-            inv_action = NO_ACTION;
-        }
     }
 
     if (sidebar_tab == SPELLBOOK)
@@ -636,7 +624,7 @@ fn void draw_ui()
     bool[2] skill_btn = gui::buttonBehavior({spos.x + 42, spos.y}, 7, get_bind(SKILLS_TAB)[0]);
     ui_term.write(spos.x + 42, spos.y, string::tformat("%c:Skill", getKeyIcon(get_bind(SKILLS_TAB)[0])), sidebar_tab == SKILLS || skill_btn[0] ? { 220, 220, 220, 255 } : colors::GREY, prio);
 
-    if (can_get_input && skill_btn[1])
+    if (can_get_input && skill_btn[1] && (inv_action == NO_ACTION || inv_action == ACT_AIM))
     {
         sidebar_tab = SKILLS;
     }

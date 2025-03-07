@@ -138,10 +138,6 @@ fn void VirtualTerminal.box_background(&self, int x0, int y0, int w, int h, rl::
     }
 }
 
-<*
-@require x >= 0 && x <= self.width
-@require y >= 0 && y <= self.height
-*>
 fn void VirtualTerminal.set_tile(&self, int x, int y, char glyph, rl::Color fg=colors::WHITE, int priority=0, Font* override_font=null)
 {
     if (x < 0 || x >= self.width || y < 0 || y >= self.height) return;

@@ -84,7 +84,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     //random::seed_entropy(&rng);
     random::seed(&rng, self.seed);
 
-    zone.name = string::new_format("Floor %d", self.depth);
+    zone.name = string::new_format("Floor %d", self.depth + 1);
 
     if (current_floor)
     {
@@ -345,6 +345,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
         pl.equipment = self.old_player.equipment;
         pl.level = self.old_player.level;
         pl.experience = self.old_player.experience;
+        pl.entity.look = self.old_player.look;
     }
 
     zone.add_player(pl);
@@ -519,6 +520,31 @@ fn int main(String[] args)
                         else
                         {
                             game_state = GAME_OVER;
+                        }
+                    }
+
+                    IVec2 player_pos = player.get_position();
+                    IVec2 player_room = {player_pos.x / 17, player_pos.y / 17};
+                    Room* room = current_floor.rooms.get(player_room)!!;
+                    if (room.type == BOSS)
+                    {
+                        bool all_dead = true;
+                        for (int y = room.position.y; y < room.position.y + room.size.y && all_dead; ++y)
+                        {
+                            for (int x = room.position.x; x < room.position.x + room.size.x; ++x)
+                            {
+                                ZoneCell* cell = g_zone.get_cell(x, y)!!;
+                                if (cell.entities.first().type == Monster.typeid ?? false)
+                                {
+                                    all_dead = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (all_dead && !room.has_spawned_exit)
+                        {
+                            room.spawn_exit_hole(g_zone);
+                            room.has_spawned_exit = true;
                         }
                     }
                 }
