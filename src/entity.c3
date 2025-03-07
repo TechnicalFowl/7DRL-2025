@@ -32,6 +32,7 @@ fn double WaitAction.duration(&self) @dynamic => self.time;
 fn void WaitAction.apply(&self, Entity ent) @dynamic
 {
     ent.give_idle_time(self.time);
+    ent.updateLookFrame(false);
 }
 
 fn WaitAction* do_wait(double time)
@@ -56,6 +57,7 @@ fn void MoveAction.apply(&self, Entity entity) @dynamic
     {
         entity.set_position(new_pos);
     }
+    entity.updateLookFrame(false);
 }
 
 fn MoveAction* do_move(IVec2 move)
@@ -81,6 +83,8 @@ interface Entity
     fn Action next_action(double max_time);
 
     fn void onUpdate(double delta_time);
+
+    fn void updateLookFrame(bool was_interact);
 }
 
 struct EntityCommon (Entity)
@@ -91,6 +95,7 @@ struct EntityCommon (Entity)
     Appearance[3] look;
 
     double idle_time;
+    int last_action;
 }
 
 fn Zone* EntityCommon.get_zone(&self) @dynamic => self.zone;
@@ -114,7 +119,7 @@ fn void EntityCommon.set_position(&self, IVec2 pos) @dynamic
     new_cell.entities.push(this_ent);
 }
 
-fn Appearance EntityCommon.get_look(&self) @dynamic => self.look[0];
+fn Appearance EntityCommon.get_look(&self) @dynamic => self.look[self.last_action];
 fn double EntityCommon.get_idle_time(&self) @dynamic => self.idle_time;
 fn void EntityCommon.give_idle_time(&self, double time) @dynamic
 {
@@ -128,6 +133,18 @@ fn void EntityCommon.new_init(&self, Zone* z, String n, IVec2 p, Appearance idle
     self.name = n;
     self.position = p;
     self.look = { idle1, idle2, point };
+}
+
+fn void EntityCommon.updateLookFrame(&self, bool was_interact) @dynamic
+{
+    if (self.last_action == 0)
+    {
+        self.last_action = was_interact ? 2 : 1;
+    }
+    else
+    {
+        self.last_action = was_interact ? 2 : 0;
+    }
 }
 
 fn void EntityCommon.free(&self) @dynamic

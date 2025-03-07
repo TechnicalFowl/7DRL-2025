@@ -67,6 +67,7 @@ fn Appearance Player.get_look(&self) @dynamic => self.entity.get_look();
 fn double Player.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Player.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 fn bool Player.is_dead(&self) @dynamic => self.health <= 0;
+fn void Player.updateLookFrame(&self, bool was_interact) @dynamic => self.entity.updateLookFrame(was_interact);
 
 // Implement EntityVisibility
 fn VisibilityTracker* Player.get_visibility(&self) @dynamic => &self.vis;
@@ -446,14 +447,14 @@ fn Action Player.next_action(&self, double max_time) @dynamic
             if (rl::isMouseButtonPressed(rl::MouseButton.LEFT) && !gui::want_mouse_input())
             {
                 IVec2 pos = self.get_zone().get_mouse_position();
-                if (pos == self.get_position())
-                {
-                    return do_grab();
-                }
                 ZoneCell*! cell = self.get_zone().get_cell(...pos);
                 if (catch cell)
                 {
                     return null;
+                }
+                if (pos == self.get_position() && !cell.dropped_items.is_empty())
+                {
+                    return do_grab();
                 }
                 if (!cell.entities.is_empty()
                         && self.get_room() == pos / 17
@@ -692,6 +693,7 @@ fn double InteractAction.duration(&self) @dynamic => 1.0;
 
 fn void InteractAction.apply(&self, Entity entity) @dynamic
 {
+    entity.updateLookFrame(true);
     IVec2 new_pos = entity.get_position() + self.dir;
     Player* player = (Player*) entity;
     Zone* zone = entity.get_zone();
@@ -1257,6 +1259,7 @@ fn void PlayerRangedAction.apply(&self, Entity entity) @dynamic
     {
         log("Your attack doesn't hit anything.");
     }
+    entity.updateLookFrame(true);
 }
 
 fn GrabAction* do_grab()
@@ -1299,4 +1302,5 @@ fn void GrabAction.apply(&self, Entity entity) @dynamic
         inv_action_target = player.get_position();
         gui::open_popup("Grab Item");
     }
+    entity.updateLookFrame(true);
 }

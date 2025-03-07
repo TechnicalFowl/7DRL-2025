@@ -145,6 +145,7 @@ fn Appearance Monster.get_look(&self) @dynamic => self.entity.get_look();
 fn double Monster.get_idle_time(&self) @dynamic => self.entity.get_idle_time();
 fn void Monster.give_idle_time(&self, double time) @dynamic => self.entity.give_idle_time(time);
 fn bool Monster.is_dead(&self) @dynamic => self.health <= 0;
+fn void Monster.updateLookFrame(&self, bool was_interact) @dynamic => self.entity.updateLookFrame(was_interact);
 
 fn void Monster.new_init(&self, Zone* z, MonsterType t, IVec2 p)
 {
@@ -353,6 +354,7 @@ fn double MobAttackAction.duration(&self) @dynamic => self.time;
 
 fn void MobAttackAction.apply(&self, Entity entity) @dynamic
 {
+    entity.updateLookFrame(true);
     Monster* mob = (Monster*) entity;
     Player* player = (Player*) mob.get_zone().player;
     IVec2 player_pos = player.get_position();
