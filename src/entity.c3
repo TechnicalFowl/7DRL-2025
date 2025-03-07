@@ -33,6 +33,10 @@ fn void WaitAction.apply(&self, Entity ent) @dynamic
 {
     ent.give_idle_time(self.time);
     ent.updateLookFrame(false);
+    if (ent.type == Player.typeid)
+    {
+        g_stats.time_spent_waiting += self.time;
+    }
 }
 
 fn WaitAction* do_wait(double time)
@@ -56,6 +60,10 @@ fn void MoveAction.apply(&self, Entity entity) @dynamic
     if (try cell && cell.isPassable())
     {
         entity.set_position(new_pos);
+        if (entity.type == Player.typeid)
+        {
+            g_stats.distance_traveled += math::sqrt(self.move[0] * self.move[0] + self.move[1] * self.move[1]);
+        }
     }
     entity.updateLookFrame(false);
 }

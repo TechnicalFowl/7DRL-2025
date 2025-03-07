@@ -133,6 +133,19 @@ fn bool Player.has_effect(&self, StatusEffect effect)
     return false;
 }
 
+fn bool Player.remove_effect(&self, StatusEffect effect)
+{
+    for (int i = (int) self.status_effects.len() - 1; i >= 0; --i)
+    {
+        if (self.status_effects[i].effect == effect)
+        {
+            self.status_effects.remove_at(i);
+            return true;
+        }
+    }
+    return false;
+}
+
 fn bool Player.is_inventory_full(&self, ItemStack item)
 {
     ItemInfo* info = &g_items.items[item.item];
@@ -285,17 +298,25 @@ fn void Player.quaff(&self, ItemStack stack)
     case FOOD:
         self.health = math::min(self.health + 5, self.level[Skill.HITPOINTS]);
         log("You eat the food.");
+        g_stats.rations_eaten++;
     case POTION1:
         self.health = math::min(self.health + 10, self.level[Skill.HITPOINTS]);
         log("You drink the potion, it heals some health.");
+        g_stats.potions_drank++;
     case POTION2:
         self.boosted_level[Skill.MELEE] = self.level[Skill.MELEE] + 10;
         self.boosted_level[Skill.RANGED] = self.level[Skill.RANGED] + 10;
         self.boosted_level[Skill.MAGIC] = self.level[Skill.MAGIC] + 10;
         log("You drink the potion, you feel stronger.");
+        if (self.remove_effect(ROOTED))
+        {
+            log("You are no longer rooted in spot.");
+        }
+        g_stats.potions_drank++;
     case POTION3:
         self.boosted_level[Skill.DEFENCE] = self.level[Skill.DEFENCE] + 10;
         log("You drink the potion, you feel safer.");
+        g_stats.potions_drank++;
     default:
         log(string::new_format("You quaff the %s, it tastes awful.", g_items.items[stack.item].name));
     }
@@ -317,13 +338,20 @@ fn void Player.give_exp(&self, Skill skill, int exp, bool supress_message=false)
         {
             self.boosted_level[skill] = self.level[skill];
         }
+        g_stats.levels_gained += (self.level[skill] - prev_level);
     }
+    g_stats.experience_gained += exp;
 }
 
 fn void Player.onUpdate(&self, double duration) @dynamic
 {
     for (int i = (int) self.status_effects.len() - 1; i >= 0; --i)
     {
+        switch (self.status_effects[i].effect)
+        {
+        case ROOTED:
+            g_stats.time_spent_rooted += math::min(duration, self.status_effects[i].duration);
+        }
         self.status_effects[i].duration -= duration;
         if (self.status_effects[i].duration <= 0)
         {
@@ -335,6 +363,7 @@ fn void Player.onUpdate(&self, double duration) @dynamic
             self.status_effects.remove_at(i);
         }
     }
+    g_stats.turns += duration;
 }
 
 fn void Player.updateBoostedStats(&self)
@@ -714,6 +743,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 }
                 else
                 {
+                    g_stats.ore_smelted++;
                     player.add_item(result);
                     player.inventory[inv_action_source].count -= 1;
                     if (player.inventory[inv_action_source].count == 0)
@@ -750,6 +780,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             }
             else
             {
+                g_stats.ore_mined++;
                 player.add_item(result_item);
                 cell.object = OBJ_ROCKS;
                 log("You mine the ore.");
@@ -771,6 +802,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             }
             else
             {
+                g_stats.logs_chopped++;
                 player.add_item(result_item);
                 cell.object = OBJ_STUMP;
                 log("You chop down the tree.");
@@ -862,6 +894,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         }
         else
         {
+            g_stats.ore_mined++;
             player.add_item(item);
             cell.object = OBJ_ROCKS;
             log("You mine the ore.");
@@ -886,6 +919,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         }
         else
         {
+            g_stats.logs_chopped++;
             player.add_item(item);
             cell.object = OBJ_STUMP;
             log("You chop down the tree.");
@@ -897,6 +931,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
         gui::open_popup("Search Crate");
         cell.object = OBJ_OPEN_CRATE;
         log("You search the crate.");
+        g_stats.crates_looted++;
 
         int count = random::next_in_range(&g_rng, 1, 4);
         DropTable* table = &crate_loot[current_floor.depth];
@@ -935,6 +970,7 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 }
                 else
                 {
+                    g_stats.ore_smelted++;
                     player.add_item(result);
                     item.count -= 1;
                     if (item.count == 0)
@@ -983,6 +1019,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_ODOOR_NORTH_R;
         zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_L;
         zone.get_cell(p.x + 1, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_R;
+        g_stats.doors_opened++;
     case TERR_DOOR_NORTH_R:
     case TERR_LDOOR_NORTH_R:
     case TERR_BDOOR_NORTH_R:
@@ -990,6 +1027,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_ODOOR_NORTH_L;
         zone.get_cell(p.x - 1, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_L;
         zone.get_cell(p.x, p.y - 2)!!.terrain = TERR_ODOOR_SOUTH_R;
+        g_stats.doors_opened++;
     case TERR_DOOR_EAST_U:
     case TERR_LDOOR_EAST_U:
     case TERR_BDOOR_EAST_U:
@@ -997,6 +1035,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_ODOOR_EAST_L;
         zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_ODOOR_WEST_U;
         zone.get_cell(p.x + 2, p.y + 1)!!.terrain = TERR_ODOOR_WEST_L;
+        g_stats.doors_opened++;
     case TERR_DOOR_EAST_L:
     case TERR_LDOOR_EAST_L:
     case TERR_BDOOR_EAST_L:
@@ -1004,6 +1043,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_ODOOR_EAST_U;
         zone.get_cell(p.x + 2, p.y - 1)!!.terrain = TERR_ODOOR_WEST_U;
         zone.get_cell(p.x + 2, p.y)!!.terrain = TERR_ODOOR_WEST_L;
+        g_stats.doors_opened++;
     case TERR_DOOR_SOUTH_L:
     case TERR_LDOOR_SOUTH_L:
     case TERR_BDOOR_SOUTH_L:
@@ -1011,6 +1051,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x + 1, p.y)!!.terrain = TERR_ODOOR_SOUTH_R;
         zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_L;
         zone.get_cell(p.x + 1, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_R;
+        g_stats.doors_opened++;
     case TERR_DOOR_SOUTH_R:
     case TERR_LDOOR_SOUTH_R:
     case TERR_BDOOR_SOUTH_R:
@@ -1018,6 +1059,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x - 1, p.y)!!.terrain = TERR_ODOOR_SOUTH_L;
         zone.get_cell(p.x - 1, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_L;
         zone.get_cell(p.x, p.y + 2)!!.terrain = TERR_ODOOR_NORTH_R;
+        g_stats.doors_opened++;
     case TERR_DOOR_WEST_U:
     case TERR_LDOOR_WEST_U:
     case TERR_BDOOR_WEST_U:
@@ -1025,6 +1067,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x, p.y + 1)!!.terrain = TERR_ODOOR_WEST_L;
         zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_ODOOR_EAST_U;
         zone.get_cell(p.x - 2, p.y + 1)!!.terrain = TERR_ODOOR_EAST_L;
+        g_stats.doors_opened++;
     case TERR_DOOR_WEST_L:
     case TERR_LDOOR_WEST_L:
     case TERR_BDOOR_WEST_L:
@@ -1032,6 +1075,7 @@ fn void open_door(Zone* zone, IVec2 p)
         zone.get_cell(p.x, p.y - 1)!!.terrain = TERR_ODOOR_WEST_U;
         zone.get_cell(p.x - 2, p.y - 1)!!.terrain = TERR_ODOOR_EAST_U;
         zone.get_cell(p.x - 2, p.y)!!.terrain = TERR_ODOOR_EAST_L;
+        g_stats.doors_opened++;
     case TERR_ODOOR_NORTH_L:
     case TERR_ODOOR_NORTH_R:
     case TERR_ODOOR_EAST_U:
@@ -1105,10 +1149,12 @@ fn void Player.attack(&self, Monster* target, bool apply_attunement)
     int damage = self.calculate_damage(target, style);
     target.take_damage(damage);
     if (apply_attunement) self.applyAttunement(target, &damage);
+    g_stats.damage_dealt += damage;
     String success = damage > 0 ? "hit" : "miss";
     String killed = "";
     if (target.is_dead())
     {
+        g_stats.enemies_killed++;
         killed = " and killed";
     }
     DString ending;
@@ -1134,6 +1180,7 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
         self.attunement = NONE;
         return;
     }
+    g_stats.runes_consumed++;
     switch (attunement)
     {
     case AIR:

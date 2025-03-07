@@ -287,7 +287,7 @@ fn void draw_ui()
 
         gui::text("");
         bool valid_inv_action = (inv_action != NO_ACTION && gui::gui_data.frame_index - 1 > inv_action_changed);
-        for (int i = 0; i < pl.equipment.len; ++i)
+        for (int i = 1; i < pl.equipment.len; ++i)
         {
             ItemStack stack = pl.equipment[i];
             gui::text(string::tformat("%-10s: ", EquipmentSlot.names[i]));
@@ -297,7 +297,7 @@ fn void draw_ui()
                 ItemInfo* info = &g_items.items[stack.item];
                 gui::icon(info.look);
                 String count = stack.count > 1 ? string::tformat(" x%d", stack.count) : "";
-                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i : 0)))
+                if (gui::button(string::tformat("%s%s", info.name, count), (KeyboardKey)(valid_inv_action ? (int) rl::KEY_A + i - 1 : 0)))
                 {
                     if (inv_action != NO_ACTION && inv_action != ACT_AIM)
                     {
@@ -349,7 +349,7 @@ fn void draw_ui()
             }
         }
         
-        gui::vertical_separator(7);
+        gui::vertical_separator(8);
         gui::text("         Accuracy     Damage      Defence");
         int[3] melee_stats = pl.get_style_stats(MELEE);
         gui::text(string::tformat("Melee        %4d       %4d         %4d", ...melee_stats));
@@ -743,6 +743,11 @@ fn void draw_ui()
                     }
                     else
                     {
+                        g_stats.items_picked_up += 1;
+                        if (stack.item == COINS)
+                        {
+                            g_stats.gold_picked_up += stack.count;
+                        }
                         pl.add_item(stack);
                         grabbed = i;
                     }
@@ -982,6 +987,7 @@ fn bool do_smith(ItemStack result, ItemStack... ingredients)
         }
         return false;
     }
+    g_stats.items_smithed++;
     log(string::new_format("You smith a %s!", g_items.items[result.item].name));
     return true;
 }

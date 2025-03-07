@@ -568,12 +568,14 @@ fn int main(String[] args)
 
             if (want_exit_floor || (devmode && !gui::want_key_input() && is_key_pressed(NEXT_FLOOR, false)))
             {
-                if (current_floor.depth == 10)
+                if (current_floor.depth == 9)
                 {
-                    // Victory screen
-                    break;
+                    game_state = VICTORY;
                 }
-                load_floor(current_floor.depth + 1);
+                else
+                {
+                    load_floor(current_floor.depth + 1);
+                }
                 want_exit_floor = false;
             }
         };
@@ -590,6 +592,13 @@ fn void draw_mainmenu()
 
 }
 
+IVec2 stats_draw_base;
+fn void write_stat(String key, double value)
+{
+    ui_term.write_centered(...stats_draw_base, string::tformat("%30s: %-7.0f", key, value), colors::WHITE);
+    stats_draw_base.y++;
+}
+
 fn void draw_gameover()
 {
     int term_width = ui_term.width;
@@ -597,6 +606,32 @@ fn void draw_gameover()
 
     IVec2 pos = {term_width / 2, term_height / 3};
     ui_term.write_centered(...pos, "You have been defeated.", colors::WHITE);
+
+    stats_draw_base = {term_width / 2 - 30, term_height / 3 + 4};
+    write_stat("Turns", g_stats.turns);
+    write_stat("Distance Travelled", g_stats.distance_traveled);
+    write_stat("Monsters Killed", g_stats.enemies_killed);
+    write_stat("Damage Dealt", g_stats.damage_dealt);
+    write_stat("Damage Taken", g_stats.damage_taken);
+    write_stat("Runes Consumed", g_stats.runes_consumed);
+    write_stat("Rations Eaten", g_stats.rations_eaten);
+    write_stat("Potions Drank", g_stats.potions_drank);
+    write_stat("Time Spent Waiting", g_stats.time_spent_waiting);
+    write_stat("Time Spent Rooted", g_stats.time_spent_rooted);
+    write_stat("Doors Opened", g_stats.doors_opened);
+
+    stats_draw_base = {term_width / 2 + 20, term_height / 3 + 4};
+    write_stat("Levels Gained", g_stats.levels_gained);
+    write_stat("Experience Gained", g_stats.experience_gained);
+    write_stat("Ore Mined", g_stats.ore_mined);
+    write_stat("Ore Smelted", g_stats.ore_smelted);
+    write_stat("Items Smithed", g_stats.items_smithed);
+    write_stat("Logs Chopped", g_stats.logs_chopped);
+    write_stat("Crates Looted", g_stats.crates_looted);
+    write_stat("Chests Opened", g_stats.chests_opened);
+    write_stat("Items Picked Up", g_stats.items_picked_up);
+    write_stat("Coins Picked Up", g_stats.gold_picked_up);
+    write_stat("Coins Spent", g_stats.gold_spent);
 }
 
 fn void draw_victory()
@@ -606,4 +641,30 @@ fn void draw_victory()
 
     IVec2 pos = {term_width / 2, term_height / 3};
     ui_term.write_centered(...pos, "You were victorious!", colors::WHITE);
+
+    stats_draw_base = {term_width / 2 - 30, term_height / 3 + 4};
+    write_stat("Turns", g_stats.turns);
+    write_stat("Distance Travelled", g_stats.distance_traveled);
+    write_stat("Monsters Killed", g_stats.enemies_killed);
+    write_stat("Damage Dealt", g_stats.damage_dealt);
+    write_stat("Damage Taken", g_stats.damage_taken);
+    write_stat("Runes Consumed", g_stats.runes_consumed);
+    write_stat("Rations Eaten", g_stats.rations_eaten);
+    write_stat("Potions Drank", g_stats.potions_drank);
+    write_stat("Time Spent Waiting", g_stats.time_spent_waiting);
+    write_stat("Time Spent Rooted", g_stats.time_spent_rooted);
+    write_stat("Doors Opened", g_stats.doors_opened);
+
+    stats_draw_base = {term_width / 2 + 20, term_height / 3 + 4};
+    write_stat("Levels Gained", g_stats.levels_gained);
+    write_stat("Experience Gained", g_stats.experience_gained);
+    write_stat("Ore Mined", g_stats.ore_mined);
+    write_stat("Ore Smelted", g_stats.ore_smelted);
+    write_stat("Items Smithed", g_stats.items_smithed);
+    write_stat("Logs Chopped", g_stats.logs_chopped);
+    write_stat("Crates Looted", g_stats.crates_looted);
+    write_stat("Chests Opened", g_stats.chests_opened);
+    write_stat("Items Picked Up", g_stats.items_picked_up);
+    write_stat("Coins Picked Up", g_stats.gold_picked_up);
+    write_stat("Coins Spent", g_stats.gold_spent);
 }

@@ -370,6 +370,7 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
             mob.applyAttunement(player, &damage);
             if (damage > 0)
             {
+                g_stats.damage_taken += damage;
                 DString ending;
                 ending.temp_init();
                 if (damage < 5) ending.append_char('.');
