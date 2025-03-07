@@ -379,6 +379,10 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
                 }
                 log(string::new_format("The %s hits you%s", mob.get_name(), ending), colors::RED);
                 player.health -= damage;
+                if (!player.nav.is_idle())
+                {
+                    player.nav.abort();
+                }
                 player.give_exp(DEFENCE, damage * 20);
                 player.give_exp(HITPOINTS, damage * 10);
             }

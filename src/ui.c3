@@ -66,6 +66,17 @@ fn void draw_ui()
     int term_height = ui_term.height;
     int map_width = ui_term.width - sidebar_width;
 
+    if (pl.health <= pl.level[Skill.HITPOINTS] / 4)
+    {
+        gui::set_color(GuiColor.TOP_BAR_BG, colors::RED);
+        gui::set_color(GuiColor.BOTTOM_BAR_BG, colors::RED);
+    }
+    else
+    {
+        gui::set_color(GuiColor.TOP_BAR_BG, colors::BLACK);
+        gui::set_color(GuiColor.BOTTOM_BAR_BG, colors::BLACK);
+    }
+
     gui::push_topbar("The Depths of Daemonheim - 7DRL 2025");
     bool debug_info_bar = false;
     if (debug_info_bar)
@@ -390,7 +401,9 @@ fn void draw_ui()
         }
         if (gui::button("Examine", get_bind(EXAMINE)[0]))
         {
+            examine_target = &pl.equipment[inv_minimenu_target];
             gui::close_current_popup();
+            gui::open_popup("Examine");
         }
         if (gui::button("Cancel", get_bind(CANCEL)[0]))
         {
@@ -551,7 +564,9 @@ fn void draw_ui()
         }
         if (gui::button("Examine", get_bind(EXAMINE)[0]))
         {
+            examine_target = &pl.inventory[inv_minimenu_target];
             gui::close_current_popup();
+            gui::open_popup("Examine");
         }
         if (gui::button("Cancel", get_bind(CANCEL)[0]))
         {
