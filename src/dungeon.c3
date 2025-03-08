@@ -733,10 +733,26 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         if (size.x == 4)
                         {
                             zone.set_object(min.x, min.y, OBJ_RUNE_ALTAR_PLINTH);
-                            zone.set_object(min.x + 3, min.y, OBJ_RUNE_ALTAR_PLINTH);
+                            zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
+                            zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
+                            if (zone.get_cell(min.x + 4, min.y).isPassable() ?? false)
+                            {
+                                zone.set_object(min.x + 3, min.y, OBJ_RUNE_ALTAR_PLINTH);
+                            }
                         }
-                        zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
-                        zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
+                        else
+                        {
+                            if (zone.get_cell(...min).isPassable() ?? false)
+                            {
+                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
+                                zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
+                            }
+                            else
+                            {
+                                zone.set_object(min.x + 0, min.y, OBJ_RUNE_ALTAR_L);
+                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_R);
+                            }
+                        }
                     case TREASURE_CACHE:
                         IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_CHEST);
                         IVec2 p1 = get_random_pos(rng, min, size, p0);

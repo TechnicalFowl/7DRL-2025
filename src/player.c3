@@ -309,11 +309,11 @@ fn void Player.quaff(&self, ItemStack stack)
     switch (stack.item)
     {
     case FOOD:
-        self.health = math::min(self.health + 5, self.level[Skill.HITPOINTS]);
+        self.health = math::min(self.health + 8, self.level[Skill.HITPOINTS]);
         log("You eat the food.");
         g_stats.rations_eaten++;
     case POTION1:
-        self.health = math::min(self.health + 10, self.level[Skill.HITPOINTS]);
+        self.health = math::min(self.health + 15, self.level[Skill.HITPOINTS]);
         log("You drink the potion, it heals some health.");
         g_stats.potions_drank++;
     case POTION2:
@@ -861,7 +861,15 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     {
         if (is_locked_door_terrain(cell.terrain))
         {
-            log("The door is locked.");
+            if (player.remove_item({KEY, 1, 0}))
+            {
+                log("You unlock the door.");
+                open_door(player.get_zone(), new_pos);
+            }
+            else
+            {
+                log("The door is locked.");
+            }
         }
         else
         {

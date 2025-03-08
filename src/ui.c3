@@ -174,6 +174,11 @@ fn void draw_ui()
 
     bool can_get_input = gui::gui_data.can_receive_input(sidebar_window);
 
+    if (can_get_input && inv_action == NO_ACTION && is_key_pressed(CANCEL, false))
+    {
+        view_settings = true;
+    }
+
     if (can_get_input && (inv_action != NO_ACTION) && is_key_pressed(CANCEL, false))
     {
         inv_action = NO_ACTION;
@@ -658,7 +663,7 @@ fn void draw_ui()
 
     gui::end_window();
 
-    if (can_get_input)
+    if (can_get_input && devmode)
     {
         if (is_key_pressed(SPAWN_ITEM, false))
         {

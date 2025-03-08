@@ -236,6 +236,32 @@ fn bool button(String next, rl::KeyboardKey shortcut=0, rl::Color color=colors::
     return pressed;
 }
 
+// @Hacky global state
+IVec2 active_input;
+
+fn void input_selector(Input in, int alt)
+{
+    KeyBind* bind = dg::g_keymap.binds.get(in.ordinal)!!;
+    if (active_input == { in, alt })
+    {
+        KeyboardKey k = dg::get_first_pressed_key();
+        if (k != 0)
+        {
+            bind.keys[alt] = k;
+            active_input = {-1, -1};
+        }
+        if (gui::button("[  ...  ]")) {}
+    }
+    else
+    {
+        String key_name = bind.keys[alt] != 0 ? dg::getKeyName(bind.keys[alt]) : "";
+        if (gui::button(string::tformat("[ %6s]", key_name)))
+        {
+            active_input = { in, alt };
+        }
+    }
+}
+
 fn void end_window()
 {
     if (catch gui_data.window_stack.pop()) unreachable("No window to end");
@@ -424,6 +450,8 @@ fn void GuiData.new_init(&self)
     set_color(GuiColor.WINDOW_TEXT, { 220, 220, 220, 255});
     set_color(GuiColor.HOVERED_TEXT, colors::WHITE);
     set_color(GuiColor.WINDOW_BORDER, colors::GREY);
+
+    active_input = {-1, -1};
 }
 
 fn bool GuiData.can_receive_input(&self, GuiWindow* window)

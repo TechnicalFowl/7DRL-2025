@@ -173,6 +173,18 @@ fn void update_inputs()
     };
 }
 
+fn KeyboardKey get_first_pressed_key()
+{
+    for (int i = 0; i < 360; ++i)
+    {
+        if (rl::isKeyPressed((KeyboardKey) i))
+        {
+            return (KeyboardKey) i;
+        }
+    }
+    return 0;
+}
+
 fn bool is_key_down(Input i)
 {
     KeyBind*! bind = g_keymap.binds.get(i.ordinal);

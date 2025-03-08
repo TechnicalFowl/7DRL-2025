@@ -14,6 +14,8 @@ Font* sprite_font;
 Font* textmode_font;
 Font* text_font;
 
+Texture2D title_screen;
+
 bool textmode;
 
 struct LogMessage
@@ -49,6 +51,7 @@ enum GameState
     VICTORY,
 }
 GameState game_state;
+bool view_settings;
 
 struct Settings
 {
@@ -72,7 +75,6 @@ fn void log(String message, rl::Color color = colors::WHITE)
 
 struct GeneratorData
 {
-    ulong seed;
     int depth;
 
     Player* old_player;
@@ -81,8 +83,7 @@ struct GeneratorData
 fn void GeneratorData.generate(&self, Zone* zone)
 {
     random::Pcg32Random rng;
-    //random::seed_entropy(&rng);
-    random::seed(&rng, self.seed);
+    random::seed_entropy(&rng);
 
     zone.name = string::new_format("Floor %d", self.depth + 1);
 
@@ -369,11 +370,22 @@ fn void load_floor(int depth)
 {
     ZoneDescription initial_zone;
     initial_zone.new_init("dungeon", 17 * FLOOR_SIZE, 17 * FLOOR_SIZE);
-    GeneratorData generator = { 165361613 * ((ulong) depth + 1), depth, g_zone ? (Player*) g_zone.player : null };
+    GeneratorData generator = { depth, g_zone && depth != 0 ? (Player*) g_zone.player : null };
     initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
     initial_zone.generator_data = &generator;
 
-    log("You descend further into the depths of Daemonheim...", colors::RED);
+    if (depth == 0)
+    {
+        want_exit_floor = false;
+        log_messages.clear();
+        reset_stats();
+
+        log("You descend into the depths of Daemonheim...", colors::RED);
+    }
+    else
+    {
+        log("You descend further into the depths of Daemonheim...", colors::RED);
+    }
 
     load_zone(initial_zone);
 
@@ -433,31 +445,23 @@ fn int main(String[] args)
     }
     text_font = hfont;
 
+    title_screen = rl::loadTexture("resources/startimage.png");
+
     textmode = false;
     map_term.new_init(term_width / map_zoom, term_height / map_zoom, textmode ? textmode_font : sprite_font);
     ui_term.new_init(term_width * 2, term_height, text_font);
 
     g_items.new_init();
     g_mobs.new_init();
-
-    ZoneDescription initial_zone;
-    initial_zone.new_init("tutorial", 17 * FLOOR_SIZE, 17 * FLOOR_SIZE);
-    GeneratorData generator = { (ulong) g_rng.next_long(), 0, null };
-    initial_zone.generator = (ZoneGenerator) &GeneratorData.generate;
-    initial_zone.generator_data = &generator;
-
-    load_zone(initial_zone);
     
     gui::gui_data.new_init();
     init_ui();
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Starting game loop...");
     
-    game_state = PLAYING;
+    game_state = MAIN_MENU;
 
-    log("You descend into the depths of Daemonheim...", colors::RED);
-
-    while (!rl::windowShouldClose())
+    while LOOP: (!rl::windowShouldClose())
     {
         @pool()
         {
@@ -506,6 +510,11 @@ fn int main(String[] args)
             switch (game_state)
             {
             case PLAYING:
+                if (view_settings)
+                {
+                    draw_settings();
+                    break;
+                }
                 double elapsed = g_zone.update();
                 if (elapsed > 0.0)
                 {
@@ -555,7 +564,17 @@ fn int main(String[] args)
                 draw_ui();
                 map_term.render(map_zoom, {0, 16});
             case MAIN_MENU:
-                draw_mainmenu();
+                if (view_settings)
+                {
+                    draw_settings();
+                }
+                else
+                {
+                    if (!draw_mainmenu())
+                    {
+                        break LOOP;
+                    }
+                }
             case GAME_OVER:
                 draw_gameover();
             case VICTORY:
@@ -586,11 +605,116 @@ fn int main(String[] args)
     return 0;
 }
 
-fn void draw_mainmenu()
+fn bool draw_mainmenu()
 {
     int term_width = ui_term.width;
     int term_height = ui_term.height;
 
+    int screen_width = rl::getScreenWidth();
+    int screen_height = rl::getScreenHeight();
+    int ox = (screen_width / 2 - (title_screen.width * 3) / 2);
+    int oy = (screen_height / 2 - (title_screen.height * 3) / 2);
+    rl::drawTextureEx(title_screen, {ox, oy}, 0.0, 3, colors::WHITE);
+
+    gui::begin_window("Main Menu", {term_width / 2 - 25, term_height / 2 + 5}, {15, 20}, false);
+    if (gui::button("Start Game"))
+    {
+        load_floor(0);
+        game_state = PLAYING;
+    }
+    if (gui::button("  Settings"))
+    {
+        view_settings = true;
+    }
+    if (gui::button("      Exit"))
+    {
+        return false;
+    }
+    gui::end_window();
+    
+    gui::begin_window("Main Menu", {term_width / 2 + 15, term_height / 2 + 5}, {30, 20}, false);
+    gui::text("Created for 7DRL 2025");
+    gui::text("");
+    gui::text("Programming by");
+    gui::text("    TechnicalFowl");
+    gui::text("Art by:");
+    gui::text("    Pepper ");
+    gui::end_window();
+    return true;
+}
+
+fn void draw_settings()
+{
+    int term_width = ui_term.width;
+    int term_height = ui_term.height;
+
+    if (is_key_pressed(CANCEL, false) && gui::active_input == {-1, -1})
+    {
+        view_settings = false;
+    }
+
+    gui::begin_window("Settings", {term_width / 2 - 55, term_height / 2 - 20}, {50, 40}, false);
+
+    gui::text("");
+    gui::text("");
+    if (gui::button(g_settings.scroll_to_wait ? "Scroll to wait? ON" : "Scroll to wait? OFF"))
+    {
+        g_settings.scroll_to_wait = !g_settings.scroll_to_wait;
+    }
+    gui::icon(WARRIOR_IDLE1); gui::icon(ITEM_SWORD0); gui::icon(ITEM_BOW0); gui::icon(ITEM_STAFF0); gui::text("");
+    if (gui::button(textmode ? "Textmode: TEXT" : "Textmode: SPRITE"))
+    {
+        textmode = !textmode;
+    }
+
+    if (game_state == PLAYING)
+    {
+        gui::vertical_separator(5);
+        if (gui::button("Restart Game"))
+        {
+            load_floor(0);
+            view_settings = false;
+        }
+    }
+
+    gui::end_window();
+
+    gui::begin_window("Controls", {term_width / 2 + 5, term_height / 2 - 20}, {50, 40}, false);
+
+    gui::text("");
+    gui::text("       Controls   Primary Secondary");
+    gui::text("");
+    gui::text("        Move Up"); gui::same_line(); gui::input_selector(MOVE_UP, 0); gui::same_line(); gui::input_selector(MOVE_UP, 1);
+    gui::text("      Move Down"); gui::same_line(); gui::input_selector(MOVE_DOWN, 0); gui::same_line(); gui::input_selector(MOVE_DOWN, 1);
+    gui::text("      Move Left"); gui::same_line(); gui::input_selector(MOVE_LEFT, 0); gui::same_line(); gui::input_selector(MOVE_LEFT, 1);
+    gui::text("     Move Right"); gui::same_line(); gui::input_selector(MOVE_RIGHT, 0); gui::same_line(); gui::input_selector(MOVE_RIGHT, 1);
+    gui::text("   Move Up-Left"); gui::same_line(); gui::input_selector(MOVE_UP_LEFT, 0); gui::same_line(); gui::input_selector(MOVE_UP_LEFT, 1);
+    gui::text("  Move Up-Right"); gui::same_line(); gui::input_selector(MOVE_UP_RIGHT, 0); gui::same_line(); gui::input_selector(MOVE_UP_RIGHT, 1);
+    gui::text(" Move Down-Left"); gui::same_line(); gui::input_selector(MOVE_DOWN_LEFT, 0); gui::same_line(); gui::input_selector(MOVE_DOWN_LEFT, 1);
+    gui::text("Move Down-Right"); gui::same_line(); gui::input_selector(MOVE_DOWN_RIGHT, 0); gui::same_line(); gui::input_selector(MOVE_DOWN_RIGHT, 1);
+    gui::text("    Diagonal Up"); gui::same_line(); gui::input_selector(DIAGONAL_UP, 0); gui::same_line(); gui::input_selector(DIAGONAL_UP, 1);
+    gui::text("  Diagonal Down"); gui::same_line(); gui::input_selector(DIAGONAL_DOWN, 0); gui::same_line(); gui::input_selector(DIAGONAL_DOWN, 1);
+    gui::text("");
+    gui::text("         Cancel"); gui::same_line(); gui::input_selector(CANCEL, 0); gui::same_line(); gui::input_selector(CANCEL, 1);
+    gui::text("           Wait"); gui::same_line(); gui::input_selector(WAIT, 0); gui::same_line(); gui::input_selector(WAIT, 1);
+    gui::text("");
+    gui::text("         Attune"); gui::same_line(); gui::input_selector(ATTUNE, 0); gui::same_line(); gui::input_selector(ATTUNE, 1);
+    gui::text("           Drop"); gui::same_line(); gui::input_selector(DROP, 0); gui::same_line(); gui::input_selector(DROP, 1);
+    gui::text("          Equip"); gui::same_line(); gui::input_selector(EQUIP, 0); gui::same_line(); gui::input_selector(EQUIP, 1);
+    gui::text("        Examine"); gui::same_line(); gui::input_selector(EXAMINE, 0); gui::same_line(); gui::input_selector(EXAMINE, 1);
+    gui::text("           Grab"); gui::same_line(); gui::input_selector(GRAB, 0); gui::same_line(); gui::input_selector(GRAB, 1);
+    gui::text("            Use"); gui::same_line(); gui::input_selector(USE, 0); gui::same_line(); gui::input_selector(USE, 1);
+    gui::text("          Quaff"); gui::same_line(); gui::input_selector(QUAFF, 0); gui::same_line(); gui::input_selector(QUAFF, 1);
+    gui::text("            Zap"); gui::same_line(); gui::input_selector(ZAP, 0); gui::same_line(); gui::input_selector(ZAP, 1);
+    gui::text("");
+    gui::text("  Equipment Tab"); gui::same_line(); gui::input_selector(EQUIPMENT_TAB, 0); gui::same_line(); gui::input_selector(EQUIPMENT_TAB, 1);
+    gui::text("  Inventory Tab"); gui::same_line(); gui::input_selector(INVENTORY_TAB, 0); gui::same_line(); gui::input_selector(INVENTORY_TAB, 1);
+    gui::text("  Spellbook Tab"); gui::same_line(); gui::input_selector(SPELLBOOK_TAB, 0); gui::same_line(); gui::input_selector(SPELLBOOK_TAB, 1);
+    gui::text("     Skills Tab"); gui::same_line(); gui::input_selector(SKILLS_TAB, 0); gui::same_line(); gui::input_selector(SKILLS_TAB, 1);
+    gui::text("");
+    gui::text("    Toggle Zoom"); gui::same_line(); gui::input_selector(TOGGLE_ZOOM, 0); gui::same_line(); gui::input_selector(TOGGLE_ZOOM, 1);
+    gui::text("Toggle Textmode"); gui::same_line(); gui::input_selector(TOGGLE_TEXTMODE, 0); gui::same_line(); gui::input_selector(TOGGLE_TEXTMODE, 1);
+    gui::end_window();
 }
 
 IVec2 stats_draw_base;
@@ -633,6 +757,16 @@ fn void draw_gameover()
     write_stat("Items Picked Up", g_stats.items_picked_up);
     write_stat("Coins Picked Up", g_stats.gold_picked_up);
     write_stat("Coins Spent", g_stats.gold_spent);
+
+    gui::begin_window("Restart", {term_width / 2 - 5, term_height / 3 + 18}, {20, 2}, false);
+
+    if (gui::button("Play Again?"))
+    {
+        load_floor(0);
+        game_state = PLAYING;
+    }
+
+    gui::end_window();
 }
 
 fn void draw_victory()
@@ -668,4 +802,14 @@ fn void draw_victory()
     write_stat("Items Picked Up", g_stats.items_picked_up);
     write_stat("Coins Picked Up", g_stats.gold_picked_up);
     write_stat("Coins Spent", g_stats.gold_spent);
+
+    gui::begin_window("Restart", {term_width / 2 - 5, term_height / 3 + 18}, {20, 2}, false);
+
+    if (gui::button("Play Again?"))
+    {
+        load_floor(0);
+        game_state = PLAYING;
+    }
+
+    gui::end_window();
 }
