@@ -2,7 +2,7 @@
 
 # The Depths of Daemonheim
 
-A roguelike dungeon crawler created for [7DRL 2025](https://itch.io/jam/7drl-challenge-2025).
+The Depths of Daemonheim is a very vaguely runescape/dungeoneering inspired roguelike dungeon crawler which was created in 7 days as part of the [2025 7DRL](https://itch.io/jam/7drl-challenge-2025) challenge. It features 10 levels of the dungeon to fight through as you scavenge and craft your equipment. You and the denizens of the dungeon can attune your attacks to certain elements which gives them additional effects.
 
 ## Running the game
 
