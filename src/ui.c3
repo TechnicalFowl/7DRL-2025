@@ -946,6 +946,26 @@ fn void draw_ui()
     }
     
     popup_size = {100, 25};
+    if (gui::begin_popup("Tutorial", {term_width / 3 - popup_size.x / 2, term_height / 3 - popup_size.y / 2}, popup_size))
+    {
+        gui::text("Thanks for Playing!");
+        gui::text("Controls are as follows:");
+        gui::text(string::tformat("%s/%s/%s/%s to move", getKeyName(get_bind(MOVE_UP)[0]), getKeyName(get_bind(MOVE_DOWN)[0]), getKeyName(get_bind(MOVE_LEFT)[0]), getKeyName(get_bind(MOVE_RIGHT)[0])));
+        gui::text(string::tformat("Pickup items with %s", getKeyName(get_bind(GRAB)[0])));
+        gui::text(string::tformat("Toggle ASCII mode with %s", getKeyName(get_bind(TOGGLE_TEXTMODE)[0])));
+        gui::text("Other actions are context sensitive, see the shortcuts at the bottom of the sidebar.");
+        gui::text("You can also move and interact with things with the mouse.");
+        gui::text("");
+        gui::text("Rations heal health; good luck!");
+        gui::vertical_separator(3);
+        if (gui::button(string::tformat("Click here or press %s to close this window", getKeyName(get_bind(CANCEL)[0])), get_bind(CANCEL)[0]))
+        {
+            gui::close_current_popup();
+        }
+        gui::end_popup();
+    }
+    
+    popup_size = {100, 25};
     if (gui::begin_popup("Examine", {term_width / 3 - popup_size.x / 2, term_height / 3 - popup_size.y / 2}, popup_size))
     {
         gui::same_line(20);

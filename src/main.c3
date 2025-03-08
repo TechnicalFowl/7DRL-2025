@@ -423,6 +423,8 @@ fn int main(String[] args)
     rl::setWindowMinSize(term_width * font_size, term_height * font_size);
 
     init_inputs();
+    
+    load_settings();
 
     set_font_directory("resources");
 
@@ -621,6 +623,7 @@ fn bool draw_mainmenu()
     {
         load_floor(0);
         game_state = PLAYING;
+        gui::open_popup("Tutorial");
     }
     if (gui::button("  Settings"))
     {
@@ -650,6 +653,7 @@ fn void draw_settings()
 
     if (is_key_pressed(CANCEL, false) && gui::active_input == {-1, -1})
     {
+        save_settings();
         view_settings = false;
     }
 
@@ -674,6 +678,7 @@ fn void draw_settings()
         {
             load_floor(0);
             view_settings = false;
+            save_settings();
         }
     }
 
@@ -812,4 +817,64 @@ fn void draw_victory()
     }
 
     gui::end_window();
+}
+
+fn void save_settings()
+{
+    @pool()
+    {
+        File! out = file::open("settings.ini", "wb");
+        if (catch out)
+        {
+            io::printfn("Failed to write settings.ini");
+            return;
+        }
+        io::fprintf(&out, "scroll_to_wait=%s\n", g_settings.scroll_to_wait ? "true" : "false")!!;
+        for (int i = 0; i < Input.elements; ++i)
+        {
+            KeyBind* bind = g_keymap.binds.get(i)!!;
+            io::fprintf(&out, "%s0=%d\n", Input.names[i], bind.keys[0])!!;
+            if (bind.keys[1] != 0) io::fprintf(&out, "%s1=%d\n", Input.names[i], bind.keys[1])!!;
+        }
+        out.close()!!;
+    };
+}
+
+fn void load_settings()
+{
+    @pool()
+    {
+        char[]! settings_text = file::load_temp("settings.ini");
+        if (catch settings_text)
+        {
+            save_settings();
+            return;
+        }
+        String settings_str = (String) settings_text[:settings_text.len];
+        String[] lines = settings_str.split("\n", 0, allocator::temp());
+        foreach (l: lines)
+        {
+            String[] parts = l.split("=", 0, allocator::temp());
+            if (parts.len != 2) continue;
+            String key = parts[0].trim();
+            String value = parts[1].trim();
+            if (key == "scroll_to_wait")
+            {
+                g_settings.scroll_to_wait = value == "true";
+            }
+            if (key[key.len - 1] == '0' || key[key.len - 1] == '1')
+            {
+                int alt = key[key.len - 1] == '0' ? 0 : 1;
+                key = key[:key.len - 1];
+                for (int i = 0; i < Input.elements; ++i)
+                {
+                    if (key == Input.names[i])
+                    {
+                        KeyBind* bind = g_keymap.binds.get(i)!!;
+                        bind.keys[alt] = (KeyboardKey) value.to_int() ?? 0;
+                    }
+                }
+            }
+        }
+    };
 }

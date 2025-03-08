@@ -744,13 +744,13 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         {
                             if (zone.get_cell(...min).isPassable() ?? false)
                             {
-                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
-                                zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
+                                zone.set_object(min.x + 0, min.y, OBJ_RUNE_ALTAR_L);
+                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_R);
                             }
                             else
                             {
-                                zone.set_object(min.x + 0, min.y, OBJ_RUNE_ALTAR_L);
-                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_R);
+                                zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
+                                zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
                             }
                         }
                     case TREASURE_CACHE:

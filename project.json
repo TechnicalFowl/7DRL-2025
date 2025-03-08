@@ -8,7 +8,7 @@
   "sources":  [ "src/**" ],
   "output": "build",
   "targets": {
-    "dungeoneer": {
+    "DoD-7DRL": {
       "type": "executable"
     }
   },
