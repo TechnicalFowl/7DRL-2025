@@ -1,3 +1,5 @@
+![header](https://raw.githubusercontent.com/TechnicalFowl/7DRL-2025/refs/heads/master/media/title.PNG)
+
 # The Depths of Daemonheim
 
 A roguelike dungeon crawler created for [7DRL 2025](https://itch.io/jam/7drl-challenge-2025).
