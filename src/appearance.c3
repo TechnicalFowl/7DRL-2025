@@ -86,6 +86,17 @@ const Appearance GRAVE2 = { 14 * 16 + 15, colors::LIGHT_GREY, 7 * 16 + 15 };
 const Appearance ORE_ROCK1 = { 4, { 195, 40, 195, 255}, 2 * 16 + 9 };
 const Appearance ORE_ROCK2 = { 4, { 15, 191, 175, 255}, 2 * 16 + 11 };
 const Appearance ORE_ROCK3 = { 4, { 243, 192, 37, 255}, 5 * 16 + 11 };
+const Appearance CHEST = { 254, colors::GOLD, 11 * 16 + 7 };
+const Appearance OPEN_CHEST = { 255, colors::GOLD, 11 * 16 + 8 };
+
+const Appearance RUNIC_CIRCLE_NW = { 12 * 16 + 9, colors::RED, 9 * 16 + 6 };
+const Appearance RUNIC_CIRCLE_NE = { 11 * 16 + 11, colors::RED, 9 * 16 + 7 };
+const Appearance RUNIC_CIRCLE_SW = { 12 * 16 + 8, colors::RED, 10 * 16 + 6 };
+const Appearance RUNIC_CIRCLE_SE = { 11 * 16 + 12, colors::RED, 10 * 16 + 7 };
+
+const Appearance RUNE_ALTAR_L = { 15 * 16 + 2, colors::WHITE, 11 * 16 + 9 };
+const Appearance RUNE_ALTAR_R = { 15 * 16 + 3, colors::WHITE, 11 * 16 + 10 };
+const Appearance RUNE_ALTAR_PLINTH = { 14 * 16 + 15, colors::WHITE, 11 * 16 + 11 };
 
 const Appearance TRADER = { 'T', colors::DARK_GREEN, 4 * 16 + 4 };
 

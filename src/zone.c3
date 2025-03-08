@@ -68,6 +68,11 @@ enum TerrainType : inline int
     TERR_EXIT_WALL_R,
     TERR_EXIT_HOLE_L,
     TERR_EXIT_HOLE_R,
+
+    TERR_RUNIC_CIRCLE_NW,
+    TERR_RUNIC_CIRCLE_NE,
+    TERR_RUNIC_CIRCLE_SW,
+    TERR_RUNIC_CIRCLE_SE,
 }
 
 struct TerrainInfo
@@ -139,6 +144,11 @@ TerrainInfo[*] g_terrain_info = {
     { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK, "a wall marked with a downward arrow" },
     { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK, "a dark pit leading deeper into the dungeon" },
     { TERR_EXIT_HOLE_R, "Exit", false, EXIT_HOLE_R, colors::BLACK, "a dark pit leading deeper into the dungeon" },
+
+    { TERR_RUNIC_CIRCLE_NW, "Runic Circle", true, RUNIC_CIRCLE_NW, colors::BLACK, "a runic circle" },
+    { TERR_RUNIC_CIRCLE_NE, "Runic Circle", true, RUNIC_CIRCLE_NE, colors::BLACK, "a runic circle" },
+    { TERR_RUNIC_CIRCLE_SW, "Runic Circle", true, RUNIC_CIRCLE_SW, colors::BLACK, "a runic circle" },
+    { TERR_RUNIC_CIRCLE_SE, "Runic Circle", true, RUNIC_CIRCLE_SE, colors::BLACK, "a runic circle" },
 };
 
 fn bool is_wall_terrain(TerrainType t) => t >= TERR_WALL_NORTH && t <= TERR_PILLAR;
@@ -167,6 +177,11 @@ enum ObjectType : inline int
     OBJ_ORE_ROCK2,
     OBJ_ORE_ROCK3,
     OBJ_TRADER,
+    OBJ_RUNE_ALTAR_L,
+    OBJ_RUNE_ALTAR_R,
+    OBJ_RUNE_ALTAR_PLINTH,
+    OBJ_CHEST,
+    OBJ_OPEN_CHEST,
 }
 
 struct ObjectInfo
@@ -198,6 +213,11 @@ ObjectInfo[*] g_object_info = {
     { OBJ_ORE_ROCK2, "Ore Rock", false, ORE_ROCK2, "a small boulder containing some fractite ore" },
     { OBJ_ORE_ROCK3, "Ore Rock", false, ORE_ROCK3, "a small boulder containing some promethium ore"},
     { OBJ_TRADER, "Trader", false, TRADER, "a trader with some wares available" },
+    { OBJ_RUNE_ALTAR_L, "Rune Altar", false, RUNE_ALTAR_L, "a rune altar" },
+    { OBJ_RUNE_ALTAR_R, "Rune Altar", false, RUNE_ALTAR_R, "a rune altar" },
+    { OBJ_RUNE_ALTAR_PLINTH, "Rune Altar", false, RUNE_ALTAR_PLINTH, "a decorative plinth" },
+    { OBJ_CHEST, "Gilded Chest", false, CHEST, "a gilded chest" },
+    { OBJ_OPEN_CHEST, "Gilded Chest", false, OPEN_CHEST, "an empty gilded chest" },
 };
 
 fault ZoneFault
@@ -631,6 +651,14 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
                 }
             }
         }
+    }
+
+    if (current_floor.depth == 9)
+    {
+        Room* boss_room = current_floor.boss_room;
+        IVec2 boss_pos = boss_room.position + {7, 7};
+
+        
     }
 
     {

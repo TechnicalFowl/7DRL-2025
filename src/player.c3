@@ -271,6 +271,19 @@ fn bool Player.has_item(&self, Item item, int count=1)
     return false;
 }
 
+fn int Player.get_item(&self, Item item)
+{
+    int count = 0;
+    foreach (&slot: self.inventory)
+    {
+        if (slot.item == item)
+        {
+            count += slot.count;
+        }
+    }
+    return count;
+}
+
 fn void Player.use_item_pair(&self, int first, int second)
 {
     ItemStack item1 = self.inventory[first];
@@ -451,19 +464,18 @@ fn Action Player.next_action(&self, double max_time) @dynamic
         {
             if (devmode)
             {
-                if (is_key_down(PATH_TO_BOSS))
+                if (is_key_pressed(PATH_TO_BOSS))
                 {
-                    for (int y= 0; y < FLOOR_SIZE && self.nav.is_idle(); ++y)
+                    if (rl::isKeyDown(rl::KEY_LEFT_SHIFT))
                     {
-                        for (int x = 0; x < FLOOR_SIZE && self.nav.is_idle(); ++x)
-                        {
-                            Room* r = current_floor.rooms.get({x, y})!!;
-                            if (r.type == BOSS)
-                            {
-                                IVec2 pos = {x * 17 + 8, y * 17 + 8};
-                                self.nav.path_to(self.get_zone(), self.get_position(), pos);
-                            }
-                        }
+                        Room* boss_room = current_floor.boss_room;
+                        IVec2 target_pos = boss_room.position + {12, 4};
+                        return do_move(target_pos - self.get_position());
+                    }
+                    else
+                    {
+                        IVec2 target_pos = self.get_zone().get_mouse_position();
+                        return do_move(target_pos - self.get_position());
                     }
                 }
             }
@@ -835,6 +847,14 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
                 return;
             }
         }
+        else if (cell.object == OBJ_RUNE_ALTAR_L || cell.object == OBJ_RUNE_ALTAR_R)
+        {
+            if (item.item == BLANK_RUNE)
+            {
+                gui::open_popup("Craft Runes");
+                return;
+            }
+        }
         log("Nothing interesting happens.");
     }
     else if (is_door_terrain(cell.terrain))
@@ -905,6 +925,31 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
     {
         gui::open_popup("Smith Item");
     }
+    else if (cell.object == OBJ_TRADER)
+    {
+        gui::open_popup("Trader");
+        
+        if (last_trader_floor != current_floor.depth)
+        {
+            trader_contents.clear();
+            DropTable* table = &crate_loot[math::min(9, current_floor.depth + 1)];
+            
+            for (int i = 0; i < 10; ++i)
+            {
+                ItemStack item;
+                do
+                {
+                    item = table.roll(&g_rng);
+                } while (item.item == COINS);
+                trader_contents.push(item);
+            }
+            last_trader_floor = current_floor.depth;
+        }
+    }
+    else if (cell.object == OBJ_RUNE_ALTAR_L || cell.object == OBJ_RUNE_ALTAR_R)
+    {
+        gui::open_popup("Craft Runes");
+    }
     else if (cell.object == OBJ_TREE)
     {
         if (!player.has_item(AXE))
@@ -942,9 +987,41 @@ fn void InteractAction.apply(&self, Entity entity) @dynamic
             storage_contents.push(item);
         }
     }
+    else if (cell.object == OBJ_CHEST)
+    {
+        if (player.has_item(KEY, 1))
+        {
+            player.remove_item({KEY, 1, 0});
+            log("You use a key to unlock the chest");
+        }
+        else
+        {
+            log("The chest is locked.");
+            return;
+        }
+        gui::open_popup("Search Crate");
+        cell.object = OBJ_OPEN_CHEST;
+        log("You search the chest.");
+        g_stats.crates_looted++;
+
+        int count = random::next_in_range(&g_rng, 3, 6);
+        DropTable* table = &crate_loot[math::min(9, current_floor.depth + 3)];
+        
+        for (int i = 0; i < count; ++i)
+        {
+            ItemStack item = table.roll(&g_rng);
+            ItemInfo* info = &g_items.items[item.item];
+            if (info.stack_size > 1) item.count = math::min(info.stack_size, item.count * 2);
+            storage_contents.push(item);
+        }
+    }
     else if (cell.object == OBJ_OPEN_CRATE)
     {
         log("The crate is empty.");
+    }
+    else if (cell.object == OBJ_OPEN_CHEST)
+    {
+        log("The chest is empty.");
     }
     else if (cell.object == OBJ_STUMP)
     {

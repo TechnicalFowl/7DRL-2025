@@ -175,6 +175,7 @@ fn void GeneratorData.generate(&self, Zone* zone)
     IVec2 boss_pos = farthest[random::next_in_range(&rng, 0, (int) farthest.len() - 1)];
     Room* boss_room = current_floor.rooms.get(boss_pos)!!;
     boss_room.type = BOSS;
+    current_floor.boss_room = boss_room;
     
     {
         if (boss_room.doors[Direction.WEST.ordinal - 1].type != WALL)

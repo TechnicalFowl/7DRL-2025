@@ -81,6 +81,8 @@ enum HotspotType : (int weight, uint exclusive_mask)
     GRAVESITE = {5, 0x2060},
     CAMPSITE = {5, 0x1000},
     SMALL_SPECIAL = {4, 0xf80},
+    RUNE_ALTAR = {2, 0x4000},
+    TREASURE_CACHE = {1, 0},
 }
 
 int hotspot_total_weight;
@@ -262,16 +264,34 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
             spawn_monster(zone, pos + {5, 7}, DARK_KNIGHT);
             spawn_monster(zone, pos + {7, 7}, DARK_KNIGHT);
             spawn_monster(zone, pos + {9, 7}, DARK_KNIGHT);
+            spawn_monster(zone, pos + {10, 7}, DARK_KNIGHT);
+        case DARK_GROUP:
+            spawn_monster(zone, pos + {5, 7}, DARK_KNIGHT);
+            spawn_monster(zone, pos + {7, 7}, DARK_KNIGHT);
+            spawn_monster(zone, pos + {7, 7}, ASSASSIN);
+            spawn_monster(zone, pos + {7, 7}, ASSASSIN);
+            spawn_monster(zone, pos + {7, 7}, DARK_MAGE);
+            spawn_monster(zone, pos + {7, 7}, DARK_MAGE);
         case NECROMANCER:
             spawn_monster(zone, pos + {9, 7}, NECROMANCER);
             spawn_monster(zone, pos + {7, 7}, SKELETON);
             spawn_monster(zone, pos + {6, 7}, SKELETON);
+            spawn_monster(zone, pos + {5, 7}, SKELETON);
         case RITUAL_SITE:
+            zone.fill_terrain(pos + {1, 1}, {14, 14}, TERR_CLEAN_STONE);
+            zone.fill_terrain(pos + {6, 6}, {4, 4}, TERR_BRICKS);
             for (int i = 0; i < 8; ++i)
             {
                 spawn_monster(zone, pos + {3 + i, 7}, DARK_MAGE);
             }
-        case ANCIENT_DAEMON:
+            zone.set_terrain(pos.x + 7, pos.y + 7, TERR_RUNIC_CIRCLE_NW);
+            zone.set_terrain(pos.x + 8, pos.y + 7, TERR_RUNIC_CIRCLE_NE);
+            zone.set_terrain(pos.x + 7, pos.y + 8, TERR_RUNIC_CIRCLE_SW);
+            zone.set_terrain(pos.x + 8, pos.y + 8, TERR_RUNIC_CIRCLE_SE);
+            zone.set_object(pos.x + 6, pos.y + 6, OBJ_RUNE_ALTAR_PLINTH);
+            zone.set_object(pos.x + 9, pos.y + 6, OBJ_RUNE_ALTAR_PLINTH);
+            zone.set_object(pos.x + 6, pos.y + 9, OBJ_RUNE_ALTAR_PLINTH);
+            zone.set_object(pos.x + 9, pos.y + 9, OBJ_RUNE_ALTAR_PLINTH);
         }
     case STANDARD:
         int ne = math::max(random::next_in_range(rng, -2, 6), 0);
@@ -708,6 +728,21 @@ fn void Room.generate(&self, DungeonFloor* floor, Zone* zone, random::Pcg32Rando
                         IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_FIRE_PIT);
                         IVec2 p1 = get_random_pos(rng, min, size, p0); zone.set_object(...p1, OBJ_SMALL_BOXES);
                         IVec2 p2 = get_random_pos(rng, min, size, p0, p1); zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
+                    case RUNE_ALTAR:
+                        zone.fill_terrain(min, size, TERR_BRICKS);
+                        if (size.x == 4)
+                        {
+                            zone.set_object(min.x, min.y, OBJ_RUNE_ALTAR_PLINTH);
+                            zone.set_object(min.x + 3, min.y, OBJ_RUNE_ALTAR_PLINTH);
+                        }
+                        zone.set_object(min.x + 1, min.y, OBJ_RUNE_ALTAR_L);
+                        zone.set_object(min.x + 2, min.y, OBJ_RUNE_ALTAR_R);
+                    case TREASURE_CACHE:
+                        IVec2 p0 = get_random_pos(rng, min, size); zone.set_object(...p0, OBJ_CHEST);
+                        IVec2 p1 = get_random_pos(rng, min, size, p0);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...p1, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
+                        IVec2 p2 = get_random_pos(rng, min, size, p0, p1);
+                        if (random::next_in_range(rng, 0, 1) == 0) zone.set_object(...p2, random::next_in_range(rng, 0, 1) == 0 ? OBJ_CRATE : OBJ_OPEN_CRATE);
                     }
                 }
             }
@@ -839,6 +874,7 @@ struct DungeonFloor
 {
     int depth;
     HashMap(<IVec2, Room*>) rooms;
+    Room* boss_room;
 }
 
 fn void DungeonFloor.new_init(&self, int d)
@@ -866,9 +902,9 @@ enum BossTypes : inline int
     SLIMES,
     HAUNTED_MAGE,
     DARK_WARRIORS,
+    DARK_GROUP,
     NECROMANCER,
     RITUAL_SITE,
-    ANCIENT_DAEMON,
 }
 
 BossTypes[10] boss_ordering;
@@ -896,7 +932,7 @@ fn void generate_whole_dungeon_stuff(random::Pcg32Random* rng)
     int[] t2 = {6, 7, 8};
     shuffle(rng, t2);
     boss_ordering[6] = BossTypes.from_ordinal(t2[0]); boss_ordering[7] = BossTypes.from_ordinal(t2[1]); boss_ordering[8] = BossTypes.from_ordinal(t2[2]);
-    boss_ordering[9] = ANCIENT_DAEMON;
+    boss_ordering[9] = RITUAL_SITE;
     
     int total_weight = 0;
     for (int i = 0; i < HotspotType.elements; ++i)

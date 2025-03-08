@@ -37,6 +37,8 @@ IVec2 inv_action_target;
 ulong inv_action_changed;
 
 List(<ItemStack>) storage_contents;
+List(<ItemStack>) trader_contents;
+int last_trader_floor = -1;
 
 enum ExamineType
 {
@@ -57,6 +59,7 @@ fn void init_ui()
     sidebar_width = 54;
     inv_action = NO_ACTION;
     storage_contents.new_init();
+    trader_contents.new_init();
 }
 
 fn void draw_ui()
@@ -815,6 +818,82 @@ fn void draw_ui()
         if (gui::button("Promethium Bow (2x Promethium Ingot, 1x Logs)", rl::KEY_I, disabled: !pl.has_item(INGOT3, 2) || !pl.has_item(LOGS)))
         {
             if (do_smith({ BOW3, 1, 0 }, { INGOT3, 2, 0 }, { LOGS, 1, 0 })) gui::close_current_popup();
+        }
+        gui::end_popup();
+    }
+
+    popup_size = {100, 15};
+    if (gui::begin_popup("Craft Runes", {term_width / 3 - popup_size.x / 2, term_height / 2 - popup_size.y / 2}, popup_size))
+    {
+        int ess = pl.get_item(BLANK_RUNE);
+        if (ess == 0)
+        {
+            gui::close_current_popup();
+        }
+        gui::same_line(20);
+        if (gui::button("Close", get_bind(CANCEL)[0]))
+        {
+            gui::close_current_popup();
+        }
+        gui::text("");
+        int count = math::min(10, ess);
+        for (int i = Item.AIR_RUNE; i <= Item.BLOOD_RUNE; ++i)
+        {
+            Item rune = Item.from_ordinal(i);
+            ItemInfo* info = &g_items.items[rune];
+            int last_len = info.name.len + 2;
+            gui::icon(info.look);
+            if (gui::button(string::tformat("%s (x%d)", info.name, count), (KeyboardKey) ((int) rl::KEY_A + i - Item.AIR_RUNE)))
+            {
+                if (pl.is_inventory_full({rune, count, 0}))
+                {
+                    log("Your inventory is full!");
+                    gui::close_current_popup();
+                }
+                else
+                {
+                    pl.remove_item({BLANK_RUNE, count, 0});
+                    pl.add_item({rune, count, 0});
+                }
+            }
+        }
+        gui::end_popup();
+    }
+
+    popup_size = {100, 25};
+    if (gui::begin_popup("Trader", {term_width / 3 - popup_size.x / 2, term_height / 2 - popup_size.y / 2}, popup_size))
+    {
+        if (trader_contents.is_empty())
+        {
+            gui::close_current_popup();
+        }
+        gui::same_line(20);
+        if (gui::button("Close", get_bind(CANCEL)[0]))
+        {
+            gui::close_current_popup();
+        }
+        gui::text("");
+        int i = 0;
+        foreach (stack: trader_contents)
+        {
+            ItemInfo* info = &g_items.items[stack.item];
+            int cost = stack.count * info.value;
+            gui::icon(info.look);
+            if (gui::button(string::tformat("%s%s (x%d) [%d coins]", info.name, stack.count > 1 ? "s" : "", stack.count, cost), (KeyboardKey) ((int) rl::KEY_A + i), disabled: pl.get_item(COINS) < cost))
+            {
+                if (pl.is_inventory_full(stack))
+                {
+                    log("Your inventory is full!");
+                }
+                else
+                {
+                    pl.remove_item({COINS, cost, 0});
+                    pl.add_item(stack);
+                    trader_contents.remove_at(i);
+                    break;
+                }
+            }
+            i++;
         }
         gui::end_popup();
     }
