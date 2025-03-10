@@ -257,7 +257,7 @@ fn Action Monster.next_action(&self, double max_time) @dynamic
 
     if (player_room == mob_room)
     {
-        double dist = ivec2_fdistance(player_pos, self.get_position());
+        double dist = player_pos.fdistance(self.get_position());
         if (dist < self.info.range)
         {
             MonsterLosChecker checker = { self, player_pos, true };
@@ -363,7 +363,7 @@ fn void MobAttackAction.apply(&self, Entity entity) @dynamic
 
     if (player_room == mob_room)
     {
-        double dist = ivec2_fdistance(player_pos, mob.get_position());
+        double dist = player_pos.fdistance(mob.get_position());
         if (dist <= mob.info.range)
         {
             int damage = mob.calculate_damage(player, mob.info.style);
@@ -446,7 +446,7 @@ fn void Monster.applyAttunement(&self, Player* target, int* damage)
         // Apply knockback
         if (*damage > 0)
         {
-            IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
+            IVec2 knockback = (target.get_position() - self.get_position()).sign();
             ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + knockback));
             if (try cell && cell.isPassable())
             {

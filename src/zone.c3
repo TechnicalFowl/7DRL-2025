@@ -7,77 +7,8 @@ import std::io;
 import std::math;
 import raylib5::rl;
 
-enum TerrainType : inline int
-{
-    EMPTY_VOID,
-
-    TERR_WALL_NORTH,
-    TERR_WALL_EAST,
-    TERR_WALL_SOUTH,
-    TERR_WALL_WEST,
-    TERR_WALL_NE,
-    TERR_WALL_NW,
-    TERR_WALL_SE,
-    TERR_WALL_SW,
-    TERR_PILLAR,
-
-    TERR_GRASS,
-    TERR_DIRT,
-    TERR_STONE,
-    TERR_BRICKS,
-    TERR_ROUGH_STONE,
-    TERR_CLEAN_STONE,
-
-    TERR_DOOR_NORTH_L,
-    TERR_DOOR_NORTH_R,
-    TERR_DOOR_EAST_U,
-    TERR_DOOR_EAST_L,
-    TERR_DOOR_SOUTH_L,
-    TERR_DOOR_SOUTH_R,
-    TERR_DOOR_WEST_U,
-    TERR_DOOR_WEST_L,
-
-    TERR_ODOOR_NORTH_L,
-    TERR_ODOOR_NORTH_R,
-    TERR_ODOOR_EAST_U,
-    TERR_ODOOR_EAST_L,
-    TERR_ODOOR_SOUTH_L,
-    TERR_ODOOR_SOUTH_R,
-    TERR_ODOOR_WEST_U,
-    TERR_ODOOR_WEST_L,
-
-    TERR_LDOOR_NORTH_L,
-    TERR_LDOOR_NORTH_R,
-    TERR_LDOOR_EAST_U,
-    TERR_LDOOR_EAST_L,
-    TERR_LDOOR_SOUTH_L,
-    TERR_LDOOR_SOUTH_R,
-    TERR_LDOOR_WEST_U,
-    TERR_LDOOR_WEST_L,
-
-    TERR_BDOOR_NORTH_L,
-    TERR_BDOOR_NORTH_R,
-    TERR_BDOOR_EAST_U,
-    TERR_BDOOR_EAST_L,
-    TERR_BDOOR_SOUTH_L,
-    TERR_BDOOR_SOUTH_R,
-    TERR_BDOOR_WEST_U,
-    TERR_BDOOR_WEST_L,
-
-    TERR_EXIT_WALL_L,
-    TERR_EXIT_WALL_R,
-    TERR_EXIT_HOLE_L,
-    TERR_EXIT_HOLE_R,
-
-    TERR_RUNIC_CIRCLE_NW,
-    TERR_RUNIC_CIRCLE_NE,
-    TERR_RUNIC_CIRCLE_SW,
-    TERR_RUNIC_CIRCLE_SE,
-}
-
 struct TerrainInfo
 {
-    TerrainType type;
     String name;
     bool passable;
     Appearance look;
@@ -85,140 +16,114 @@ struct TerrainInfo
     String description;
 }
 
-TerrainInfo[*] g_terrain_info = {
-    { EMPTY_VOID, "Empty", false, EMPTY_LOOK, colors::BLACK, "an empty void" },
-    { TERR_WALL_NORTH, "Wall", false, WALL_NORTH, colors::BLACK, "a solid wall" },
-    { TERR_WALL_EAST, "Wall", false, WALL_EAST, colors::BLACK, "a solid wall" },
-    { TERR_WALL_SOUTH, "Wall", false, WALL_SOUTH, colors::BLACK, "a solid wall" },
-    { TERR_WALL_WEST, "Wall", false, WALL_WEST, colors::BLACK, "a solid wall" },
-    { TERR_WALL_NE, "Wall", false, WALL_NE, colors::BLACK, "a solid wall" },
-    { TERR_WALL_NW, "Wall", false, WALL_NW, colors::BLACK, "a solid wall" },
-    { TERR_WALL_SE, "Wall", false, WALL_SE, colors::BLACK, "a solid wall" },
-    { TERR_WALL_SW, "Wall", false, WALL_SW, colors::BLACK, "a solid wall" },
-    { TERR_PILLAR, "Pillar", false, PILLAR, colors::BLACK, "a solid wall" },
+enum TerrainType : inline int (TerrainInfo info)
+{
+    EMPTY_VOID = { "Empty", false, EMPTY_LOOK, colors::BLACK, "an empty void" },
 
-    { TERR_GRASS, "Grass", true, FLOOR_GRASS, colors::BLACK, "some tufts of grass" },
-    { TERR_DIRT, "Dirt", true, FLOOR_DIRT, colors::BLACK, "some dirt" },
-    { TERR_STONE, "Stone", true, FLOOR_STONE, colors::BLACK, "some stones" },
-    { TERR_BRICKS, "Bricks", true, FLOOR_SLABS, colors::BLACK, "a stone floor" },
-    { TERR_ROUGH_STONE, "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK, "some dirty stone" },
-    { TERR_CLEAN_STONE, "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK, "some bare stone" },
+    TERR_WALL_NORTH = { "Wall", false, WALL_NORTH, colors::BLACK, "a solid wall" },
+    TERR_WALL_EAST = { "Wall", false, WALL_EAST, colors::BLACK, "a solid wall" },
+    TERR_WALL_SOUTH = { "Wall", false, WALL_SOUTH, colors::BLACK, "a solid wall" },
+    TERR_WALL_WEST = { "Wall", false, WALL_WEST, colors::BLACK, "a solid wall" },
+    TERR_WALL_NE = { "Wall", false, WALL_NE, colors::BLACK, "a solid wall" },
+    TERR_WALL_NW = { "Wall", false, WALL_NW, colors::BLACK, "a solid wall" },
+    TERR_WALL_SE = { "Wall", false, WALL_SE, colors::BLACK, "a solid wall" },
+    TERR_WALL_SW = { "Wall", false, WALL_SW, colors::BLACK, "a solid wall" },
+    TERR_PILLAR = { "Pillar", false, PILLAR, colors::BLACK, "a solid wall" },
 
-    { TERR_DOOR_NORTH_L, "Door", false, DOOR_NORTH_L, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_NORTH_R, "Door", false, DOOR_NORTH_R, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_EAST_U, "Door", false, DOOR_EAST_U, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_EAST_L, "Door", false, DOOR_EAST_L, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_SOUTH_L, "Door", false, DOOR_SOUTH_L, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_SOUTH_R, "Door", false, DOOR_SOUTH_R, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_WEST_U, "Door", false, DOOR_WEST_U, colors::BLACK, "a sturdy door" },
-    { TERR_DOOR_WEST_L, "Door", false, DOOR_WEST_L, colors::BLACK, "a sturdy door" },
+    TERR_GRASS = { "Grass", true, FLOOR_GRASS, colors::BLACK, "some tufts of grass" },
+    TERR_DIRT = { "Dirt", true, FLOOR_DIRT, colors::BLACK, "some dirt" },
+    TERR_STONE = { "Stone", true, FLOOR_STONE, colors::BLACK, "some stones" },
+    TERR_BRICKS = { "Bricks", true, FLOOR_SLABS, colors::BLACK, "a stone floor" },
+    TERR_ROUGH_STONE = { "Rough Stone", true, FLOOR_ROUGH_STONE, colors::BLACK, "some dirty stone" },
+    TERR_CLEAN_STONE = { "Clean Stone", true, FLOOR_CLEAN_STONE, colors::BLACK, "some bare stone" },
 
-    { TERR_ODOOR_NORTH_L, "Open Door", false, DOOR_OPEN_NORTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_NORTH_R, "Open Door", false, DOOR_OPEN_NORTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_EAST_U, "Open Door", false, DOOR_OPEN_EAST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_EAST_L, "Open Door", false, DOOR_OPEN_EAST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_SOUTH_L, "Open Door", false, DOOR_OPEN_SOUTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_SOUTH_R, "Open Door", false, DOOR_OPEN_SOUTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_WEST_U, "Open Door", false, DOOR_OPEN_WEST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
-    { TERR_ODOOR_WEST_L, "Open Door", false, DOOR_OPEN_WEST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_DOOR_NORTH_L = { "Door", false, DOOR_NORTH_L, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_NORTH_R = { "Door", false, DOOR_NORTH_R, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_EAST_U = { "Door", false, DOOR_EAST_U, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_EAST_L = { "Door", false, DOOR_EAST_L, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_SOUTH_L = { "Door", false, DOOR_SOUTH_L, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_SOUTH_R = { "Door", false, DOOR_SOUTH_R, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_WEST_U = { "Door", false, DOOR_WEST_U, colors::BLACK, "a sturdy door" },
+    TERR_DOOR_WEST_L = { "Door", false, DOOR_WEST_L, colors::BLACK, "a sturdy door" },
 
-    { TERR_LDOOR_NORTH_L, "Locked Door", false, DOOR_LOCKED_NORTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_NORTH_R, "Locked Door", false, DOOR_LOCKED_NORTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_EAST_U, "Locked Door", false, DOOR_LOCKED_EAST_U, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_EAST_L, "Locked Door", false, DOOR_LOCKED_EAST_L, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_SOUTH_L, "Locked Door", false, DOOR_LOCKED_SOUTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_SOUTH_R, "Locked Door", false, DOOR_LOCKED_SOUTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_WEST_U, "Locked Door", false, DOOR_LOCKED_WEST_U, colors::BLACK, "a sturdy door with a big lock on it" },
-    { TERR_LDOOR_WEST_L, "Locked Door", false, DOOR_LOCKED_WEST_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_ODOOR_NORTH_L = { "Open Door", false, DOOR_OPEN_NORTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_NORTH_R = { "Open Door", false, DOOR_OPEN_NORTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_EAST_U = { "Open Door", false, DOOR_OPEN_EAST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_EAST_L = { "Open Door", false, DOOR_OPEN_EAST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_SOUTH_L = { "Open Door", false, DOOR_OPEN_SOUTH_L, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_SOUTH_R = { "Open Door", false, DOOR_OPEN_SOUTH_R, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_WEST_U = { "Open Door", false, DOOR_OPEN_WEST_U, colors::BLACK, "a sturdy door, you remember going through it before" },
+    TERR_ODOOR_WEST_L = { "Open Door", false, DOOR_OPEN_WEST_L, colors::BLACK, "a sturdy door, you remember going through it before" },
 
-    { TERR_BDOOR_NORTH_L, "Boss Door", false, DOOR_BOSS_NORTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_NORTH_R, "Boss Door", false, DOOR_BOSS_NORTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_EAST_U, "Boss Door", false, DOOR_BOSS_EAST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_EAST_L, "Boss Door", false, DOOR_BOSS_EAST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_SOUTH_L, "Boss Door", false, DOOR_BOSS_SOUTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_SOUTH_R, "Boss Door", false, DOOR_BOSS_SOUTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_WEST_U, "Boss Door", false, DOOR_BOSS_WEST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
-    { TERR_BDOOR_WEST_L, "Boss Door", false, DOOR_BOSS_WEST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_LDOOR_NORTH_L = { "Locked Door", false, DOOR_LOCKED_NORTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_NORTH_R = { "Locked Door", false, DOOR_LOCKED_NORTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_EAST_U = { "Locked Door", false, DOOR_LOCKED_EAST_U, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_EAST_L = { "Locked Door", false, DOOR_LOCKED_EAST_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_SOUTH_L = { "Locked Door", false, DOOR_LOCKED_SOUTH_L, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_SOUTH_R = { "Locked Door", false, DOOR_LOCKED_SOUTH_R, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_WEST_U = { "Locked Door", false, DOOR_LOCKED_WEST_U, colors::BLACK, "a sturdy door with a big lock on it" },
+    TERR_LDOOR_WEST_L = { "Locked Door", false, DOOR_LOCKED_WEST_L, colors::BLACK, "a sturdy door with a big lock on it" },
 
-    { TERR_EXIT_WALL_L, "Wall", false, EXIT_WALL_L, colors::BLACK, "a wall marked with a downward arrow" },
-    { TERR_EXIT_WALL_R, "Wall", false, EXIT_WALL_R, colors::BLACK, "a wall marked with a downward arrow" },
-    { TERR_EXIT_HOLE_L, "Exit", false, EXIT_HOLE_L, colors::BLACK, "a dark pit leading deeper into the dungeon" },
-    { TERR_EXIT_HOLE_R, "Exit", false, EXIT_HOLE_R, colors::BLACK, "a dark pit leading deeper into the dungeon" },
+    TERR_BDOOR_NORTH_L = { "Boss Door", false, DOOR_BOSS_NORTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_NORTH_R = { "Boss Door", false, DOOR_BOSS_NORTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_EAST_U = { "Boss Door", false, DOOR_BOSS_EAST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_EAST_L = { "Boss Door", false, DOOR_BOSS_EAST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_SOUTH_L = { "Boss Door", false, DOOR_BOSS_SOUTH_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_SOUTH_R = { "Boss Door", false, DOOR_BOSS_SOUTH_R, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_WEST_U = { "Boss Door", false, DOOR_BOSS_WEST_U, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
+    TERR_BDOOR_WEST_L = { "Boss Door", false, DOOR_BOSS_WEST_L, colors::BLACK, "a sturdy door, you sense some danger lurks beyond it" },
 
-    { TERR_RUNIC_CIRCLE_NW, "Runic Circle", true, RUNIC_CIRCLE_NW, colors::BLACK, "a runic circle" },
-    { TERR_RUNIC_CIRCLE_NE, "Runic Circle", true, RUNIC_CIRCLE_NE, colors::BLACK, "a runic circle" },
-    { TERR_RUNIC_CIRCLE_SW, "Runic Circle", true, RUNIC_CIRCLE_SW, colors::BLACK, "a runic circle" },
-    { TERR_RUNIC_CIRCLE_SE, "Runic Circle", true, RUNIC_CIRCLE_SE, colors::BLACK, "a runic circle" },
-};
+    TERR_EXIT_WALL_L = { "Wall", false, EXIT_WALL_L, colors::BLACK, "a wall marked with a downward arrow" },
+    TERR_EXIT_WALL_R = { "Wall", false, EXIT_WALL_R, colors::BLACK, "a wall marked with a downward arrow" },
+    TERR_EXIT_HOLE_L = { "Exit", false, EXIT_HOLE_L, colors::BLACK, "a dark pit leading deeper into the dungeon" },
+    TERR_EXIT_HOLE_R = { "Exit", false, EXIT_HOLE_R, colors::BLACK, "a dark pit leading deeper into the dungeon" },
+
+    TERR_RUNIC_CIRCLE_NW = { "Runic Circle", true, RUNIC_CIRCLE_NW, colors::BLACK, "a runic circle" },
+    TERR_RUNIC_CIRCLE_NE = { "Runic Circle", true, RUNIC_CIRCLE_NE, colors::BLACK, "a runic circle" },
+    TERR_RUNIC_CIRCLE_SW = { "Runic Circle", true, RUNIC_CIRCLE_SW, colors::BLACK, "a runic circle" },
+    TERR_RUNIC_CIRCLE_SE = { "Runic Circle", true, RUNIC_CIRCLE_SE, colors::BLACK, "a runic circle" },
+}
 
 fn bool is_wall_terrain(TerrainType t) => t >= TERR_WALL_NORTH && t <= TERR_PILLAR;
 fn bool is_door_terrain(TerrainType t) => t >= TERR_DOOR_NORTH_L && t <= TERR_BDOOR_WEST_L;
 fn bool is_locked_door_terrain(TerrainType t) => t >= TERR_LDOOR_NORTH_L && t <= TERR_LDOOR_WEST_L;
 fn bool is_exit_terrain(TerrainType t) => t >= TERR_EXIT_WALL_L && t <= TERR_EXIT_HOLE_R;
 
-enum ObjectType : inline int
-{
-    OBJ_EMPTY,
-    OBJ_SMALL_ROCKS,
-    OBJ_ROCKS,
-    OBJ_TREE,
-    OBJ_STUMP,
-    OBJ_CRATE,
-    OBJ_OPEN_CRATE,
-    OBJ_SMALL_BOXES,
-    OBJ_ANVIL,
-    OBJ_FURNACE,
-    OBJ_CAMPFIRE,
-    OBJ_FIRE_PIT,
-    OBJ_TORCH,
-    OBJ_GRAVE,
-    OBJ_GRAVE2,
-    OBJ_ORE_ROCK1,
-    OBJ_ORE_ROCK2,
-    OBJ_ORE_ROCK3,
-    OBJ_TRADER,
-    OBJ_RUNE_ALTAR_L,
-    OBJ_RUNE_ALTAR_R,
-    OBJ_RUNE_ALTAR_PLINTH,
-    OBJ_CHEST,
-    OBJ_OPEN_CHEST,
-}
-
 struct ObjectInfo
 {
-    ObjectType type;
     String name;
     bool passable;
     Appearance look;
     String description;
 }
 
-ObjectInfo[*] g_object_info = {
-    { OBJ_EMPTY, "Empty", true, EMPTY_LOOK, "" },
-    { OBJ_SMALL_ROCKS, "Small Rocks", false, SMALL_ROCKS, "a small scattering of rocks" },
-    { OBJ_ROCKS, "Rocks", false, ROCKS, "a large boulder" },
-    { OBJ_TREE, "Tree", false, TREE, "a short tree" },
-    { OBJ_STUMP, "Stump", false, STUMP, "an old stump" },
-    { OBJ_CRATE, "Crate", false, CRATE, "a supply crate" },
-    { OBJ_OPEN_CRATE, "Open Crate", false, OPEN_CRATE, "an empty supply crate" },
-    { OBJ_SMALL_BOXES, "Small Boxes", false, SMALL_BOXES, "some small empty boxes" },
-    { OBJ_ANVIL, "Anvil", false, ANVIL, "an anvil" },
-    { OBJ_FURNACE, "Furnace", false, FURNACE, "a hot furnace" },
-    { OBJ_CAMPFIRE, "Campfire", false, CAMPFIRE, "a small campfire" },
-    { OBJ_FIRE_PIT, "Fire Pit", false, FIRE_PIT, "the remnants of a fire" },
-    { OBJ_TORCH, "Torch", false, TORCH, "a lit torch" },
-    { OBJ_GRAVE, "Grave", false, GRAVE, "a gravestone" },
-    { OBJ_GRAVE2, "Grave", false, GRAVE2, "a gravestone" },
-    { OBJ_ORE_ROCK1, "Ore Rock", false, ORE_ROCK1, "a small boulder containing some novite ore" },
-    { OBJ_ORE_ROCK2, "Ore Rock", false, ORE_ROCK2, "a small boulder containing some fractite ore" },
-    { OBJ_ORE_ROCK3, "Ore Rock", false, ORE_ROCK3, "a small boulder containing some promethium ore"},
-    { OBJ_TRADER, "Trader", false, TRADER, "a trader with some wares available" },
-    { OBJ_RUNE_ALTAR_L, "Rune Altar", false, RUNE_ALTAR_L, "a rune altar" },
-    { OBJ_RUNE_ALTAR_R, "Rune Altar", false, RUNE_ALTAR_R, "a rune altar" },
-    { OBJ_RUNE_ALTAR_PLINTH, "Rune Altar", false, RUNE_ALTAR_PLINTH, "a decorative plinth" },
-    { OBJ_CHEST, "Gilded Chest", false, CHEST, "a gilded chest" },
-    { OBJ_OPEN_CHEST, "Gilded Chest", false, OPEN_CHEST, "an empty gilded chest" },
-};
+enum ObjectType : inline int (ObjectInfo info)
+{
+    OBJ_EMPTY = { "Empty", true, EMPTY_LOOK, "" },
+    OBJ_SMALL_ROCKS = { "Small Rocks", false, SMALL_ROCKS, "a small scattering of rocks" },
+    OBJ_ROCKS = { "Rocks", false, ROCKS, "a large boulder" },
+    OBJ_TREE = { "Tree", false, TREE, "a short tree" },
+    OBJ_STUMP = { "Stump", false, STUMP, "an old stump" },
+    OBJ_CRATE = { "Crate", false, CRATE, "a supply crate" },
+    OBJ_OPEN_CRATE = { "Open Crate", false, OPEN_CRATE, "an empty supply crate" },
+    OBJ_SMALL_BOXES = { "Small Boxes", false, SMALL_BOXES, "some small empty boxes" },
+    OBJ_ANVIL = { "Anvil", false, ANVIL, "an anvil" },
+    OBJ_FURNACE = { "Furnace", false, FURNACE, "a hot furnace" },
+    OBJ_CAMPFIRE = { "Campfire", false, CAMPFIRE, "a small campfire" },
+    OBJ_FIRE_PIT = { "Fire Pit", false, FIRE_PIT, "the remnants of a fire" },
+    OBJ_TORCH = { "Torch", false, TORCH, "a lit torch" },
+    OBJ_GRAVE = { "Grave", false, GRAVE, "a gravestone" },
+    OBJ_GRAVE2 = { "Grave", false, GRAVE2, "a gravestone" },
+    OBJ_ORE_ROCK1 = { "Ore Rock", false, ORE_ROCK1, "a small boulder containing some novite ore" },
+    OBJ_ORE_ROCK2 = { "Ore Rock", false, ORE_ROCK2, "a small boulder containing some fractite ore" },
+    OBJ_ORE_ROCK3 = { "Ore Rock", false, ORE_ROCK3, "a small boulder containing some promethium ore"},
+    OBJ_TRADER = { "Trader", false, TRADER, "a trader with some wares available" },
+    OBJ_RUNE_ALTAR_L = { "Rune Altar", false, RUNE_ALTAR_L, "a rune altar" },
+    OBJ_RUNE_ALTAR_R = { "Rune Altar", false, RUNE_ALTAR_R, "a rune altar" },
+    OBJ_RUNE_ALTAR_PLINTH = { "Rune Altar", false, RUNE_ALTAR_PLINTH, "a decorative plinth" },
+    OBJ_CHEST = { "Gilded Chest", false, CHEST, "a gilded chest" },
+    OBJ_OPEN_CHEST = { "Gilded Chest", false, OPEN_CHEST, "an empty gilded chest" },
+}
 
 fault ZoneFault
 {
@@ -233,8 +138,8 @@ struct ZoneCell
     List(<Entity>) entities;
 }
 
-fn bool ZoneCell.isPassable(&self) => g_terrain_info[self.terrain].passable && g_object_info[self.object].passable && self.entities.is_empty();
-fn bool ZoneCell.isTerrainPassable(&self) => g_terrain_info[self.terrain].passable;
+fn bool ZoneCell.isPassable(&self) => self.terrain.info.passable && self.object.info.passable && self.entities.is_empty();
+fn bool ZoneCell.isTerrainPassable(&self) => self.terrain.info.passable;
 
 struct Zone
 {
@@ -574,7 +479,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
             //terminal.set_background(term_x, term_y, is_visible ? terr.bg : terr.bg.grayscale().darken(0.4f));
             if (cell.terrain != EMPTY_VOID)
             {
-                TerrainInfo terr = g_terrain_info[cell.terrain];
+                TerrainInfo terr = cell.terrain.info;
                 Appearance look = terr.look;
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
@@ -587,7 +492,7 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
             }
             if (cell.object != OBJ_EMPTY)
             {
-                ObjectInfo obj = g_object_info[cell.object];
+                ObjectInfo obj = cell.object.info;
                 Appearance look = obj.look;
                 bool is_textmode = textmode || look.sprite_index < 0;
                 char gl = is_textmode ? look.glyph : (char) look.sprite_index;
@@ -721,16 +626,13 @@ fn void Zone.render(&self, VirtualTerminal* terminal, VirtualTerminal* ui, ZoneR
 
 fn double get_diag_heuristic(IVec2 a, IVec2 b)
 {
-    int dx = math::abs(a[0] - b[0]);
-    int dy = math::abs(a[1] - b[1]);
-    return (double) (dx + dy) + (-0.58578643762) * math::min(dx, dy);
+    IVec2 dv = math::abs(a - b);
+    return dv.sum() + (-0.58578643762) * dv.min_element();
 }
 
 fn double get_heuristic(IVec2 a, IVec2 b)
 {
-    int dx = math::abs(a[0] - b[0]);
-    int dy = math::abs(a[1] - b[1]);
-    return (double) (dx + dy);
+    return math::abs(a - b).sum();
 }
 
 struct AStarStep
@@ -957,7 +859,7 @@ fn void line(IVec2 start, IVec2 end, LineCallback callback, void* data=null)
     if (start == end) return;
 
     IVec2 delta = math::abs(end - start);
-    IVec2 step = ivec2_sign(end - start);
+    IVec2 step = (end - start).sign();
 
     int err = delta[0] - delta[1];
 

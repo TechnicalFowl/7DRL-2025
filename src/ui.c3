@@ -119,8 +119,8 @@ fn void draw_ui()
         ZoneCell*! cell = g_zone.get_cell(...g_zone.get_mouse_position());
         if (try cell)
         {
-            String terrain_name = cell.terrain != EMPTY_VOID ? g_terrain_info[cell.terrain].name : "";
-            String object_name = cell.object != OBJ_EMPTY ? g_object_info[cell.object].name : "";
+            String terrain_name = cell.terrain != EMPTY_VOID ? cell.terrain.info.name : "";
+            String object_name = cell.object != OBJ_EMPTY ? cell.object.info.name : "";
             String items = cell.dropped_items.is_empty() ? "" : (cell.dropped_items.len() > 1 ? "Some items" : g_items.items[cell.dropped_items[0].item].name);
             String entity = cell.entities.is_empty() ? "" : cell.entities[0].get_name();
             gui::push_bottombar(string::tformat("       %16s    %16s    %10s    %10s", terrain_name, object_name, items, entity));
@@ -1006,8 +1006,8 @@ fn void draw_ui()
             }
         case ZoneCell:
             ZoneCell* cell = (ZoneCell*) examine_target;
-            if (cell.terrain != EMPTY_VOID) gui::text(string::tformat("  There is %s.", g_terrain_info[cell.terrain].description));
-            if (cell.object != OBJ_EMPTY) gui::text(string::tformat("  There is %s.", g_object_info[cell.object].description));
+            if (cell.terrain != EMPTY_VOID) gui::text(string::tformat("  There is %s.", cell.terrain.info.description));
+            if (cell.object != OBJ_EMPTY) gui::text(string::tformat("  There is %s.", cell.object.info.description));
             if (!cell.dropped_items.is_empty())
             {
                 for (int i = 0; i < cell.dropped_items.len(); ++i)

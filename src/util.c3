@@ -7,40 +7,23 @@ def IVec2 = int[<2>];
 def IVec3 = int[<3>];
 def IVec4 = int[<4>];
 
-fn uint IVec2.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]);
-fn uint IVec3.hash(self) => ((uint) self[0]) * 2654435761u + ((uint) self[1]) * 2654435761u + ((uint) self[2]) * 2654435761u;
+fn uint IVec2.hash(self) => ((uint) self.x) * 2654435761u + ((uint) self.y);
+fn uint IVec3.hash(self) => (((uint) self.x) * 2654435761u + ((uint) self.y)) * 2654435761u + ((uint) self.z);
+fn uint IVec4.hash(self) => ((((uint) self.x) * 2654435761u + ((uint) self.y)) * 2654435761u + ((uint) self.z)) * 2654435761u + ((uint) self.y);
 
-fn IVec2 ivec2_sign(IVec2 v)
-{
-    return { math::sign(v[0]), math::sign(v[1]) };
-}
+fn IVec2 IVec2.sign(self) => { math::sign(self.x), math::sign(self.y) };
+fn int IVec2.distance(self, IVec2 other) => math::abs(self - other).sum();
+fn int IVec2.dot(self, IVec2 other) => self.x * other.x + self.y * other.y;
+fn double IVec2.length(self) => math::sqrt(self.dot(self));
+fn int IVec2.length_sq(self) => self.dot(self);
+fn double IVec2.fdistance(self, IVec2 other) => (self - other).length();
+fn int IVec2.min_element(self) => math::min(self.x, self.y);
+fn int IVec2.max_element(self) => math::max(self.x, self.y);
+fn IVec2 IVec2.min(self, IVec2 other) => { math::min(self.x, other.x), math::min(self.y, other.y) };
+fn IVec2 IVec2.max(self, IVec2 other) => { math::max(self.x, other.x), math::max(self.y, other.y) };
+fn IVec2 IVec2.clamp(self, IVec2 min, IVec2 max) => self.max(min).min(max);
 
-fn int ivec2_distance(IVec2 a, IVec2 b)
-{
-    return math::abs(a[0] - b[0]) + math::abs(a[1] - b[1]);
-}
-
-fn double ivec2_fdistance(IVec2 a, IVec2 b)
-{
-    int dx = a[0] - b[0];
-    int dy = a[1] - b[1];
-    return math::sqrt(dx * dx + dy * dy);
-}
-
-fn IVec2 ivec2_min(IVec2 a, IVec2 b)
-{
-    return { math::min(a[0], b[0]), math::min(a[1], b[1]) };
-}
-
-fn IVec2 ivec2_max(IVec2 a, IVec2 b)
-{
-    return { math::max(a[0], b[0]), math::max(a[1], b[1]) };
-}
-
-fn IVec2 ivec2_clamp(IVec2 v, IVec2 min, IVec2 max)
-{
-    return ivec2_min(ivec2_max(v, min), max);
-}
+fn IVec2 ivec2_clamp(IVec2 value, IVec2 min, IVec2 max) => value.max(min).min(max);
 
 fn float ivec2_angle(IVec2 a, IVec2 b)
 {
@@ -153,39 +136,41 @@ struct ExceptionRecord
 }
 
 def UnhandledExceptionFilter = fn int (ExceptionRecord* exception_info);
+UnhandledExceptionFilter g_previous_filter;
+PanicFn g_previous_panic;
+bool g_has_panicked;
 extern fn UnhandledExceptionFilter setUnhandledExceptionFilter(UnhandledExceptionFilter filter) @extern("SetUnhandledExceptionFilter") @if(env::WIN32);
 
 fn int exceptionHandler(ExceptionRecord* exception_info)
 {
-    String code;
-    switch (exception_info.code)
+    if (!g_has_panicked)
     {
-        case 0xC0000005: code = "Access violation";
-        case 0xC000001D: code = "Illegal instruction";
-        case 0xC0000025: code = "Non-continuable exception";
-        case 0xC0000026: code = "Invalid disposition";
-        case 0xC000008C: code = "Array bounds exceeded";
-        case 0xC000008D: code = "Float denormal operand";
-        case 0xC000008E: code = "Float divide by zero";
-        case 0xC000008F: code = "Float inexact result";
-        case 0xC0000090: code = "Float invalid operation";
-        case 0xC0000091: code = "Float overflow";
-        case 0xC0000092: code = "Float stack check";
-        case 0xC0000093: code = "Float underflow";
-        case 0xC0000094: code = "Integer divide by zero";
-        case 0xC0000095: code = "Integer overflow";
-        case 0xC0000096: code = "Privileged instruction";
-        case 0xC00000FD: code = "Stack overflow";
-        default: code = "Unhandled exception";
+        @stack_mem(512; Allocator allocator)
+        {
+            DString s;
+            s.new_init(allocator: allocator);
+            s.appendf("Unhandled exception (%X)", exception_info.code);
+            builtin::print_backtrace(s.str_view(), 8);
+        };
     }
-    io::printfn("Unhandled exception: %s (%X)", code, exception_info.code);
-    builtin::print_backtrace(code, 0);
+    if (g_previous_filter)
+    {
+        return g_previous_filter(exception_info);
+    }
     return 1;
 }
 
-fn void initExceptionHandler()
+fn void panic_tracker(String message, String file, String function, uint line)
+{
+    g_has_panicked = true;
+    g_previous_panic(message, file, function, line);
+}
+
+fn void initExceptionHandler() @init
 {
 $if env::WIN32:
-    setUnhandledExceptionFilter(&exceptionHandler);
+    g_previous_filter = setUnhandledExceptionFilter(&exceptionHandler);
+    g_previous_panic = builtin::panic;
+    builtin::panic = &panic_tracker;
 $endif
 }

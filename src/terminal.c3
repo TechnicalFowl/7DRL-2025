@@ -295,7 +295,6 @@ fn void VirtualTerminal.render(&self, float zoom, Vec2f offset={0, 0})
             if (cell.bg.a > 0) rl::drawRectangleRec(dest, cell.bg);
         }
     }
-    rl::beginBlendMode(0);
     for (int y = 0; y < self.height; y++)
     {
         for (int x = 0; x < self.width; x++)

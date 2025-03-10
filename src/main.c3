@@ -395,7 +395,6 @@ fn void load_floor(int depth)
 fn int main(String[] args)
 {
     //waitForDebugger();
-    initExceptionHandler();
 
     rl::traceLog(rl::TraceLogLevel.INFO, "C3RL: Initializing...");
 

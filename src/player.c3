@@ -500,7 +500,7 @@ fn Action Player.next_action(&self, double max_time) @dynamic
                 if (!cell.entities.is_empty()
                         && self.get_room() == pos / 17
                         && self.getAttackStyle() != MELEE
-                        && ivec2_distance(self.get_position(), pos) <= self.getAttackRange())
+                        && (self.get_position().distance(pos) <= self.getAttackRange()))
                 {
                     return do_ranged_attack(1.0, pos);
                 }
@@ -1286,7 +1286,7 @@ fn void Player.applyAttunement(&self, Monster* target, int* damage)
     case EARTH:
         if (*damage > 0)
         {
-            IVec2 knockback = ivec2_sign(target.get_position() - self.get_position());
+            IVec2 knockback = (target.get_position() - self.get_position()).sign();
             ZoneCell*! cell = target.get_zone().get_cell(...(target.get_position() + knockback));
             if (try cell && cell.isPassable())
             {
